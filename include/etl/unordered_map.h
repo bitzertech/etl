@@ -51,6 +51,7 @@ SOFTWARE.
 #include "iterator.h"
 #include "placement_new.h"
 #include "initializer_list.h"
+#include "optional.h"
 
 #include <stddef.h>
 
@@ -652,14 +653,16 @@ namespace etl
 
       // Doesn't exist, so add a new one.
       // Get a new node.
-      node_t& node = create_data_node();
-      ::new (&node.key_value_pair) value_type(key, T());
-      ETL_INCREMENT_DEBUG_COUNT
+      auto node = create_data_node();
+      if (node)
+      {
+        ::new (&node->get().key_value_pair) value_type(key, T());
+        ETL_INCREMENT_DEBUG_COUNT
 
-      pbucket->insert_after(pbucket->before_begin(), node);
+        pbucket->insert_after(pbucket->before_begin(), node->get());
 
-      adjust_first_last_markers_after_insert(pbucket);
-
+        adjust_first_last_markers_after_insert(pbucket);
+      }
       return pbucket->begin()->key_value_pair.second;
     }
 
@@ -782,17 +785,20 @@ namespace etl
       if (bucket.empty())
       {
         // Get a new node.
-        node_t& node = create_data_node();
-        ::new (&node.key_value_pair) value_type(key_value_pair);
-        ETL_INCREMENT_DEBUG_COUNT
+        auto node = create_data_node();
+        if (node)
+        {
+          ::new (&node->get().key_value_pair) value_type(key_value_pair);
+          ETL_INCREMENT_DEBUG_COUNT
 
-        // Just add the pointer to the bucket;
-        bucket.insert_after(bucket.before_begin(), node);
+          // Just add the pointer to the bucket;
+          bucket.insert_after(bucket.before_begin(), node->get());
 
-        adjust_first_last_markers_after_insert(pbucket);
+          adjust_first_last_markers_after_insert(pbucket);
 
-        result.first = iterator((pbuckets + number_of_buckets), pbucket, pbucket->begin());
-        result.second = true;
+          result.first = iterator((pbuckets + number_of_buckets), pbucket, pbucket->begin());
+          result.second = true;
+        }
       }
       else
       {
@@ -816,17 +822,21 @@ namespace etl
         if (inode == bucket.end())
         {
           // Get a new node.
-          node_t& node = create_data_node();
-          ::new (&node.key_value_pair) value_type(key_value_pair);
-          ETL_INCREMENT_DEBUG_COUNT
+          auto node = create_data_node();
+          if (node)
+          {
+            ::new (&node->get().key_value_pair) value_type(key_value_pair);
+            ETL_INCREMENT_DEBUG_COUNT
 
-          // Add the node to the end of the bucket;
-          bucket.insert_after(inode_previous, node);
-          adjust_first_last_markers_after_insert(&bucket);
-          ++inode_previous;
+            // Add the node to the end of the bucket;
+            bucket.insert_after(inode_previous, node->get());
 
-          result.first = iterator((pbuckets + number_of_buckets), pbucket, inode_previous);
-          result.second = true;
+            adjust_first_last_markers_after_insert(&bucket);
+            ++inode_previous;
+
+            result.first = iterator((pbuckets + number_of_buckets), pbucket, inode_previous);
+            result.second = true;
+          }
         }
       }
 
@@ -858,17 +868,20 @@ namespace etl
       if (bucket.empty())
       {
         // Get a new node.
-        node_t& node = create_data_node();
-        ::new (&node.key_value_pair) value_type(etl::move(key_value_pair));
-        ETL_INCREMENT_DEBUG_COUNT
+        auto node = create_data_node();
+        if (node)
+        {
+          ::new (&node->get().key_value_pair) value_type(etl::move(key_value_pair));
+          ETL_INCREMENT_DEBUG_COUNT
 
-        // Just add the pointer to the bucket;
-        bucket.insert_after(bucket.before_begin(), node);
+          // Just add the pointer to the bucket;
+          bucket.insert_after(bucket.before_begin(), node->get());
 
-        adjust_first_last_markers_after_insert(pbucket);
+          adjust_first_last_markers_after_insert(pbucket);
 
-        result.first = iterator((pbuckets + number_of_buckets), pbucket, pbucket->begin());
-        result.second = true;
+          result.first = iterator((pbuckets + number_of_buckets), pbucket, pbucket->begin());
+          result.second = true;
+        }
       }
       else
       {
@@ -892,17 +905,21 @@ namespace etl
         if (inode == bucket.end())
         {
           // Get a new node.
-          node_t& node = create_data_node();
-          ::new (&node.key_value_pair) value_type(etl::move(key_value_pair));
-          ETL_INCREMENT_DEBUG_COUNT
+          auto node = create_data_node();
+          if (node)
+          {
+            ::new (&node->get().key_value_pair) value_type(etl::move(key_value_pair));
+            ETL_INCREMENT_DEBUG_COUNT
 
-          // Add the node to the end of the bucket;
-          bucket.insert_after(inode_previous, node);
-          adjust_first_last_markers_after_insert(&bucket);
-          ++inode_previous;
+            // Add the node to the end of the bucket;
+            bucket.insert_after(inode_previous, node->get());
 
-          result.first = iterator((pbuckets + number_of_buckets), pbucket, inode_previous);
-          result.second = true;
+            adjust_first_last_markers_after_insert(&bucket);
+            ++inode_previous;
+
+            result.first = iterator((pbuckets + number_of_buckets), pbucket, inode_previous);
+            result.second = true;
+          }
         }
       }
 
@@ -1387,14 +1404,22 @@ namespace etl
 #endif
 
   private:
+    // Optional reference type for node_t
+    using opt_ref_node_t = etl::optional<std::reference_wrapper<node_t>>;
 
     //*************************************************************************
     /// Create a node.
     //*************************************************************************
-    node_t& create_data_node()
+    opt_ref_node_t create_data_node()
     {
       node_t* (etl::ipool::*func)() = &etl::ipool::allocate<node_t>;
-      return *(pnodepool->*func)();
+      node_t* node = (pnodepool->*func)();
+      if (node == nullptr)
+      {
+        ETL_ASSERT(false, etl::pool_no_allocation);
+        return opt_ref_node_t(nullopt);
+      }
+      return opt_ref_node_t(*node);
     }
 
     //*********************************************************************
