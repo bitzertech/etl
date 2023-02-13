@@ -117,7 +117,7 @@ namespace etl
     /// Returns a reference to the value at index 'i'.
     ///\param i The index of the element to access.
     //*************************************************************************
-    reference at(size_t i)
+    ETL_CONSTEXPR reference at(size_t i)
     {
       ETL_ASSERT(i < SIZE, ETL_ERROR(array_out_of_range));
 
@@ -128,7 +128,7 @@ namespace etl
     /// Returns a const reference to the value at index 'i'.
     ///\param i The index of the element to access.
     //*************************************************************************
-    const_reference at(size_t i) const
+    ETL_CONSTEXPR const_reference at(size_t i) const
     {
       ETL_ASSERT(i < SIZE, ETL_ERROR(array_out_of_range));
 
@@ -140,7 +140,7 @@ namespace etl
     /// Returns a reference to the value at index 'i'.
     ///\param i The index of the element to access.
     //*************************************************************************
-    reference operator[](size_t i)
+    ETL_CONSTEXPR reference operator[](size_t i)
     {
       return _buffer[i];
     }
@@ -158,7 +158,7 @@ namespace etl
     //*************************************************************************
     /// Returns a reference to the first element.
     //*************************************************************************
-    reference front()
+    ETL_CONSTEXPR reference front()
     {
       return _buffer[0];
     }
@@ -174,7 +174,7 @@ namespace etl
     //*************************************************************************
     /// Returns a reference to the last element.
     //*************************************************************************
-    reference back()
+    ETL_CONSTEXPR reference back()
     {
       return _buffer[SIZE - 1];
     }
@@ -190,7 +190,7 @@ namespace etl
     //*************************************************************************
     /// Returns a pointer to the first element of the internal buffer.
     //*************************************************************************
-    pointer data() ETL_NOEXCEPT
+    ETL_CONSTEXPR pointer data() ETL_NOEXCEPT
     {
       return &_buffer[0];
     }
@@ -210,7 +210,7 @@ namespace etl
     //*************************************************************************
     /// Returns an iterator to the beginning of the array.
     //*************************************************************************
-    iterator begin() ETL_NOEXCEPT
+    ETL_CONSTEXPR iterator begin() ETL_NOEXCEPT
     {
       return &_buffer[0];
     }
@@ -234,7 +234,7 @@ namespace etl
     //*************************************************************************
     /// Returns an iterator to the end of the array.
     //*************************************************************************
-    iterator end() ETL_NOEXCEPT
+    ETL_CONSTEXPR iterator end() ETL_NOEXCEPT
     {
       return &_buffer[SIZE];
     }
@@ -258,7 +258,7 @@ namespace etl
     //*************************************************************************
     // Returns an reverse iterator to the reverse beginning of the array.
     //*************************************************************************
-    reverse_iterator rbegin() ETL_NOEXCEPT
+    ETL_CONSTEXPR reverse_iterator rbegin() ETL_NOEXCEPT
     {
       return reverse_iterator(end());
     }
@@ -282,7 +282,7 @@ namespace etl
     //*************************************************************************
     /// Returns a reverse iterator to the end of the array.
     //*************************************************************************
-    reverse_iterator rend() ETL_NOEXCEPT
+    ETL_CONSTEXPR reverse_iterator rend() ETL_NOEXCEPT
     {
       return reverse_iterator(begin());
     }
