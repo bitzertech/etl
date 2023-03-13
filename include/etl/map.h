@@ -1166,12 +1166,13 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
       // Get next available free node
-      Data_Node& node = allocate_data_node(value);
-
-      // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-      inserted_node = insert_node(root_node, node);
-      inserted = inserted_node == &node;
-
+      Data_Node* node = allocate_data_node(value);
+      if (node != nullptr)
+      {
+        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+        inserted_node = insert_node(root_node, *node);
+        inserted = inserted_node == node;
+      }
       // Insert node into tree and return iterator to new node location in tree
       return ETL_OR_STD::make_pair(iterator(*this, inserted_node), inserted);
     }
@@ -1191,11 +1192,14 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
       // Get next available free node
-      Data_Node& node = allocate_data_node(etl::move(value));
+      Data_Node* node = allocate_data_node(etl::move(value));
 
-      // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-      inserted_node = insert_node(root_node, node);
-      inserted = inserted_node == &node;
+      if (node != nullptr)
+      {
+        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+        inserted_node = insert_node(root_node, *node);
+        inserted = inserted_node == node;
+      }
 
       // Insert node into tree and return iterator to new node location in tree
       return ETL_OR_STD::make_pair(iterator(*this, inserted_node), inserted);
@@ -1216,11 +1220,13 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
       // Get next available free node
-      Data_Node& node = allocate_data_node(value);
+      Data_Node* node = allocate_data_node(value);
 
-      // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-      inserted_node = insert_node(root_node, node);
-
+      if (node != nullptr)
+      {
+        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+        inserted_node = insert_node(root_node, *node);
+      }
       // Insert node into tree and return iterator to new node location in tree
       return iterator(*this, inserted_node);
     }
@@ -1240,11 +1246,13 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
       // Get next available free node
-      Data_Node& node = allocate_data_node(etl::move(value));
+      Data_Node* node = allocate_data_node(etl::move(value));
 
-      // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-      inserted_node = insert_node(root_node, node);
-
+      if (node != nullptr)
+      {
+        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+        inserted_node = insert_node(root_node, *node);
+      }
       // Insert node into tree and return iterator to new node location in tree
       return iterator(*this, inserted_node);
     }
@@ -1459,11 +1467,14 @@ namespace etl
     //*************************************************************************
     /// Allocate a Data_Node.
     //*************************************************************************
-    Data_Node& allocate_data_node(rvalue_reference value)
+    Data_Node* allocate_data_node(rvalue_reference value)
     {
-      Data_Node& node = create_data_node();
-      ::new (&node.value) value_type(etl::move(value));
-      ETL_INCREMENT_DEBUG_COUNT
+      Data_Node* node = create_data_node();
+      if (node != nullptr)
+      {
+        ::new (&node->value) value_type(etl::move(value));
+        ETL_INCREMENT_DEBUG_COUNT
+      }
       return node;
     }
 #endif
@@ -1471,10 +1482,10 @@ namespace etl
     //*************************************************************************
     /// Create a Data_Node.
     //*************************************************************************
-    Data_Node& create_data_node()
+    Data_Node* create_data_node()
     {
       Data_Node* (etl::ipool::*func)() = &etl::ipool::allocate<Data_Node>;
-      return *(p_node_pool->*func)();
+      return (p_node_pool->*func)();
     }
 
     //*************************************************************************
