@@ -1416,7 +1416,7 @@ namespace etl
       node_t* node = (pnodepool->*func)();
       if (node == nullptr)
       {
-        ETL_ASSERT(false, etl::pool_no_allocation);
+        ETL_ASSERT(false, ETL_ERROR(etl::pool_no_allocation));
         return opt_ref_node_t(nullopt);
       }
       return opt_ref_node_t(*node);
