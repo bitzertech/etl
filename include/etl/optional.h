@@ -400,9 +400,8 @@ namespace etl
     /// Emplaces a value.
     ///\param args The arguments to construct with.
     //*************************************************************************
-    ETL_CONSTEXPR20_STL
     template <typename ... TArgs>
-    void emplace(TArgs&& ... args)
+    ETL_CONSTEXPR20_STL void emplace(TArgs&& ... args)
     {
       storage.construct(etl::forward<TArgs>(args)...);
     }
