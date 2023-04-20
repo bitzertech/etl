@@ -925,7 +925,16 @@ namespace etl
       {
         // Doesn't exist, so create a new one.
         i_element = insert(ETL_OR_STD::make_pair(key, mapped_type())).first;
+
+        ETL_ASSERT(i_element.p_node != ETL_NULLPTR, ETL_ERROR(map_out_of_bounds));
+
+        //Undefined behaviour
+        if (!i_element.p_node)
+        {
+          return end()->second;
+        }
       }
+
 
       return i_element->second;
     }
