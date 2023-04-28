@@ -815,9 +815,12 @@ namespace etl
       // Add all of the elements.
       while (first != last)
       {
-        data_node_t& node = allocate_data_node(*first);
-        join(get_tail(), node);
-        join(node, terminal_node);
+        data_node_t* node = allocate_data_node(*first);
+        if (node != nullptr)
+        {
+          join(get_tail(), *node);
+          join(*node, terminal_node);
+        }
         ++first;
       }
     }
@@ -836,9 +839,12 @@ namespace etl
       // Add all of the elements.
       while (n-- > 0)
       {
-        data_node_t& node = allocate_data_node(value);
-        join(*terminal_node.previous, node);
-        join(node, terminal_node);
+        data_node_t* node = allocate_data_node(value);
+        if (node != nullptr)
+        {
+          join(*terminal_node.previous, *node);
+          join(*node, terminal_node);
+        }
       }
     }
 
@@ -849,7 +855,11 @@ namespace etl
     {
       ETL_ASSERT_CHECK_PUSH_POP_OR_RETURN(!full(), ETL_ERROR(list_full));
 
-      insert_node(get_head(), allocate_data_node(value));
+      data_node_t* node = allocate_data_node(value);
+      if (node != nullptr)
+      {
+        insert_node(get_head(), *node);
+      }
     }
 
 #if ETL_USING_CPP11
@@ -860,7 +870,11 @@ namespace etl
     {
       ETL_ASSERT_CHECK_PUSH_POP_OR_RETURN(!full(), ETL_ERROR(list_full));
 
-      insert_node(get_head(), allocate_data_node(etl::move(value)));
+      data_node_t* node = allocate_data_node(etl::move(value));
+      if (node != nullptr)
+      {
+        insert_node(get_head(), *node);
+      }
     }
 #endif
 
@@ -876,9 +890,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(etl::forward<Args>(args)...);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(etl::forward<Args>(args)...);
+        insert_node(get_head(), *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(get_head(), *p_data_node);
       return front();
     }
 #else
@@ -909,9 +926,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value1);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value1);
+        insert_node(get_head(), *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(get_head(), *p_data_node);
       return front();
     }
 
@@ -926,9 +946,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value1, value2);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value1, value2);
+        insert_node(get_head(), *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(get_head(), *p_data_node);
       return front();
     }
 
@@ -943,9 +966,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value1, value2, value3);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value1, value2, value3);
+        insert_node(get_head(), *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(get_head(), *p_data_node);
       return front();
     }
 
@@ -960,9 +986,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value1, value2, value3, value4);
-      ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(get_head(), *p_data_node);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value1, value2, value3, value4);
+        insert_node(get_head(), *p_data_node);
+      }
+      ETL_INCREMENT_DEBUG_COUNT
       return front();
     }
 #endif
@@ -985,7 +1014,11 @@ namespace etl
     {
       ETL_ASSERT_CHECK_PUSH_POP_OR_RETURN(!full(), ETL_ERROR(list_full));
 
-      insert_node(terminal_node, allocate_data_node(value));
+      data_node_t* node = allocate_data_node(value);
+      if (node != nullptr)
+      {
+        insert_node(terminal_node, *node);
+      }
     }
 
 #if ETL_USING_CPP11
@@ -996,7 +1029,11 @@ namespace etl
     {
       ETL_ASSERT_CHECK_PUSH_POP_OR_RETURN(!full(), ETL_ERROR(list_full));
 
-      insert_node(terminal_node, allocate_data_node(etl::move(value)));
+      data_node_t* node = allocate_data_node(etl::move(value));
+      if (node != nullptr)
+      {
+        insert_node(terminal_node, *node);
+      }
     }
 #endif
 
@@ -1012,9 +1049,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(etl::forward<Args>(args)...);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(etl::forward<Args>(args)...);
+        insert_node(terminal_node, *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(terminal_node, *p_data_node);
       return back();
     }
 #else
@@ -1025,9 +1065,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T();
-      ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(terminal_node, *p_data_node);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T();
+        ETL_INCREMENT_DEBUG_COUNT;
+        insert_node(terminal_node, *p_data_node);
+      }
       return back();
     }
 
@@ -1039,9 +1082,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value1);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value1);
+        insert_node(terminal_node, *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(terminal_node, *p_data_node);
       return back();
     }
 
@@ -1053,9 +1099,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value1, value2);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value1, value2);
+        insert_node(terminal_node, *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(terminal_node, *p_data_node);
       return back();
     }
 
@@ -1067,9 +1116,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value1, value2, value3);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value1, value2, value3);
+        insert_node(terminal_node, *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(terminal_node, *p_data_node);
       return back();
     }
 
@@ -1081,9 +1133,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value1, value2, value3, value4);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value1, value2, value3, value4);
+        insert_node(terminal_node, *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(terminal_node, *p_data_node);
       return back();
     }
 #endif
@@ -1106,10 +1161,14 @@ namespace etl
     {
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 
-      data_node_t& data_node = allocate_data_node(value);
-      insert_node(*to_iterator(position).p_node, data_node);
+      data_node_t* data_node = allocate_data_node(value);
+      if (data_node != nullptr)
+      {
+        insert_node(*to_iterator(position).p_node, *data_node);
+        return iterator(*data_node);
+      }
 
-      return iterator(data_node);
+      return iterator();
     }
 
 #if ETL_USING_CPP11
@@ -1120,10 +1179,14 @@ namespace etl
     {
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 
-      data_node_t& data_node = allocate_data_node(etl::move(value));
-      insert_node(*to_iterator(position).p_node, data_node);
+      data_node_t* data_node = allocate_data_node(etl::move(value));
+      if (data_node != nullptr)
+      {
+        insert_node(*to_iterator(position).p_node, *data_node);
+        return iterator(*data_node);
+      }
 
-      return iterator(data_node);
+      return iterator();
     }
 #endif
 
@@ -1138,9 +1201,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(etl::forward<Args>(args)...);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(etl::forward<Args>(args)...);
+        insert_node(*to_iterator(position).p_node, *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(*to_iterator(position).p_node, *p_data_node);
 
       return iterator(*p_data_node);
     }
@@ -1165,9 +1231,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value1);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value1);
+        insert_node(*position.p_node, *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(*to_iterator(position).p_node, *p_data_node);
 
       return iterator(*p_data_node);
     }
@@ -1179,9 +1248,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value1, value2);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value1, value2);
+        insert_node(*position.p_node, *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(*to_iterator(position).p_node, *p_data_node);
 
       return iterator(*p_data_node);
     }
@@ -1193,9 +1265,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value1, value2, value3);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value1, value2, value3);
+        insert_node(*position.p_node, *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(*to_iterator(position).p_node, *p_data_node);
 
       return iterator(*p_data_node);
     }
@@ -1207,9 +1282,12 @@ namespace etl
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value1, value2, value3, value4);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value1, value2, value3, value4);
+        insert_node(*position.p_node, *p_data_node);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      insert_node(*to_iterator(position).p_node, *p_data_node);
 
       return iterator(*p_data_node);
     }
@@ -1225,7 +1303,11 @@ namespace etl
         ETL_ASSERT(!full(), ETL_ERROR(list_full));
 
         // Set up the next free node and insert.
-        insert_node(*to_iterator(position).p_node, allocate_data_node(value));
+        data_node_t* node = allocate_data_node(value);
+        if (node != nullptr)
+        {
+          insert_node(*to_iterator(position).p_node, *node);
+        }
       }
     }
 
@@ -1240,7 +1322,11 @@ namespace etl
         ETL_ASSERT(!full(), ETL_ERROR(list_full));
 
         // Set up the next free node and insert.
-        insert_node(*to_iterator(position).p_node, allocate_data_node(*first));
+        data_node_t* node = allocate_data_node(*first);
+        if (node != nullptr)
+        {
+          insert_node(*to_iterator(position).p_node, *node);
+        }
         ++first;
       }
     }
@@ -1903,7 +1989,11 @@ namespace etl
             {
               ETL_ASSERT(!full(), ETL_ERROR(list_full));
 
-              insert_node(terminal_node, this->allocate_data_node(etl::move(*first)));
+              data_node_t* node = this->allocate_data_node(etl::move(*first));
+              if (node != nullptr)
+              {
+                insert_node(terminal_node, *node);
+              }
               ++first;
             }
 
@@ -1985,30 +2075,36 @@ namespace etl
     //*************************************************************************
     /// Allocate a data_node_t.
     //*************************************************************************
-    data_node_t& allocate_data_node(const_reference value)
+    data_node_t* allocate_data_node(const_reference value)
     {
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(value);
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(value);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
 
-      return *p_data_node;
+      return p_data_node;
     }
 
 #if ETL_USING_CPP11
     //*************************************************************************
     /// Allocate a data_node_t.
     //*************************************************************************
-    data_node_t& allocate_data_node(rvalue_reference value)
+    data_node_t* allocate_data_node(rvalue_reference value)
     {
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
-      ::new (&(p_data_node->value)) T(etl::move(value));
+      if (p_data_node != nullptr)
+      {
+        ::new (&(p_data_node->value)) T(etl::move(value));
+      }
       ETL_INCREMENT_DEBUG_COUNT;
 
-      return *p_data_node;
+      return p_data_node;
     }
 #endif
 
