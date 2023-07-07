@@ -1464,11 +1464,14 @@ namespace etl
     //*************************************************************************
     /// Allocate a Data_Node.
     //*************************************************************************
-    Data_Node& allocate_data_node(const_reference value)
+    Data_Node* allocate_data_node(const_reference value)
     {
-      Data_Node& node = create_data_node();
-      ::new (&node.value) value_type(value);
-      ETL_INCREMENT_DEBUG_COUNT
+      Data_Node* node = create_data_node();
+      if (node != nullptr)
+      {
+        ::new (&node->value) value_type(value);
+        ETL_INCREMENT_DEBUG_COUNT
+      }
       return node;
     }
 
