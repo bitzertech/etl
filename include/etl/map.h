@@ -1733,7 +1733,7 @@ namespace etl
     //*************************************************************************
     /// Allocate a Data_Node with the supplied key.
     //*************************************************************************
-    Data_Node& allocate_data_node_with_key(const_key_reference key)
+    Data_Node* allocate_data_node_with_key(const_key_reference key)
     {
       Data_Node* node = allocate_data_node();
       if (node != nullptr)
