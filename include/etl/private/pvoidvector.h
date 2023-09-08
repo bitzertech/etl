@@ -350,7 +350,7 @@ namespace etl
 
       while (first != last)
       {
-        *p_end++ = (void*)(*first);
+        *p_end++ = static_cast<void*>(*first);
         ++first;
       }
     }
@@ -373,8 +373,8 @@ namespace etl
 
       initialise();
 
-      void** p_first = (void**)(first);
-      void** p_last  = (void**)(last);
+      void** p_first = static_cast<void**>(first);
+      void** p_last  = static_cast<void**>(last);
 
       p_end = etl::mem_move(p_first, p_last, p_buffer) + (p_last - p_first);
     }
