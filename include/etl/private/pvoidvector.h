@@ -341,7 +341,7 @@ namespace etl
 
       while (first != last)
       {
-        *p_end++ = (void*)(*first);
+        *p_end++ = static_cast<void*>(*first);
         ++first;
       }
     }
@@ -364,8 +364,8 @@ namespace etl
 
       initialise();
 
-      void** p_first = (void**)(first);
-      void** p_last  = (void**)(last);
+      void** p_first = static_cast<void**>(first);
+      void** p_last  = static_cast<void**>(last);
 
       p_end = etl::copy(p_first, p_last, p_buffer);
     }
@@ -570,7 +570,7 @@ namespace etl
       iterator last_  = to_iterator(last);
 
       etl::copy(last_, end(), first_);
-      size_t n_delete = etl::distance(first, last);
+      size_t n_delete = static_cast<size_t>(etl::distance(first, last));
 
       // Just adjust the count.
       p_end -= n_delete;
@@ -672,7 +672,7 @@ namespace etl
     //*************************************************************************
     void repair_buffer(void** p_buffer_)
     {
-      uintptr_t length = p_end - p_buffer;
+      uintptr_t length = static_cast<uintptr_t>(p_end - p_buffer);
 
       p_buffer = p_buffer_;
       p_end = p_buffer_ + length;
