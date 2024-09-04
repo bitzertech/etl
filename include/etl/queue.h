@@ -103,7 +103,7 @@ namespace etl
   /// The base class for all queues.
   ///\ingroup queue
   //***************************************************************************
-  template <const size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
+  template <size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
   class queue_base
   {
   public:
@@ -193,7 +193,7 @@ namespace etl
       }
 
       ++current_size;
-      ETL_INCREMENT_DEBUG_COUNT
+      ETL_INCREMENT_DEBUG_COUNT;
     }
 
     //*************************************************************************
@@ -206,7 +206,7 @@ namespace etl
         out = 0;
       }
       --current_size;
-      ETL_DECREMENT_DEBUG_COUNT
+      ETL_DECREMENT_DEBUG_COUNT;
     }
 
     //*************************************************************************
@@ -217,14 +217,14 @@ namespace etl
       in = 0;
       out = 0;
       current_size = 0;
-      ETL_RESET_DEBUG_COUNT
+      ETL_RESET_DEBUG_COUNT;
     }
 
     size_type in;            ///< Where to input new data.
     size_type out;           ///< Where to get the oldest data.
     size_type current_size;   ///< The number of items in the queue.
     const size_type CAPACITY; ///< The maximum number of items in the queue.
-    ETL_DECLARE_DEBUG_COUNT  ///< For internal debugging purposes.
+    ETL_DECLARE_DEBUG_COUNT;  ///< For internal debugging purposes.
 
   };
 
@@ -349,6 +349,20 @@ namespace etl
       add_in();
     }
 #else
+    //*************************************************************************
+    /// Constructs a value in the queue 'in place'.
+    /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
+    ///\param value The value to use to construct the item to push to the queue.
+    //*************************************************************************
+    void emplace()
+    {
+#if defined(ETL_CHECK_PUSH_POP)
+      ETL_ASSERT(!full(), ETL_ERROR(queue_full));
+#endif
+      ::new (&p_buffer[in]) T();
+      add_in();
+    }
+
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
@@ -648,7 +662,7 @@ namespace etl
     {
       if (&rhs != this)
       {
-        base_t::move_clone(rhs);
+        base_t::move_clone(etl::move(rhs));
       }
 
       return *this;
@@ -660,6 +674,9 @@ namespace etl
     /// The uninitialised buffer of T used in the queue.
     container_type buffer[SIZE];
   };
+
+  template <typename T, const size_t SIZE, const size_t MEMORY_MODEL>
+  ETL_CONSTANT typename queue<T, SIZE, MEMORY_MODEL>::size_type queue<T, SIZE, MEMORY_MODEL>::MAX_SIZE;
 }
 
 #endif

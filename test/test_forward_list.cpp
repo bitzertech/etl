@@ -241,6 +241,7 @@ namespace
       data1.push_front(std::move(p4));
 
       DataM data2;
+      data2.push_front(ItemM(5U));
       data2 = std::move(data1);
 
       CHECK_EQUAL(0U, data1.size());
@@ -269,6 +270,7 @@ namespace
       data1.push_front(std::move(p4));
 
       DataM data2;
+      data2.push_front(ItemM(5U));
 
       IDataM& idata1 = data1;
       IDataM& idata2 = data2;
@@ -423,7 +425,7 @@ namespace
       data.assign(sorted_data.begin(), sorted_data.end());
       CHECK_EQUAL(SIZE, data.size());
       data.clear();
-      CHECK_EQUAL(size_t(0UL), data.size());
+      CHECK_EQUAL(0UL, data.size());
     }
 
     //*************************************************************************
@@ -438,7 +440,7 @@ namespace
       data.resize(SIZE);
       CHECK_EQUAL(SIZE, data.size());
       data.clear();
-      CHECK_EQUAL(size_t(0UL), data.size());
+      CHECK_EQUAL(0UL, data.size());
     }
 
     //*************************************************************************
@@ -998,10 +1000,13 @@ namespace
       compare_data.unique();
       data.unique();
 
-      CHECK_EQUAL(size_t(std::distance(compare_data.begin(), compare_data.end())), data.size());
+      if ((compare_data.begin() != compare_data.end()) && (data.begin() != data.end()))
+      {
+        CHECK_EQUAL(size_t(std::distance(compare_data.begin(), compare_data.end())), data.size());
 
-      are_equal = std::equal(data.begin(), data.end(), compare_data.begin());
-      CHECK(are_equal);
+        are_equal = std::equal(data.begin(), data.end(), compare_data.begin());
+        CHECK(are_equal);
+      }
     }
 
     //*************************************************************************
@@ -1403,7 +1408,7 @@ namespace
 
       auto v = *data.begin();
       using Type = decltype(v);
-      CHECK((std::is_same_v<ItemNDC, Type>));
+      CHECK((std::is_same<ItemNDC, Type>::value));
 
       decltype(data)::const_iterator itr = data.begin();
 

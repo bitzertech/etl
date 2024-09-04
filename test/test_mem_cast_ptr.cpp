@@ -72,7 +72,7 @@ namespace
     return reinterpret_cast<char*>(uintptr_t(i));
   }
 
-  std::aligned_storage_t<Size, Alignment> buffer;
+  typename std::aligned_storage<Size, Alignment>::type buffer;
   
   SUITE(test_mem_cast_ptr)
   {
@@ -183,6 +183,8 @@ namespace
     {
       char* pbuffer = reinterpret_cast<char*>(&buffer);
 
+      using Array = std::array<int, 3>;
+
       MemCast memCast(pbuffer); 
 
       memCast.assign<char>(123);
@@ -193,9 +195,9 @@ namespace
 
       Data data(123, 1.23, std::array<int, 3>{ 1, 2, 3 });
       memCast.assign<Data>(data);
-      CHECK(123 == memCast.ref<Data>().c);
-      CHECK(1.23 == memCast.ref<Data>().d);
-      CHECK((std::array { 1, 2, 3 }) == memCast.ref<Data>().a);
+      CHECK_EQUAL(123, memCast.ref<Data>().c);
+      CHECK_EQUAL(1.23, memCast.ref<Data>().d);
+      CHECK((Array{ 1, 2, 3 }) == memCast.ref<Data>().a);
     }
 
     //*************************************************************************
@@ -235,6 +237,8 @@ namespace
     {
       char* pbuffer = reinterpret_cast<char*>(&buffer);
 
+      using Array = std::array<int, 3>;
+
       MemCast memCast(pbuffer); 
 
       memCast.emplace<char>(123);
@@ -244,9 +248,9 @@ namespace
       CHECK_EQUAL(1.23, memCast.ref<double>());
 
       memCast.emplace<Data>(123, 1.23, std::array<int, 3>{ 1, 2, 3 });
-      CHECK(123 == memCast.ref<Data>().c);
-      CHECK(1.23 == memCast.ref<Data>().d);
-      CHECK((std::array { 1, 2, 3 }) == memCast.ref<Data>().a);
+      CHECK_EQUAL(123, memCast.ref<Data>().c);
+      CHECK_EQUAL(1.23, memCast.ref<Data>().d);
+      CHECK((Array{ 1, 2, 3 }) == memCast.ref<Data>().a);
     }
 
     //*************************************************************************
@@ -286,6 +290,8 @@ namespace
     {
       char* pbuffer = reinterpret_cast<char*>(&buffer);
 
+      using Array = std::array<int, 3>;
+
       MemCast memCast(pbuffer); 
 
       pbuffer = memCast.data();
@@ -296,15 +302,17 @@ namespace
       CHECK_EQUAL(1.23, memCast.ref<double>());
 
       *reinterpret_cast<Data*>(pbuffer) = { 123, 1.23, { 1, 2, 3 } };
-      CHECK(123 == memCast.ref<Data>().c);
-      CHECK(1.23 == memCast.ref<Data>().d);
-      CHECK((std::array { 1, 2, 3 }) == memCast.ref<Data>().a);
+      CHECK_EQUAL(123, memCast.ref<Data>().c);
+      CHECK_EQUAL(1.23, memCast.ref<Data>().d);
+      CHECK((Array{ 1, 2, 3 }) == memCast.ref<Data>().a);
     }
 
     //*************************************************************************
     TEST(test_const_mem_cast_to_type)
     {
       char* pbuffer = reinterpret_cast<char*>(&buffer);
+
+      using Array = std::array<int, 3>;
 
       const MemCast memCast(pbuffer); 
 
@@ -315,9 +323,9 @@ namespace
       CHECK_EQUAL(1.23, memCast.ref<double>());
 
       *reinterpret_cast<Data*>(pbuffer) = { 123, 1.23, { 1, 2, 3 } };
-      CHECK(123 == memCast.ref<Data>().c);
-      CHECK(1.23 == memCast.ref<Data>().d);
-      CHECK((std::array { 1, 2, 3 }) == memCast.ref<Data>().a);
+      CHECK_EQUAL(123, memCast.ref<Data>().c);
+      CHECK_EQUAL(1.23, memCast.ref<Data>().d);
+      CHECK((Array{ 1, 2, 3 }) == memCast.ref<Data>().a);
     }
 
     //*************************************************************************

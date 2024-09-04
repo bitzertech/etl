@@ -44,6 +44,9 @@ SOFTWARE.
 #include "smallest.h"
 #include "absolute.h"
 #include "expected.h"
+#include "math.h"
+
+#include <math.h>
 
 namespace etl
 {
@@ -193,11 +196,34 @@ namespace etl
 
   namespace private_to_arithmetic
   {
-    static ETL_CONSTANT char Positive_Char     = '+';
-    static ETL_CONSTANT char Negative_Char     = '-';
-    static ETL_CONSTANT char Radix_Point1_Char = '.';
-    static ETL_CONSTANT char Radix_Point2_Char = ',';
-    static ETL_CONSTANT char Exponential_Char  = 'e';
+    template <typename T = void>
+    struct char_statics
+    {
+      static ETL_CONSTANT char Positive_Char = '+';
+      static ETL_CONSTANT char Negative_Char = '-';
+      static ETL_CONSTANT char Radix_Point1_Char = '.';
+      static ETL_CONSTANT char Radix_Point2_Char = ',';
+      static ETL_CONSTANT char Exponential_Char = 'e';
+    };
+
+    template <typename T>
+    ETL_CONSTANT char char_statics<T>::Positive_Char;
+
+    template <typename T>
+    ETL_CONSTANT char char_statics<T>::Negative_Char;
+
+    template <typename T>
+    ETL_CONSTANT char char_statics<T>::Radix_Point1_Char;
+
+    template <typename T>
+    ETL_CONSTANT char char_statics<T>::Radix_Point2_Char;
+
+    template <typename T>
+    ETL_CONSTANT char char_statics<T>::Exponential_Char;
+
+    struct char_constant : char_statics<>
+    {
+    };
 
     //*******************************************
     ETL_NODISCARD
@@ -225,7 +251,7 @@ namespace etl
           break;
         }
 
-        case etl::radix::hex:
+        case etl::radix::hexadecimal:
         {
           return ((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f'));
           break;
@@ -255,7 +281,7 @@ namespace etl
           break;
         }
 
-        case etl::radix::hex:
+        case etl::radix::hexadecimal:
         {
           if ((c >= '0') && (c <= '9'))
           {
@@ -312,8 +338,8 @@ namespace etl
       {
         // Check for prefix.
         const char c = convert(view[0]);
-        const bool has_positive_prefix = (c == Positive_Char);
-        const bool has_negative_prefix = (c == Negative_Char);
+        const bool has_positive_prefix = (c == char_constant::Positive_Char);
+        const bool has_negative_prefix = (c == char_constant::Negative_Char);
 
         // Step over the prefix, if present.
         if (has_positive_prefix || has_negative_prefix)
@@ -337,7 +363,7 @@ namespace etl
       return (radix == etl::radix::binary)  ||
              (radix == etl::radix::octal)   ||
              (radix == etl::radix::decimal) ||
-             (radix == etl::radix::hex);
+             (radix == etl::radix::hexadecimal);
     }
 
     //***************************************************************************
@@ -371,7 +397,7 @@ namespace etl
           TValue old_value = integral_value;
           integral_value *= radix;
 
-          // No multipication overflow?
+          // No multiplication overflow?
           is_not_overflow = ((integral_value / radix) == old_value);
 
           if (is_not_overflow)
@@ -465,19 +491,19 @@ namespace etl
           //***************************
           case Parsing_Integral:
           {
-            if (expecting_sign && ((c == Positive_Char) || (c == Negative_Char)))
+            if (expecting_sign && ((c == char_constant::Positive_Char) || (c == char_constant::Negative_Char)))
             {
-              is_negative_mantissa = (c == Negative_Char);
+              is_negative_mantissa = (c == char_constant::Negative_Char);
               expecting_sign = false;
             }
             // Radix point?
-            else if ((c == Radix_Point1_Char) || (c == Radix_Point2_Char))
+            else if ((c == char_constant::Radix_Point1_Char) || (c == char_constant::Radix_Point2_Char))
             {
               expecting_sign = false;
               state = Parsing_Fractional;
             }
             // Exponential?
-            else if (c == Exponential_Char)
+            else if (c == char_constant::Exponential_Char)
             {
               expecting_sign = true;
               state = Parsing_Exponential;
@@ -502,13 +528,13 @@ namespace etl
           case Parsing_Fractional:
           {
             // Radix point?
-            if ((c == Radix_Point1_Char) || (c == Radix_Point2_Char))
+            if ((c == char_constant::Radix_Point1_Char) || (c == char_constant::Radix_Point2_Char))
             {
               conversion_status = to_arithmetic_status::Invalid_Format;
               is_success = false;
             }
             // Exponential?
-            else if (c == Exponential_Char)
+            else if (c == char_constant::Exponential_Char)
             {
               expecting_sign = true;
               state = Parsing_Exponential;
@@ -532,13 +558,13 @@ namespace etl
           //***************************
           case Parsing_Exponential:
           {
-            if (expecting_sign && ((c == Positive_Char) || (c == Negative_Char)))
+            if (expecting_sign && ((c == char_constant::Positive_Char) || (c == char_constant::Negative_Char)))
             {
-              is_negative_exponent = (c == Negative_Char);
+              is_negative_exponent = (c == char_constant::Negative_Char);
               expecting_sign = false;
             }
             // Radix point?
-            else if ((c == Radix_Point1_Char) || (c == Radix_Point2_Char) || (c == Exponential_Char))
+            else if ((c == char_constant::Radix_Point1_Char) || (c == char_constant::Radix_Point2_Char) || (c == char_constant::Exponential_Char))
             {
               conversion_status = to_arithmetic_status::Invalid_Format;
               is_success = false;
@@ -896,13 +922,11 @@ namespace etl
         value *= pow(static_cast<TValue>(10.0), static_cast<TValue>(exponent));
 
         // Check that the result is a valid floating point number.
-        if ((value == etl::numeric_limits<TValue>::infinity()) ||
-            (value == -etl::numeric_limits<TValue>::infinity()))
+        if (etl::is_infinity(value))
         {
           result = unexpected_type(to_arithmetic_status::Overflow);
         }
-        // Check for NaN.
-        else if (value != value)
+        else if (etl::is_nan(value))
         {
           result = unexpected_type(to_arithmetic_status::Invalid_Float);
         }

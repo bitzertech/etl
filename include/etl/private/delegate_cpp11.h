@@ -210,6 +210,19 @@ namespace etl
       return delegate(const_method_instance_stub<T, Instance, Method>);
     }
 
+#if !(defined(ETL_COMPILER_GCC) && (__GNUC__ <= 8))
+    //*************************************************************************
+    /// Create from instance function operator (Compile time).
+    /// At the time of writing, GCC appears to have trouble with this.
+    //*************************************************************************
+    template <typename T, T& Instance>
+    ETL_NODISCARD
+      static ETL_CONSTEXPR14 delegate create()
+    {
+      return delegate(operator_instance_stub<T, Instance>);
+    }
+#endif
+
     //*************************************************************************
     /// Set from function (Compile time).
     //*************************************************************************
@@ -273,18 +286,13 @@ namespace etl
       assign(ETL_NULLPTR, const_method_instance_stub<T, Instance, Method>);
     }
 
-#if !(defined(ETL_COMPILER_GCC) && (__GNUC__ <= 8))
     //*************************************************************************
-    /// Create from instance function operator (Compile time).
-    /// At the time of writing, GCC appears to have trouble with this.
+    /// Clear the delegate.
     //*************************************************************************
-    template <typename T, T& Instance>
-    ETL_NODISCARD
-    static ETL_CONSTEXPR14 delegate create()
+    ETL_CONSTEXPR14 void clear()
     {
-      return delegate(operator_instance_stub<T, Instance>);
+      invocation.clear();
     }
-#endif
 
     //*************************************************************************
     /// Execute the delegate.
@@ -301,6 +309,7 @@ namespace etl
     /// 'void' return.
     //*************************************************************************
     template <typename TRet = TReturn>
+    ETL_CONSTEXPR14
     typename etl::enable_if_t<etl::is_same<TRet, void>::value, bool>
       call_if(TParams... args) const
     {
@@ -320,6 +329,7 @@ namespace etl
     /// Non 'void' return.
     //*************************************************************************
     template <typename TRet = TReturn>
+    ETL_CONSTEXPR14
     typename etl::enable_if_t<!etl::is_same<TRet, void>::value, etl::optional<TReturn>>
       call_if(TParams... args) const
     {
@@ -456,6 +466,13 @@ namespace etl
       }
 
       //***********************************************************************
+      ETL_CONSTEXPR14 void clear()
+      {
+        object = ETL_NULLPTR;
+        stub   = ETL_NULLPTR;
+      }
+
+      //***********************************************************************
       void*     object = ETL_NULLPTR;
       stub_type stub   = ETL_NULLPTR;
     };
@@ -464,10 +481,8 @@ namespace etl
     /// Constructs a delegate from an object and stub.
     //*************************************************************************
     ETL_CONSTEXPR14 delegate(void* object, stub_type stub)
-      //: invocation(object, stub)
+      : invocation(object, stub)
     {
-      invocation.object = object;
-      invocation.stub = stub;
     }
 
     //*************************************************************************

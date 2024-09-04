@@ -33,6 +33,10 @@ SOFTWARE.
 #include "etl/private/delegate_cpp03.h"
 #include "etl/vector.h"
 
+#include <vector>
+#include <functional>
+#include <algorithm>
+
 namespace
 {
   //*****************************************************************************
@@ -66,7 +70,7 @@ namespace
   bool parameter_correct = false;
 
   //*****************************************************************************
-  // Test data structure.
+  // Object data structure.
   //*****************************************************************************
   struct Data
   {
@@ -133,7 +137,7 @@ namespace
   //*****************************************************************************
   // The test class with member functions.
   //*****************************************************************************
-  class Test
+  class Object
   {
   public:
 
@@ -204,8 +208,8 @@ namespace
     return a * 2;
   }
 
-  Test test_static;
-  const Test const_test_static;
+  Object test_static;
+  const Object const_test_static;
 }
 
 namespace
@@ -233,6 +237,26 @@ namespace
       CHECK(!d);
 
       CHECK_THROW(d(), etl_cpp03::delegate_uninitialised);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_is_valid_true)
+    {
+      auto d = etl_cpp03::delegate<void(void)>::create<free_void>();
+
+      CHECK(d.is_valid());
+      CHECK(d);
+      CHECK_NO_THROW(d());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_is_valid_after_clear)
+    {
+      auto d = etl_cpp03::delegate<void(void)>::create<free_void>();
+
+      CHECK_TRUE(d.is_valid());
+      d.clear();
+      CHECK_FALSE(d.is_valid());
     }
 
     //*************************************************************************
@@ -273,9 +297,9 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_operator_void)
     {
-      Test test;
+      Object object;
 
-      etl_cpp03::delegate<void(void)> d(test);
+      etl_cpp03::delegate<void(void)> d(object);
 
       d();
 
@@ -285,9 +309,9 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_operator_void_create)
     {
-      Test test;
+      Object object;
 
-      auto d = etl_cpp03::delegate<void(void)>::create(test);
+      auto d = etl_cpp03::delegate<void(void)>::create(object);
 
       d();
 
@@ -297,9 +321,9 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_operator_void_const)
     {
-      const Test test;
+      const Object object;
 
-      etl_cpp03::delegate<void(void)> d(test);
+      etl_cpp03::delegate<void(void)> d(object);
 
       d();
 
@@ -310,7 +334,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_operator_void_compile_time)
     {
-      auto d = etl_cpp03::delegate<void(void)>::create<Test, test_static>();
+      auto d = etl_cpp03::delegate<void(void)>::create<Object, test_static>();
 
       d();
 
@@ -320,7 +344,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_operator_void_compile_time_const)
     {
-      auto d = etl_cpp03::delegate<void(void)>::create<const Test, const_test_static>();
+      auto d = etl_cpp03::delegate<void(void)>::create<const Object, const_test_static>();
 
       d();
 
@@ -331,11 +355,11 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_assignment_member_operator_void)
     {
-      Test test;
+      Object object;
 
       etl_cpp03::delegate<void(void)> d;
 
-      d = test;
+      d = object;
 
       d();
 
@@ -345,9 +369,9 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_void)
     {
-      Test test;
+      Object object;
 
-      auto d = etl_cpp03::delegate<void(void)>::create<Test, &Test::member_void>(test);
+      auto d = etl_cpp03::delegate<void(void)>::create<Object, &Object::member_void>(object);
 
       d();
 
@@ -357,9 +381,9 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_void_const)
     {
-      const Test test;
+      const Object object;
 
-      auto d = etl_cpp03::delegate<void(void)>::create<Test, &Test::member_void_const>(test);
+      auto d = etl_cpp03::delegate<void(void)>::create<Object, &Object::member_void_const>(object);
 
       d();
 
@@ -369,9 +393,9 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_int)
     {
-      Test test;
+      Object object;
 
-      auto d = etl_cpp03::delegate<void(int)>::create<Test, &Test::member_int>(test);
+      auto d = etl_cpp03::delegate<void(int)>::create<Object, &Object::member_int>(object);
 
       d(VALUE1);
 
@@ -382,9 +406,9 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_int_const)
     {
-      const Test test;
+      const Object object;
 
-      auto d = etl_cpp03::delegate<void(int)>::create<Test, &Test::member_int_const>(test);
+      auto d = etl_cpp03::delegate<void(int)>::create<Object, &Object::member_int_const>(object);
 
       d(VALUE1);
 
@@ -395,8 +419,8 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_reference)
     {
-      Test test;
-      auto d = etl_cpp03::delegate<void(const Data&)>::create<Test, &Test::member_reference>(test);
+      Object object;
+      auto d = etl_cpp03::delegate<void(const Data&)>::create<Object, &Object::member_reference>(object);
 
       Data data;
       data.d = VALUE1;
@@ -410,8 +434,8 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_reference_const)
     {
-      const Test test;
-      auto d = etl_cpp03::delegate<void(const Data&)>::create<Test, &Test::member_reference_const>(test);
+      const Object object;
+      auto d = etl_cpp03::delegate<void(const Data&)>::create<Object, &Object::member_reference_const>(object);
 
       Data data;
       data.d = VALUE1;
@@ -425,7 +449,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_static)
     {
-      auto d = etl_cpp03::delegate<void(const Data&)>::create<Test::member_static>();
+      auto d = etl_cpp03::delegate<void(const Data&)>::create<Object::member_static>();
 
       Data data;
       data.d = VALUE1;
@@ -440,7 +464,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_void_compile_time)
     {
-      auto d = etl_cpp03::delegate<void(void)>::create<Test, test_static, &Test::member_void>();
+      auto d = etl_cpp03::delegate<void(void)>::create<Object, test_static, &Object::member_void>();
 
       d();
 
@@ -450,7 +474,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_void_const_compile_time)
     {
-      auto d = etl_cpp03::delegate<void(void)>::create<Test, const_test_static, &Test::member_void_const>();
+      auto d = etl_cpp03::delegate<void(void)>::create<Object, const_test_static, &Object::member_void_const>();
 
       d();
 
@@ -460,7 +484,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_int_compile_time)
     {
-      auto d = etl_cpp03::delegate<void(int)>::create<Test, test_static, &Test::member_int>();
+      auto d = etl_cpp03::delegate<void(int)>::create<Object, test_static, &Object::member_int>();
 
       d(VALUE1);
 
@@ -471,7 +495,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_int_const_compile_time)
     {
-      auto d = etl_cpp03::delegate<void(int)>::create<Test, const_test_static, &Test::member_int_const>();
+      auto d = etl_cpp03::delegate<void(int)>::create<Object, const_test_static, &Object::member_int_const>();
 
       d(VALUE1);
 
@@ -482,7 +506,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_reference_compile_time)
     {
-      auto d = etl_cpp03::delegate<void(const Data&)>::create<Test, test_static, &Test::member_reference>();
+      auto d = etl_cpp03::delegate<void(const Data&)>::create<Object, test_static, &Object::member_reference>();
 
       Data data;
       data.d = VALUE1;
@@ -496,7 +520,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_reference_const_compile_time)
     {
-      auto d = etl_cpp03::delegate<void(const Data&)>::create<Test, const_test_static, &Test::member_reference_const>();
+      auto d = etl_cpp03::delegate<void(const Data&)>::create<Object, const_test_static, &Object::member_reference_const>();
 
       Data data;
       data.d = VALUE1;
@@ -536,10 +560,10 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_set_member_reference)
     {
-      Test test;
+      Object object;
       etl_cpp03::delegate<void(const Data&)> d;
       
-      d.set<Test, &Test::member_reference>(test);
+      d.set<Object, &Object::member_reference>(object);
 
       Data data;
       data.d = VALUE1;
@@ -553,10 +577,10 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_set_const_member_reference)
     {
-      Test test;
+      Object object;
       etl_cpp03::delegate<void(const Data&)> d;
 
-      d.set<Test, &Test::member_reference_const>(test);
+      d.set<Object, &Object::member_reference_const>(object);
 
       Data data;
       data.d = VALUE1;
@@ -572,7 +596,7 @@ namespace
     {
       etl_cpp03::delegate<void(const Data&)> d;
 
-      d.set<Test, test_static, &Test::member_reference>();
+      d.set<Object, test_static, &Object::member_reference>();
 
       Data data;
       data.d = VALUE1;
@@ -588,7 +612,7 @@ namespace
     {
       etl_cpp03::delegate<void(const Data&)> d;
 
-      d.set<Test, const_test_static, &Test::member_reference_const>();
+      d.set<Object, const_test_static, &Object::member_reference_const>();
 
       Data data;
       data.d = VALUE1;
@@ -603,9 +627,9 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_copy_construct)
     {
-      Test test;
+      Object object;
 
-      auto d1 = etl_cpp03::delegate<void(int)>::create<Test, &Test::member_int>(test);
+      auto d1 = etl_cpp03::delegate<void(int)>::create<Object, &Object::member_int>(object);
       auto d2(d1);
 
       d2(VALUE1);
@@ -617,9 +641,9 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_assignment)
     {
-      Test test;
+      Object object;
 
-      auto d1 = etl_cpp03::delegate<void(int)>::create<Test, &Test::member_int>(test);
+      auto d1 = etl_cpp03::delegate<void(int)>::create<Object, &Object::member_int>(object);
       etl_cpp03::delegate<void(int)> d2;
 
       d2 = d1;
@@ -633,9 +657,9 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_delegate_equal)
     {
-      Test test;
+      Object object;
 
-      auto d1 = etl_cpp03::delegate<void(int)>::create<Test, &Test::member_int>(test);
+      auto d1 = etl_cpp03::delegate<void(int)>::create<Object, &Object::member_int>(object);
       auto d2 = d1;
 
       CHECK(d1 == d2);
@@ -644,10 +668,10 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_delegate_not_equal)
     {
-      Test test;
+      Object object;
 
-      auto d1 = etl_cpp03::delegate<void(int)>::create<Test, &Test::member_int>(test);
-      auto d2 = etl_cpp03::delegate<void(int)>::create<Test, &Test::member_int_const>(test);;
+      auto d1 = etl_cpp03::delegate<void(int)>::create<Object, &Object::member_int>(object);
+      auto d2 = etl_cpp03::delegate<void(int)>::create<Object, &Object::member_int_const>(object);;
 
       CHECK(d1 != d2);
     }
@@ -747,6 +771,52 @@ namespace
       CHECK(!was_called);
       CHECK(function_called == FunctionCalled::Not_Called);
       CHECK(!parameter_correct);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_delegate_identification)
+    {
+      Object test1;
+      Object test2;
+
+      auto d1 = etl_cpp03::delegate<void(int)>::create<free_int>();
+      auto d2 = etl_cpp03::delegate<void(int)>::create<Object, &Object::member_int>(test1);
+      auto d3 = etl_cpp03::delegate<void(int)>::create<Object, &Object::member_int>(test2);
+
+      etl_cpp03::delegate<void(int)> d4;
+
+      using Delegate_List = std::vector<etl_cpp03::delegate<void(int)>>;
+
+      Delegate_List delegate_list = { d1, d2, d3 };
+
+      Delegate_List::const_iterator itr;
+
+      d4 = d1;
+
+      itr = std::find(delegate_list.begin(), delegate_list.end(), d4);
+      CHECK(*itr == d1);
+      CHECK(*itr != d2);
+      CHECK(*itr != d3);
+
+      d4 = d2;
+
+      itr = std::find(delegate_list.begin(), delegate_list.end(), d4);
+      CHECK(*itr != d1);
+      CHECK(*itr == d2);
+      CHECK(*itr != d3);
+
+      d4 = d3;
+
+      itr = std::find(delegate_list.begin(), delegate_list.end(), d4);
+      CHECK(*itr != d1);
+      CHECK(*itr != d2);
+      CHECK(*itr == d3);
+
+      d4 = etl_cpp03::delegate<void(int)>::create<Object, &Object::member_int>(test2); // Same as d3
+      itr = std::find(delegate_list.begin(), delegate_list.end(), d4);
+      CHECK(*itr != d1);
+      CHECK(*itr != d2);
+      CHECK(*itr == d3);
     }
   };
 }

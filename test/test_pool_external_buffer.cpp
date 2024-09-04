@@ -205,6 +205,9 @@ namespace
 
       CHECK_EQUAL(4U, pool.available());
 
+      CHECK_THROW(pool.release(p4), etl::pool_no_allocation);
+      CHECK_EQUAL(4U, pool.available());
+
       Test_Data not_in_pool;
 
       CHECK_THROW(pool.release(&not_in_pool), etl::pool_object_not_in_pool);
@@ -385,7 +388,7 @@ namespace
     //*************************************************************************
     TEST(test_type_error)
     {
-      struct Test
+      struct Object
       {
         uint64_t a;
         uint64_t b;
@@ -397,7 +400,7 @@ namespace
 
       etl::ipool& ip = pool;
 
-      CHECK_THROW(ip.allocate<Test>(), etl::pool_element_size);
+      CHECK_THROW(ip.allocate<Object>(), etl::pool_element_size);
 
       delete[] buffer;
     }

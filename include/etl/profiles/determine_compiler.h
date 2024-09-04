@@ -44,6 +44,7 @@ SOFTWARE.
     !defined(ETL_COMPILER_IAR) && \
     !defined(ETL_COMPILER_INTEL) && \
     !defined(ETL_COMPILER_TEXAS_INSTRUMENTS) && \
+    !defined(ETL_COMPILER_TASKING) && \
     !defined(ETL_COMPILER_GENERIC)
 
   #if !defined(ETL_COMPILER_TYPE_DETECTED) && !defined(ETL_COMPILER_ARM5)
@@ -78,7 +79,7 @@ SOFTWARE.
     #if defined(__clang__) || defined(__llvm__)
       #define ETL_COMPILER_CLANG
       #define ETL_COMPILER_TYPE_DETECTED
-      #if __AVR__ == 1
+      #if defined(__AVR__) && (__AVR__ == 1)
         #define ETL_CROSS_COMPILING_TO_AVR
       #endif
     #endif

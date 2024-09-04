@@ -94,6 +94,11 @@ namespace
 
     struct D1
     {
+      D1()
+        : a("a")
+      {
+      }
+
       D1(const std::string& a_)
         : a(a_)
       {
@@ -104,9 +109,15 @@ namespace
 
     struct D2
     {
+      D2()
+        : a("a")
+        , b("b")
+      {
+      }
+
       D2(const std::string& a_, const std::string& b_)
-        : a(a_),
-          b(b_)
+        : a(a_)
+        , b(b_)
       {
       }
 
@@ -116,10 +127,17 @@ namespace
 
     struct D3
     {
+      D3()
+        : a("a")
+        , b("b")
+        , c("c")
+      {
+      }
+
       D3(const std::string& a_, const std::string& b_, const std::string& c_)
-        : a(a_),
-          b(b_),
-          c(c_)
+        : a(a_)
+        , b(b_)
+        , c(c_)
       {
       }
 
@@ -130,11 +148,19 @@ namespace
 
     struct D4
     {
+      D4()
+        : a("a")
+        , b("b")
+        , c("c")
+        , d("d")
+      {
+      }
+
       D4(const std::string& a_, const std::string& b_, const std::string& c_, const std::string& d_)
-        : a(a_),
-          b(b_),
-          c(c_),
-          d(d_)
+        : a(a_)
+        , b(b_)
+        , c(c_)
+        , d(d_)
       {
       }
 
@@ -271,7 +297,7 @@ namespace
     {
       DataDC data;
 
-      CHECK_EQUAL(data.size(), size_t(0UL));
+      CHECK_EQUAL(data.size(), 0UL);
       CHECK(data.empty());
       CHECK_EQUAL(data.capacity(), SIZE);
       CHECK_EQUAL(data.max_size(), SIZE);
@@ -588,6 +614,64 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_existing_value_when_full)
+    {
+      DataNDC data;
+     
+      data.insert(N0);
+      data.insert(N1);
+      data.insert(N2);
+      data.insert(N3);
+      data.insert(N4);
+      data.insert(N5);
+      data.insert(N6);
+      data.insert(N7);
+      data.insert(N8);
+      data.insert(N9);
+      
+      CHECK_NO_THROW(data.insert(N0));
+      CHECK_NO_THROW(data.insert(N1));
+      CHECK_NO_THROW(data.insert(N2));
+      CHECK_NO_THROW(data.insert(N3));
+      CHECK_NO_THROW(data.insert(N4));
+      CHECK_NO_THROW(data.insert(N5));
+      CHECK_NO_THROW(data.insert(N6));
+      CHECK_NO_THROW(data.insert(N7));
+      CHECK_NO_THROW(data.insert(N8));
+      CHECK_NO_THROW(data.insert(N9));
+
+      CHECK(std::is_sorted(data.begin(), data.end()));
+    }
+    
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_emplace_default_value)
+    {
+      Compare1 compare;
+      Data1 data;
+
+      data.emplace();
+      compare.emplace();
+
+      data.emplace();
+      compare.emplace();
+
+      data.emplace();
+      compare.emplace();
+
+      // Do it again.
+      data.emplace();
+      compare.emplace();
+
+      data.emplace();
+      compare.emplace();
+
+      data.emplace();
+      compare.emplace();
+
+      CHECK_EQUAL(compare.size(), data.size());
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_emplace_value1)
     {
       Compare1 compare;
@@ -853,13 +937,13 @@ namespace
 
       DataNDC data(compare_data.begin(), compare_data.end());
       data.clear();
-      CHECK_EQUAL(data.size(), size_t(0UL));
+      CHECK_EQUAL(data.size(), 0UL);
 
       // Do it again to check that clear() didn't screw up the internals.
       data.assign(compare_data.begin(), compare_data.end());
       CHECK_EQUAL(data.size(), compare_data.size());
       data.clear();
-      CHECK_EQUAL(data.size(), size_t(0UL));
+      CHECK_EQUAL(data.size(), 0UL);
     }
 
     //*************************************************************************
@@ -867,13 +951,13 @@ namespace
     {
       DataInt data(int_data.begin(), int_data.end());
       data.clear();
-      CHECK_EQUAL(data.size(), size_t(0UL));
+      CHECK_EQUAL(data.size(), 0UL);
 
       // Do it again to check that clear() didn't screw up the internals.
       data.assign(int_data.begin(), int_data.end());
       CHECK_EQUAL(data.size(), int_data.size());
       data.clear();
-      CHECK_EQUAL(data.size(), size_t(0UL));
+      CHECK_EQUAL(data.size(), 0UL);
     }
 
     //*************************************************************************
@@ -1196,7 +1280,7 @@ namespace
 
       auto v = *data.begin();
       using Type = decltype(v);
-      CHECK((std::is_same_v<NDC, Type>));
+      CHECK((std::is_same<NDC, Type>::value));
 
       decltype(data)::const_iterator itr = data.begin();
 

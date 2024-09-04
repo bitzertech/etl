@@ -180,6 +180,7 @@ namespace etl
       friend class const_iterator;
 
       iterator()
+        : lookup_itr()
       {
       }
 
@@ -311,6 +312,7 @@ namespace etl
       friend class iindirect_vector;
 
       const_iterator()
+        : lookup_itr()
       {
       }
 
@@ -598,11 +600,14 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Does nothing.
     /// For compatibility with the STL vector API.
+    /// Does not increase the capacity, as this is fixed.
+    /// Asserts an etl::vector_out_of_bounds error if the request is for more than the capacity.
     //*********************************************************************
-    void reserve(size_t)
+    void reserve(size_t n)
     {
+      (void)n;  // Stop 'unused parameter' warning in release mode.
+      ETL_ASSERT(n <= capacity(), ETL_ERROR(vector_out_of_bounds));
     }
 
     //*********************************************************************
@@ -794,6 +799,18 @@ namespace etl
     /// If asserts or exceptions are enabled, emits vector_full if the indirect_vector is already full.
     ///\param value The value to add.
     //*********************************************************************
+    reference emplace_back()
+    {
+      T* p = storage.create<T>(T());
+      lookup.push_back(p);
+      return back();
+    }
+
+    //*********************************************************************
+    /// Constructs a value at the end of the indirect_vector.
+    /// If asserts or exceptions are enabled, emits vector_full if the indirect_vector is already full.
+    ///\param value The value to add.
+    //*********************************************************************
     template <typename T1>
     reference emplace_back(const T1& value1)
     {
@@ -891,7 +908,7 @@ namespace etl
     //*************************************************************************
     /// Emplaces a value to the vector at the specified position.
     //*************************************************************************
-#if ETL_USING_CPP11 && ETL_NOT_USING_STLPORT
+#if ETL_USING_CPP11 && ETL_NOT_USING_STLPORT && !defined(ETL_VECTOR_FORCE_CPP03_IMPLEMENTATION)
     template <typename ... Args>
     iterator emplace(iterator position, Args && ... args)
     {
@@ -903,6 +920,16 @@ namespace etl
       return position;
     }
 #else
+    iterator emplace(iterator position)
+    {
+      ETL_ASSERT(!full(), ETL_ERROR(vector_full));
+
+      T* p = storage.create<T>(T());
+      position = iterator(lookup.insert(position.lookup_itr, p));
+
+      return position;
+    }
+
     template <typename T1>
     iterator emplace(iterator position, const T1& value1)
     {
@@ -1424,6 +1451,9 @@ namespace etl
     etl::pool<T, MAX_SIZE>    storage_pool;
   };
 
+  template <typename T, const size_t MAX_SIZE_>
+  ETL_CONSTANT size_t indirect_vector<T, MAX_SIZE_>::MAX_SIZE;
+
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
@@ -1440,7 +1470,7 @@ namespace etl
   template <typename... T>
   constexpr auto make_indirect_vector(T&&... t) -> etl::indirect_vector<typename etl::common_type_t<T...>, sizeof...(T)>
   {
-    return { { etl::forward<T>(t)... } };
+    return { etl::forward<T>(t)... };
   }
 #endif
 

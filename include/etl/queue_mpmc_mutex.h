@@ -48,7 +48,7 @@ SOFTWARE.
 
 namespace etl
 {
-  template <const size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
+  template <size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
   class queue_mpmc_mutex_base
   {
   public:
@@ -199,6 +199,21 @@ namespace etl
       return result;
     }
 #else
+    //*************************************************************************
+    /// Constructs a value in the queue 'in place'.
+    /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
+    //*************************************************************************
+    bool emplace()
+    {
+      access.lock();
+
+      bool result = emplace_implementation();
+
+      access.unlock();
+
+      return result;
+    }
+
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
@@ -471,6 +486,24 @@ namespace etl
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     //*************************************************************************
+    bool emplace_implementation()
+    {
+      if (current_size != MAX_SIZE)
+      {
+        ::new (&p_buffer[write_index]) T();
+
+        write_index = get_next_index(write_index, MAX_SIZE);
+
+        ++current_size;
+
+        return true;
+      }
+
+      // Queue is full.
+      return false;
+    }
+
+    //*************************************************************************
     template <typename T1>
     bool emplace_implementation(const T1& value1)
     {
@@ -676,6 +709,9 @@ namespace etl
     /// The uninitialised buffer of T used in the queue_mpmc_mutex.
     typename etl::aligned_storage<sizeof(T), etl::alignment_of<T>::value>::type buffer[MAX_SIZE];
   };
+
+  template <typename T, size_t SIZE, const size_t MEMORY_MODEL>  
+  ETL_CONSTANT typename queue_mpmc_mutex<T, SIZE, MEMORY_MODEL>::size_type queue_mpmc_mutex<T, SIZE, MEMORY_MODEL>::MAX_SIZE;
 }
 
 #endif

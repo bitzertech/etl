@@ -53,6 +53,21 @@ namespace etl
       static ETL_CONSTANT size_t       Accumulator_Bits = etl::integral_limits<accumulator_type>::bits; 
     };
 
+    template <typename TAccumulator, TAccumulator Polynomial_, TAccumulator Initial_, TAccumulator Xor_Out_, bool Reflect_>
+    ETL_CONSTANT TAccumulator crc_parameters<TAccumulator, Polynomial_, Initial_, Xor_Out_, Reflect_>::Polynomial;
+
+    template <typename TAccumulator, TAccumulator Polynomial_, TAccumulator Initial_, TAccumulator Xor_Out_, bool Reflect_>
+    ETL_CONSTANT TAccumulator crc_parameters<TAccumulator, Polynomial_, Initial_, Xor_Out_, Reflect_>::Initial;
+
+    template <typename TAccumulator, TAccumulator Polynomial_, TAccumulator Initial_, TAccumulator Xor_Out_, bool Reflect_>
+    ETL_CONSTANT TAccumulator crc_parameters<TAccumulator, Polynomial_, Initial_, Xor_Out_, Reflect_>::Xor_Out;
+
+    template <typename TAccumulator, TAccumulator Polynomial_, TAccumulator Initial_, TAccumulator Xor_Out_, bool Reflect_>
+    ETL_CONSTANT bool crc_parameters<TAccumulator, Polynomial_, Initial_, Xor_Out_, Reflect_>::Reflect;
+
+    template <typename TAccumulator, TAccumulator Polynomial_, TAccumulator Initial_, TAccumulator Xor_Out_, bool Reflect_>
+    ETL_CONSTANT size_t crc_parameters<TAccumulator, Polynomial_, Initial_, Xor_Out_, Reflect_>::Accumulator_Bits;
+
     // 8 bit.
     typedef crc_parameters<uint8_t, 0x07U, 0x00U, 0x00U, false> crc8_ccitt_parameters;
     typedef crc_parameters<uint8_t, 0x07U, 0xFFU, 0x00U, true>  crc8_rohc_parameters;
@@ -64,6 +79,8 @@ namespace etl
     typedef crc_parameters<uint8_t, 0x07U, 0x00U, 0x55U, false> crc8_itu_parameters;
     typedef crc_parameters<uint8_t, 0x31U, 0x00U, 0x00U, true>  crc8_maxim_parameters;
     typedef crc_parameters<uint8_t, 0x9BU, 0x00U, 0x00U, true>  crc8_wcdma_parameters;
+    typedef crc_parameters<uint8_t, 0x1DU, 0xFFU, 0xFFU, false> crc8_j1850_parameters;
+    typedef crc_parameters<uint8_t, 0x1DU, 0x00U, 0x00U, false> crc8_j1850_zero_parameters;
 
     // 16 bit.
     typedef crc_parameters<uint16_t, 0x8005U, 0x0000U, 0x0000U, true>  crc16_parameters;

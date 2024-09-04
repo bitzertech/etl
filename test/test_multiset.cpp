@@ -101,6 +101,7 @@ namespace
   SUITE(test_multiset)
   {
     //*************************************************************************
+#include "etl/private/diagnostic_null_dereference_push.h"
     template <typename T1, typename T2>
     bool Check_Equal(T1 begin1, T1 end1, T2 begin2)
     {
@@ -117,11 +118,12 @@ namespace
 
       return true;
     }
+#include "etl/private/diagnostic_pop.h"
 
     //*************************************************************************
     struct SetupFixture
     {
-      // Multisets of predefined data from which to constuct multisets used in
+      // Multisets of predefined data from which to construct multisets used in
       // each test
       std::multiset<int> initial_data;
       std::multiset<int> excess_data;
@@ -223,7 +225,7 @@ namespace
     {
       Data data;
 
-      CHECK_EQUAL(data.size(), size_t(0UL));
+      CHECK_EQUAL(data.size(), 0UL);
       CHECK(data.empty());
       CHECK_EQUAL(data.capacity(), MAX_SIZE);
       CHECK_EQUAL(data.max_size(), MAX_SIZE);
@@ -391,6 +393,7 @@ namespace
       data1.insert(ItemM(4));
 
       DataM data2;
+      data2.insert(ItemM(5));
 
       data2 = std::move(data1);
 
@@ -551,16 +554,16 @@ namespace
 
       // Check that elements in multiset are the same
       bool isEqual = Check_Equal(data.begin(),
-        data.end(),
-        compare_data.begin());
+                                 data.end(),
+                                 compare_data.begin());
       CHECK(isEqual);
 
       data.insert(Data::const_iterator(data_result), 1);
-      compare_data.insert(Compare_Data::const_iterator(compare_result), 1);
+      compare_data.insert(compare_result, 1);
 
       isEqual = Check_Equal(data.begin(),
-        data.end(),
-        compare_data.begin());
+                            data.end(),
+                            compare_data.begin());
 
       CHECK(isEqual);
     }
@@ -712,7 +715,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare_data(initial_data.begin(), initial_data.end());
       
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       size_t compare_count = compare_data.erase(2);
@@ -833,7 +836,7 @@ namespace
       Data data(compare_data.begin(), compare_data.end());
       data.clear();
 
-      CHECK_EQUAL(data.size(), size_t(0UL));
+      CHECK_EQUAL(data.size(), 0UL);
     }
 
     //*************************************************************************
@@ -857,7 +860,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       const CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       const ESet data(initial_data.begin(), initial_data.end());
 
       CHECK_EQUAL(compare_data.count(-1), data.count(Key(-1)));
@@ -976,7 +979,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       ESet::iterator i_data = data.find(Key(0));
@@ -1069,7 +1072,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       ESet::const_iterator i_data = data.find(Key(0));
@@ -1156,7 +1159,12 @@ namespace
 
       i_compare = compare_data.lower_bound(99);
       i_data = data.lower_bound(99);
-      CHECK(*i_compare == *i_data);
+      CHECK(i_data != data.end());
+      
+      if ((i_data != data.end()) && (i_compare != compare_data.end()))
+      {
+        CHECK(*i_compare == *i_data);
+      }
 #else
       i_compare = compare_data.lower_bound(-1);
       i_data = data.lower_bound(-1);
@@ -1176,7 +1184,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       CSet::iterator i_compare = compare_data.lower_bound(2);
@@ -1213,7 +1221,12 @@ namespace
 
       i_compare = compare_data.lower_bound(99);
       i_data = data.lower_bound(99);
-      CHECK(*i_compare == *i_data);
+      CHECK(i_data != data.end());
+
+      if ((i_data != data.end()) && (i_compare != compare_data.end()))
+      {
+        CHECK(*i_compare == *i_data);
+      }
 #else
       i_compare = compare_data.lower_bound(-1);
       i_data = data.lower_bound(-1);
@@ -1233,7 +1246,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       CSet::const_iterator i_compare = compare_data.lower_bound(4);
@@ -1270,7 +1283,12 @@ namespace
 
       i_compare = compare_data.upper_bound(99);
       i_data = data.upper_bound(99);
-      CHECK(*i_compare == *i_data);
+      CHECK(i_data != data.end());
+
+      if ((i_data != data.end()) && (i_compare != compare_data.end()))
+      {
+        CHECK(*i_compare == *i_data);
+      }
 #else
       i_compare = compare_data.upper_bound(-1);
       i_data = data.upper_bound(-1);
@@ -1290,7 +1308,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       CSet::iterator i_compare = compare_data.upper_bound(1);
@@ -1327,7 +1345,12 @@ namespace
 
       i_compare = compare_data.upper_bound(99);
       i_data = data.upper_bound(99);
-      CHECK(*i_compare == *i_data);
+      CHECK(i_data != data.end());
+
+      if ((i_data != data.end()) && (i_compare != compare_data.end()))
+      {
+        CHECK(*i_compare == *i_data);
+      }
 #else
       i_compare = compare_data.upper_bound(-1);
       i_data = data.upper_bound(-1);
@@ -1347,7 +1370,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       const CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       const ESet data(initial_data.begin(), initial_data.end());
 
       CSet::const_iterator i_compare = compare_data.upper_bound(3);
@@ -1387,7 +1410,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_key_compare_using_transparent_comparator)
     {
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       const ESet data(initial_data.begin(), initial_data.end());
 
       ESet::key_compare compare = data.key_comp();
@@ -1443,7 +1466,7 @@ namespace
             if((compare.lower_bound(i) == compare.end()) == (data.lower_bound(i) == data.end()))
             {
                 //if both are not end
-                if(compare.lower_bound(i) != compare.end())
+                if ((data.lower_bound(i) != data.end()) && (compare.lower_bound(i) != compare.end()))
                 {
                     CHECK((*compare.lower_bound(i)) == (*data.lower_bound(i)));
                 }
@@ -1466,10 +1489,10 @@ namespace
             //upper_bound
             CHECK_EQUAL(compare.upper_bound(i) == compare.end(), data.upper_bound(i) == data.end());
             //if both end, or none
-            if((compare.upper_bound(i) == compare.end()) == (data.upper_bound(i) == data.end()))
+            if ((compare.upper_bound(i) == compare.end()) == (data.upper_bound(i) == data.end()))
             {
                 //if both are not end
-                if(compare.upper_bound(i) != compare.end())
+                if ((data.upper_bound(i) != data.end()) && (compare.upper_bound(i) != compare.end()))
                 {
                     CHECK((*compare.upper_bound(i)) == (*data.upper_bound(i)));
                 }
@@ -1483,7 +1506,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       std::vector<int> tab(test_data.begin(), test_data.end());
@@ -1505,7 +1528,7 @@ namespace
         if ((compare.lower_bound(i) == compare.end()) == (data.lower_bound(i) == data.end()))
         {
           //if both are not end
-          if (compare.lower_bound(i) != compare.end())
+          if ((data.lower_bound(i) != data.end()) && (compare.lower_bound(i) != compare.end()))
           {
             CHECK((*compare.lower_bound(i)) == (*data.lower_bound(i)));
           }
@@ -1531,7 +1554,7 @@ namespace
         if ((compare.upper_bound(i) == compare.end()) == (data.upper_bound(i) == data.end()))
         {
           //if both are not end
-          if (compare.upper_bound(i) != compare.end())
+          if ((data.upper_bound(i) != data.end()) && (compare.upper_bound(i) != compare.end()))
           {
             CHECK((*compare.upper_bound(i)) == (*data.upper_bound(i)));
           }
@@ -1550,7 +1573,7 @@ namespace
 
       for (int eltNum = 0; eltNum != 10; ++eltNum)
       {
-        data.insert(Data::value_type(keys[eltNum]));
+        data.insert(keys[eltNum]);
       }
 
       data.erase(2);
@@ -1562,6 +1585,7 @@ namespace
 
       for (pos = data.crbegin(); pos != data.crend(); ++pos)
       {
+#include "etl/private/diagnostic_null_dereference_push.h"
         if (*pos > prv)
         {
           pass = false;
@@ -1569,6 +1593,7 @@ namespace
         }
 
         prv = *pos;
+#include "etl/private/diagnostic_pop.h"
       }
 
       CHECK(pass);
@@ -1608,7 +1633,7 @@ namespace
 
       auto v = *data.begin();
       using Type = decltype(v);
-      CHECK((std::is_same_v<std::string, Type>));
+      CHECK((std::is_same<std::string, Type>::value));
 
       decltype(data)::const_iterator itr = data.begin();
 

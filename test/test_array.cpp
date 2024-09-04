@@ -97,7 +97,7 @@ namespace
         CHECK_EQUAL(data.at(i), compare_data.at(i));
       }
 
-      CHECK_THROW(data.at(data.size()), etl::array_out_of_range);
+      CHECK_THROW({ int d = data.at(data.size()); (void)d; }, etl::array_out_of_range);
     }
 
     //*************************************************************************
@@ -110,7 +110,7 @@ namespace
         CHECK_EQUAL(data.at(i), compare_data.at(i));
       }
 
-      CHECK_THROW(data.at(data.size()), etl::array_out_of_range);
+      CHECK_THROW({ int d = data.at(data.size()); (void)d; }, etl::array_out_of_range);
     }
 
     //*************************************************************************
@@ -375,20 +375,27 @@ namespace
 
       Data data = { 0 };
 
+      Data::iterator result;
+
       // Initial data.
-      data.assign(std::begin(initial), std::end(initial));
+      result = data.assign(std::begin(initial), std::end(initial));
+      CHECK(result == data.end());
       bool isEqual = std::equal(data.begin(), data.end(), std::begin(initial));
       CHECK(isEqual);
 
       // Assign smaller.
-      data.assign(std::begin(initial), std::end(initial));
-      data.assign(&source[0], &source[5]);
+      result = data.assign(std::begin(initial), std::end(initial));
+      CHECK(result == data.end());
+      result = data.assign(&source[0], &source[5]);
+      CHECK(result == &data[5]);
       isEqual = std::equal(data.begin(), data.end(), std::begin(check1));
       CHECK(isEqual);
 
       // Assign smaller + default.
-      data.assign(std::begin(initial), std::end(initial));
-      data.assign(&source[0], &source[5], 99);
+      result = data.assign(std::begin(initial), std::end(initial));
+      CHECK(result == data.end());
+      result = data.assign(&source[0], &source[5], 99);
+      CHECK(result == &data[5]);
       isEqual = std::equal(data.begin(), data.end(), std::begin(check2));
       CHECK(isEqual);
     }
@@ -654,7 +661,7 @@ namespace
 #if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     TEST(test_array_template_deduction)
     {
-      etl::array data{ char(0), short(1), int(2), long(3), 4, 5, 6, 7, 8, 9 };
+      etl::array data{ char(0), short(1), 2, long(3), 4, 5, 6, 7, 8, 9 };
 
       using Type = std::remove_reference_t<decltype(data[0])>;
       CHECK((std::is_same_v<long, Type>));
@@ -700,8 +707,8 @@ namespace
     {
       auto data = etl::make_array<char>(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 
-      using Type = std::remove_reference_t<decltype(data[0])>;
-      CHECK((std::is_same_v<char, Type>));
+      using Type = etl::remove_reference_t<decltype(data[0])>;
+      CHECK((std::is_same<char, Type>::value));
 
       CHECK_EQUAL(0, data[0]);
       CHECK_EQUAL(1, data[1]);
@@ -722,8 +729,8 @@ namespace
     {
       auto data = etl::make_array<Moveable>(Moveable(0), Moveable(1), Moveable(2), Moveable(3), Moveable(4), Moveable(5), Moveable(6), Moveable(7), Moveable(8), Moveable(9));
 
-      using Type = std::remove_reference_t<decltype(data[0])>;
-      CHECK((std::is_same_v<Moveable, Type>));
+      using Type = etl::remove_reference_t<decltype(data[0])>;
+      CHECK((std::is_same<Moveable, Type>::value));
 
       CHECK_EQUAL(Moveable(0), data[0]);
       CHECK_EQUAL(Moveable(1), data[1]);
@@ -735,6 +742,151 @@ namespace
       CHECK_EQUAL(Moveable(7), data[7]);
       CHECK_EQUAL(Moveable(8), data[8]);
       CHECK_EQUAL(Moveable(9), data[9]);
+    }
+#endif
+
+#if ETL_USING_CPP14
+    //*************************************************************************
+    using Array = etl::array<int, 10U>;
+
+    //*********************************
+    constexpr int BeginEnd(const Array& data) noexcept
+    {
+      return *(data.begin() + 5);
+    }
+
+    //*********************************
+    constexpr int CBeginCEnd(const Array& data) noexcept
+    {
+      return *(data.cbegin() + 5);
+    }
+
+#if ETL_USING_CPP20 && ETL_USING_STL
+    //*********************************
+    constexpr int RBeginREnd(const Array& data) noexcept
+    {
+      return *(data.rbegin() + 5);
+    }
+
+    //*********************************
+    constexpr int CRBeginCREnd(const Array& data) noexcept
+    {
+      return *(data.crbegin() + 5);
+    }
+#endif
+
+    //*********************************
+    constexpr int DataSize(const Array& data) noexcept
+    {
+      return *(data.data() + 5);
+    }
+
+    //*********************************
+    constexpr Array Fill(int i) noexcept
+    {
+      Array a{};
+
+      a.fill(i);
+
+      return a;
+    }
+
+    //*********************************
+#if ETL_USING_CPP20 && ETL_USING_STL
+    constexpr Array Swap(Array data1, Array data2) noexcept
+    {
+      data1.swap(data2);
+
+      return data1;
+    }
+#endif
+
+    TEST(test_cpp14_constexpr)
+    {
+      constexpr Array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      
+      // [] operator
+      constexpr int i0 = data[0];
+      constexpr int i1 = data[1];
+      constexpr int i2 = data[2];
+      constexpr int i3 = data[3];
+      constexpr int i4 = data[4];
+      constexpr int i5 = data[5];
+      constexpr int i6 = data[6];
+      constexpr int i7 = data[7];
+      constexpr int i8 = data[8];
+      constexpr int i9 = data[9];
+      CHECK_EQUAL(data[0], i0);
+      CHECK_EQUAL(data[1], i1);
+      CHECK_EQUAL(data[2], i2);
+      CHECK_EQUAL(data[3], i3);
+      CHECK_EQUAL(data[4], i4);
+      CHECK_EQUAL(data[5], i5);
+      CHECK_EQUAL(data[6], i6);
+      CHECK_EQUAL(data[7], i7);
+      CHECK_EQUAL(data[8], i8);
+      CHECK_EQUAL(data[9], i9);
+
+      // front & back
+      constexpr int f0 = data.front();
+      constexpr int b9 = data.back();
+      CHECK_EQUAL(data[0], f0);
+      CHECK_EQUAL(data[9], b9);
+
+      // begin & end
+      constexpr int b5 = BeginEnd(data);
+      CHECK_EQUAL(data[5], b5);
+
+      // cbegin & cend
+      constexpr int cb5 = CBeginCEnd(data);
+      CHECK_EQUAL(data[5], cb5);
+
+#if ETL_USING_CPP20 && ETL_USING_STL
+      // rbegin & rend
+      constexpr int rb5 = RBeginREnd(data);
+      CHECK_EQUAL(data[4], rb5);
+
+      // crbegin & crend
+      constexpr int crb5 = CRBeginCREnd(data);
+      CHECK_EQUAL(data[4], crb5);
+#endif
+
+      // data
+      constexpr int d5 = DataSize(data);
+      CHECK_EQUAL(data[5], d5);
+
+      // empty
+      constexpr bool e = data.empty();
+      CHECK_FALSE(e);
+
+      // size
+      constexpr size_t s = data.size();
+      CHECK_EQUAL(data.size(), s);
+
+      // max_size
+      constexpr size_t ms = data.max_size();
+      CHECK_EQUAL(data.max_size(), ms);
+
+      // fill
+      constexpr Array a = Fill(5);
+      CHECK_EQUAL(5, a[0]);
+      CHECK_EQUAL(5, a[1]);
+      CHECK_EQUAL(5, a[2]);
+      CHECK_EQUAL(5, a[3]);
+      CHECK_EQUAL(5, a[4]);
+      CHECK_EQUAL(5, a[5]);
+      CHECK_EQUAL(5, a[6]);
+      CHECK_EQUAL(5, a[7]);
+      CHECK_EQUAL(5, a[8]);
+      CHECK_EQUAL(5, a[9]);
+
+#if ETL_USING_CPP20 && ETL_USING_STL
+      // swap
+      constexpr Array data1{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      constexpr Array data2{ 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
+      constexpr Array data3 = Swap(data1, data2);
+      CHECK_ARRAY_EQUAL(data2.data(), data3.data(), data2.size());
+#endif
     }
 #endif
   };

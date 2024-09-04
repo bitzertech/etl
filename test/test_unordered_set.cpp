@@ -341,6 +341,7 @@ namespace
       data1.insert(ItemM(4));
 
       DataM data2;
+      data2.insert(ItemM(5));
 
       data2 = std::move(data1);
 
@@ -463,6 +464,37 @@ namespace
       CHECK_EQUAL(4, data.find(ItemM(4))->value);
     }
 
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_existing_value_when_full)
+    {
+      DataNDC data;
+
+      data.insert(N0);  // Inserted
+      data.insert(N1);  // Inserted
+      data.insert(N2);  // Inserted
+      data.insert(N3);  // Inserted
+      data.insert(N4);  // Inserted
+      data.insert(N5);  // Inserted  
+      data.insert(N6);  // Inserted
+      data.insert(N7);  // Inserted
+      data.insert(N8);  // Inserted
+      data.insert(N9);  // Inserted
+      
+      // Try to insert existing item when unordered_set is full should not fail
+      CHECK_NO_THROW(data.insert(N0));
+      CHECK_NO_THROW(data.insert(N1));
+      CHECK_NO_THROW(data.insert(N2));
+      CHECK_NO_THROW(data.insert(N3));
+      CHECK_NO_THROW(data.insert(N4));
+      CHECK_NO_THROW(data.insert(N5));
+      CHECK_NO_THROW(data.insert(N6));
+      CHECK_NO_THROW(data.insert(N7));
+      CHECK_NO_THROW(data.insert(N8));
+      CHECK_NO_THROW(data.insert(N9));
+      
+      CHECK(data.size() == SIZE);
+    }
+    
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_erase_key)
     {
@@ -861,7 +893,21 @@ namespace
     TEST(test_iterator_value_types_bug_584)
     {
       using Set = etl::unordered_set<int, 1, 1>;
-      CHECK((!std::is_same_v<typename Set::const_iterator::value_type, typename Set::iterator::value_type>));
+      CHECK((!std::is_same<typename Set::const_iterator::value_type, typename Set::iterator::value_type>::value));
+    }
+
+    //*************************************************************************
+    TEST(test_iterator_value_types_bug_803)
+    {
+      using Set1 = etl::unordered_set<NDC, SIZE, 5>;
+      using Set2 = etl::unordered_set<NDC, 2 * SIZE, 10>;
+
+      Set1 set1(initial_data.begin(), initial_data.end());
+      Set2 set2a(initial_data.begin(), initial_data.end());
+      Set2 set2b(different_data.begin(), different_data.end());
+
+      CHECK_TRUE(set1 == set2a);
+      CHECK_FALSE(set1 == set2b);
     }
   };
 }

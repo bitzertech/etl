@@ -136,20 +136,38 @@ namespace etl
   ///\ingroup string
   /// The base class for all templated string types.
   //***************************************************************************
-  class string_base
+  namespace private_basic_string
+  {
+    //*************************************************************************
+    template <typename T = void>
+    class string_base_statics
+    {
+    public:
+
+      typedef size_t size_type;
+
+      static ETL_CONSTANT uint_least8_t IS_TRUNCATED    = etl::bit<0>::value;
+      static ETL_CONSTANT uint_least8_t CLEAR_AFTER_USE = etl::bit<1>::value;
+      
+      static ETL_CONSTANT size_type npos = etl::integral_limits<size_type>::max;
+    };
+
+    template <typename T>
+    ETL_CONSTANT uint_least8_t string_base_statics<T>::IS_TRUNCATED;
+
+    template <typename T>
+    ETL_CONSTANT uint_least8_t string_base_statics<T>::CLEAR_AFTER_USE;
+
+    template <typename T>
+    ETL_CONSTANT typename string_base_statics<T>::size_type string_base_statics<T>::npos;
+  }
+
+  //***************************************************************************
+  class string_base : public private_basic_string::string_base_statics<>
   {
   public:
 
     typedef size_t size_type;
-
-#if ETL_USING_CPP11
-    static constexpr size_type npos = etl::integral_limits<size_type>::max;
-#else
-    enum
-    {
-      npos = etl::integral_limits<size_type>::max
-    };
-#endif
 
     //*************************************************************************
     /// Gets the current size of the string.
@@ -289,9 +307,6 @@ namespace etl
     ~string_base()
     {
     }
-
-    static ETL_CONSTANT uint_least8_t IS_TRUNCATED    = etl::bit<0>::value;
-    static ETL_CONSTANT uint_least8_t CLEAR_AFTER_USE = etl::bit<1>::value;
 
     size_type       current_size;   ///< The current number of elements in the string.
     const size_type CAPACITY;       ///< The maximum number of elements in the string.
@@ -488,6 +503,16 @@ namespace etl
     }
 
     //*********************************************************************
+    /// Fills the string with the specified character.
+    /// Does not change the string length.
+    ///\param value The character used to fill the string.
+    //*********************************************************************
+    void fill(T value)
+    {
+      etl::fill(begin(), end(), value);
+    }
+
+    //*********************************************************************
     /// Returns a reference to the value at index 'i'
     ///\param i The index.
     ///\return A reference to the value at index 'i'
@@ -580,7 +605,7 @@ namespace etl
     /// Returns a const pointer to the beginning of the string data.
     ///\return A const pointer to the beginning of the string data.
     //*********************************************************************
-    const_pointer data() const
+    ETL_CONSTEXPR const_pointer data() const
     {
       return p_buffer;
     }
@@ -688,7 +713,7 @@ namespace etl
       set_truncated(*other != 0);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-      ETL_ASSERT(flags.test<IS_TRUNCATED>() == false, ETL_ERROR(string_truncation))
+      ETL_ASSERT(flags.test<IS_TRUNCATED>() == false, ETL_ERROR(string_truncation));
 #endif
 #endif
 
@@ -709,7 +734,7 @@ namespace etl
       set_truncated(length_ > CAPACITY);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-      ETL_ASSERT(flags.test<IS_TRUNCATED>() == false, ETL_ERROR(string_truncation))
+      ETL_ASSERT(flags.test<IS_TRUNCATED>() == false, ETL_ERROR(string_truncation));
 #endif
 #endif
 
@@ -749,7 +774,7 @@ namespace etl
       set_truncated(first != last);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-      ETL_ASSERT(flags.test<IS_TRUNCATED>() == false, ETL_ERROR(string_truncation))
+      ETL_ASSERT(flags.test<IS_TRUNCATED>() == false, ETL_ERROR(string_truncation));
 #endif
 #endif
     }
@@ -768,7 +793,7 @@ namespace etl
       set_truncated(n > CAPACITY);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-      ETL_ASSERT(flags.test<IS_TRUNCATED>() == false, ETL_ERROR(string_truncation))
+      ETL_ASSERT(flags.test<IS_TRUNCATED>() == false, ETL_ERROR(string_truncation));
 #endif
 #endif
 
@@ -1237,7 +1262,7 @@ namespace etl
     /// Erases a sequence.
     ///\param position Position to start from.
     ///\param length   Number of characters.
-    ///\return A refernce to this string.
+    ///\return A reference to this string.
     //*********************************************************************
     etl::ibasic_string<T>& erase(size_type position, size_type length_ = npos)
     {
@@ -1315,7 +1340,7 @@ namespace etl
 
     //*********************************************************************
     /// Copies a portion of a string.
-    ///\param s     Pointer to the string to copy.
+    ///\param dest  Pointer to the destination buffer.
     ///\param count The number of characters to copy.
     ///\param pos   The position to start copying from.
     //*********************************************************************
@@ -2072,7 +2097,7 @@ namespace etl
       {
         for (size_type i = position; i < size(); ++i)
         {
-          if (p_buffer[i] != c)
+          if (*(p_buffer + i) != c)
           {
             return i;
           }

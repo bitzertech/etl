@@ -446,7 +446,7 @@ namespace etl
     size_type current_size;   ///< The number of the used nodes.
     const size_type CAPACITY; ///< The maximum size of the set.
     Node* root_node;          ///< The node that acts as the set root.
-    ETL_DECLARE_DEBUG_COUNT
+    ETL_DECLARE_DEBUG_COUNT;
 
   };
 
@@ -815,6 +815,8 @@ namespace etl
       // Skip if doing self assignment
       if (this != &rhs)
       {
+        this->clear();
+
         typename etl::iset<TKey, TCompare>::iterator from = rhs.begin();
 
         while (from != rhs.end())
@@ -1113,8 +1115,19 @@ namespace etl
       Node* inserted_node = ETL_NULLPTR;
       bool inserted = false;
 
-      ETL_ASSERT(!full(), ETL_ERROR(set_full));
-
+      if (full())
+      {
+        iterator iter = find(value);
+        if (iter == end())
+        {
+          ETL_ASSERT_FAIL(ETL_ERROR(set_full));
+        }
+        else
+        {
+          return ETL_OR_STD::make_pair(iter, false);
+        }
+      }
+      
       // Get next available free node
       Data_Node& node = allocate_data_node(value);
 
@@ -1137,8 +1150,19 @@ namespace etl
       // Default to no inserted node
       Node* inserted_node = ETL_NULLPTR;
       bool inserted = false;
-
-      ETL_ASSERT(!full(), ETL_ERROR(set_full));
+      
+      if (full())
+      {
+        iterator iter = find(value);
+        if (iter == end())
+        {
+          ETL_ASSERT_FAIL(ETL_ERROR(set_full));
+        }
+        else
+        {
+          return ETL_OR_STD::make_pair(iter, false);
+        }
+      }
 
       // Get next available free node
       Data_Node& node = allocate_data_node(etl::move(value));
@@ -1163,7 +1187,18 @@ namespace etl
       // Default to no inserted node
       Node* inserted_node = ETL_NULLPTR;
 
-      ETL_ASSERT(!full(), ETL_ERROR(set_full));
+      if (full())
+      {
+        iterator iter = find(value);
+        if (iter == end())
+        {
+          ETL_ASSERT_FAIL(ETL_ERROR(set_full));
+        }
+        else
+        {
+          return iter;
+        }
+      }
 
       // Get next available free node
       Data_Node& node = allocate_data_node(value);
@@ -1187,7 +1222,18 @@ namespace etl
       // Default to no inserted node
       Node* inserted_node = ETL_NULLPTR;
 
-      ETL_ASSERT(!full(), ETL_ERROR(set_full));
+      if (full())
+      {
+        iterator iter = find(value);
+        if (iter == end())
+        {
+          ETL_ASSERT_FAIL(ETL_ERROR(set_full));
+        }
+        else
+        {
+          return iter;
+        }
+      }
 
       // Get next available free node
       Data_Node& node = allocate_data_node(etl::move(value));
@@ -1361,10 +1407,10 @@ namespace etl
     //*************************************************************************
     Data_Node& allocate_data_node(const_reference value)
     {
-      Data_Node& node = create_data_node();
-      ::new ((void*)&node.value) value_type(value);
-      ETL_INCREMENT_DEBUG_COUNT
-      return node;
+      Data_Node* node = allocate_data_node();
+      ::new ((void*)&node->value) value_type(value);
+      ETL_INCREMENT_DEBUG_COUNT;
+      return *node;
     }
 
 #if ETL_USING_CPP11
@@ -1373,20 +1419,20 @@ namespace etl
     //*************************************************************************
     Data_Node& allocate_data_node(rvalue_reference value)
     {
-      Data_Node& node = create_data_node();
-      ::new ((void*)&node.value) value_type(etl::move(value));
-      ETL_INCREMENT_DEBUG_COUNT
-      return node;
+      Data_Node* node = allocate_data_node();
+      ::new ((void*)&node->value) value_type(etl::move(value));
+      ETL_INCREMENT_DEBUG_COUNT;
+      return *node;
     }
 #endif
 
     //*************************************************************************
     /// Create a Data_Node.
     //*************************************************************************
-    Data_Node& create_data_node()
+    Data_Node* allocate_data_node()
     {
       Data_Node* (etl::ipool::*func)() = &etl::ipool::allocate<Data_Node>;
-      return *(p_node_pool->*func)();
+      return (p_node_pool->*func)();
     }
 
     //*************************************************************************
@@ -1396,7 +1442,7 @@ namespace etl
     {
       node.value.~value_type();
       p_node_pool->release(&node);
-      ETL_DECREMENT_DEBUG_COUNT
+      ETL_DECREMENT_DEBUG_COUNT;
     }
 
     //*************************************************************************
@@ -2603,6 +2649,8 @@ namespace etl
       // Skip if doing self assignment
       if (this != &rhs)
       {
+        this->clear();
+
         typename etl::iset<TKey, TCompare>::iterator from = rhs.begin();
 
         while (from != rhs.end())
@@ -2625,6 +2673,9 @@ namespace etl
     etl::pool<typename etl::iset<TKey, TCompare>::Data_Node, MAX_SIZE> node_pool;
   };
 
+  template <typename TKey, const size_t MAX_SIZE_, typename TCompare>
+  ETL_CONSTANT size_t set<TKey, MAX_SIZE_, TCompare>::MAX_SIZE;
+
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
@@ -2640,7 +2691,7 @@ namespace etl
   template <typename TKey, typename TCompare = etl::less<TKey>, typename... T>
   constexpr auto make_set(T&&... keys) -> etl::set<TKey, sizeof...(T), TCompare>
   {
-    return { {etl::forward<T>(keys)...} };
+    return { etl::forward<T>(keys)... };
   }
 #endif
 

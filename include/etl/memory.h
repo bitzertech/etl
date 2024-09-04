@@ -1395,11 +1395,16 @@ namespace etl
     //*********************************
     void reset(pointer p_ = pointer()) ETL_NOEXCEPT
     {
-      assert(p_ != p);
+      if (p_ == ETL_NULLPTR || p_ != p)
+      {
+        pointer value = p;
+        p = p_;
 
-      pointer value = p;
-      p = p_;
-      deleter(value);
+        if (value != ETL_NULLPTR)
+        {
+          deleter(value);
+        }
+      }
     }
 
     //*********************************
@@ -1416,23 +1421,16 @@ namespace etl
       return (p != ETL_NULLPTR);
     }
 
-#if ETL_USING_STL && ETL_USING_CPP11
     //*********************************
-    unique_ptr&	operator =(std::nullptr_t) ETL_NOEXCEPT
+    unique_ptr&	operator =(etl::nullptr_t) ETL_NOEXCEPT
     {
-      reset(nullptr);
+      if (p)
+      {
+        reset(ETL_NULLPTR);
+      }
 
       return *this;
     }
-#else
-    //*********************************
-    unique_ptr&	operator =(void*) ETL_NOEXCEPT
-    {
-      reset(NULL);
-
-      return *this;
-    }
-#endif
 
 #if ETL_USING_CPP11
     //*********************************
@@ -1595,17 +1593,27 @@ namespace etl
     {
       pointer value = p;
       p = ETL_NULLPTR;
-      return value;
+      return value; 
     }
 
     //*********************************
     void reset(pointer p_) ETL_NOEXCEPT
     {
-      assert(p_ != p);
+      if (p_ != p)
+      {
+        pointer value = p;
+        p = p_;
 
-      pointer value = p;
-      p = p_;
-      delete[] value;
+        if (value != ETL_NULLPTR)
+        {
+          deleter(value);
+        }
+      }
+    }
+
+    void reset(etl::nullptr_t = ETL_NULLPTR) ETL_NOEXCEPT
+    {
+      reset(pointer());
     }
 
     //*********************************
@@ -1622,23 +1630,13 @@ namespace etl
       return (p != ETL_NULLPTR);
     }
 
-#if ETL_USING_STL && ETL_USING_CPP11
     //*********************************
-    unique_ptr& operator =(std::nullptr_t) ETL_NOEXCEPT
+    unique_ptr& operator =(etl::nullptr_t) ETL_NOEXCEPT
     {
-      reset(nullptr);
+      reset(ETL_NULLPTR);
 
       return *this;
     }
-#else
-    //*********************************
-    unique_ptr& operator =(void*) ETL_NOEXCEPT
-    {
-      reset(NULL);
-
-      return *this;
-    }
-#endif
 
 #if ETL_USING_CPP11
     //*********************************
@@ -2146,6 +2144,15 @@ namespace etl
 #endif
   };
 
+  template <size_t VObject_Size, size_t VN_Objects, size_t VAlignment>
+  ETL_CONSTANT size_t uninitialized_buffer<VObject_Size, VN_Objects, VAlignment>::Object_Size;
+
+  template <size_t VObject_Size, size_t VN_Objects, size_t VAlignment>
+  ETL_CONSTANT size_t uninitialized_buffer<VObject_Size, VN_Objects, VAlignment>::N_Objects;
+
+  template <size_t VObject_Size, size_t VN_Objects, size_t VAlignment>
+  ETL_CONSTANT size_t uninitialized_buffer<VObject_Size, VN_Objects, VAlignment>::Alignment;
+
   //***************************************************************************
   /// Declares an aligned buffer of VN_Objects as if they were type T.
   ///\ingroup alignment
@@ -2234,6 +2241,15 @@ namespace etl
     };
 #endif
   };
+
+  template <typename T, size_t VN_Objects>
+  ETL_CONSTANT size_t uninitialized_buffer_of<T, VN_Objects>::Object_Size;
+
+  template <typename T, size_t VN_Objects>
+  ETL_CONSTANT size_t uninitialized_buffer_of<T, VN_Objects>::N_Objects;
+
+  template <typename T, size_t VN_Objects>
+  ETL_CONSTANT size_t uninitialized_buffer_of<T, VN_Objects>::Alignment;
 
 #if ETL_USING_CPP11
   template <typename T, size_t N_Objects>

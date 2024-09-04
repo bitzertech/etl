@@ -39,12 +39,15 @@ SOFTWARE.
 #include "fnv_1.h"
 #include "type_traits.h"
 #include "static_assert.h"
+#include "math.h"
 
 #include <stdint.h>
 #include <stdlib.h>
 
 ///\defgroup hash Standard hash calculations
 ///\ingroup maths
+
+#include "private/diagnostic_useless_cast_push.h"
 
 namespace etl
 {
@@ -189,11 +192,18 @@ namespace etl
   template<>
   struct hash<wchar_t>
   {
-    ETL_STATIC_ASSERT(sizeof(size_t) >= sizeof(wchar_t), "size_t smaller than type");
-
     size_t operator ()(wchar_t v) const
     {
-      return static_cast<size_t>(v);
+      // If it's the same size as a size_t.
+      if ETL_IF_CONSTEXPR(sizeof(size_t) >= sizeof(v))
+      {
+        return static_cast<size_t>(v);
+      }
+      else
+      {
+        uint8_t* p = reinterpret_cast<uint8_t*>(&v);
+        return private_hash::generic_hash<size_t>(p, p + sizeof(v));
+      }
     }
   };
 
@@ -204,11 +214,18 @@ namespace etl
   template<>
   struct hash<short>
   {
-    ETL_STATIC_ASSERT(sizeof(size_t) >= sizeof(short), "size_t smaller than type");
-
     size_t operator ()(short v) const
     {
-      return static_cast<size_t>(v);
+      // If it's the same size as a size_t.
+      if ETL_IF_CONSTEXPR(sizeof(size_t) >= sizeof(v))
+      {
+        return static_cast<size_t>(v);
+      }
+      else
+      {
+        uint8_t* p = reinterpret_cast<uint8_t*>(&v);
+        return private_hash::generic_hash<size_t>(p, p + sizeof(v));
+      }
     }
   };
 
@@ -219,11 +236,18 @@ namespace etl
   template<>
   struct hash<unsigned short>
   {
-    ETL_STATIC_ASSERT(sizeof(size_t) >= sizeof(unsigned short), "size_t smaller than type");
-
     size_t operator ()(unsigned short v) const
     {
-      return static_cast<size_t>(v);
+      // If it's the same size as a size_t.
+      if ETL_IF_CONSTEXPR(sizeof(size_t) >= sizeof(v))
+      {
+        return static_cast<size_t>(v);
+      }
+      else
+      {
+        uint8_t* p = reinterpret_cast<uint8_t*>(&v);
+        return private_hash::generic_hash<size_t>(p, p + sizeof(v));
+      }
     }
   };
 
@@ -234,11 +258,18 @@ namespace etl
   template<>
   struct hash<int>
   {
-    ETL_STATIC_ASSERT(sizeof(size_t) >= sizeof(int), "size_t smaller than type");
-
     size_t operator ()(int v) const
     {
-      return static_cast<size_t>(v);
+      // If it's the same size as a size_t.
+      if ETL_IF_CONSTEXPR(sizeof(size_t) >= sizeof(v))
+      {
+        return static_cast<size_t>(v);
+      }
+      else
+      {
+        uint8_t* p = reinterpret_cast<uint8_t*>(&v);
+        return private_hash::generic_hash<size_t>(p, p + sizeof(v));
+      }
     }
   };
 
@@ -249,11 +280,18 @@ namespace etl
   template<>
   struct hash<unsigned int>
   {
-    ETL_STATIC_ASSERT(sizeof(size_t) >= sizeof(unsigned int), "size_t smaller than type");
-
     size_t operator ()(unsigned int v) const
     {
-      return static_cast<size_t>(v);
+      // If it's the same size as a size_t.
+      if ETL_IF_CONSTEXPR(sizeof(size_t) >= sizeof(v))
+      {
+        return static_cast<size_t>(v);
+      }
+      else
+      {
+        uint8_t* p = reinterpret_cast<uint8_t*>(&v);
+        return private_hash::generic_hash<size_t>(p, p + sizeof(v));
+      }
     }
   };
 
@@ -363,7 +401,7 @@ namespace etl
           float  v;
         } u;
 
-        if (v == -0.0f)
+        if (etl::is_zero(v))
         { // -0.0 and 0.0 are represented differently at bit level
           v = 0.0f;
         }
@@ -397,7 +435,7 @@ namespace etl
           double v;
         } u;
 
-        if (v == -0.0)
+        if (etl::is_zero(v))
         { // -0.0 and 0.0 are represented differently at bit level
           v = 0.0;
         }
@@ -431,7 +469,7 @@ namespace etl
           long double v;
         } u;
 
-        if (v == -0.0L)
+        if (etl::is_zero(v))
         { // -0.0 and 0.0 are represented differently at bit level
           v = 0.0L;
         }
@@ -499,6 +537,8 @@ namespace etl
     };
   }
 }
+
+#include "private/diagnostic_pop.h"
 
 #endif // ETL_USING_8BIT_TYPES
 

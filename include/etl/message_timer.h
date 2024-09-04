@@ -86,7 +86,7 @@ namespace etl
       : p_message(ETL_NULLPTR),
         p_router(ETL_NULLPTR),
         period(0),
-        delta(etl::timer::state::INACTIVE),
+        delta(etl::timer::state::Inactive),
         destination_router_id(etl::imessage_bus::ALL_MESSAGE_ROUTERS),
         id(etl::timer::id::NO_TIMER),
         previous(etl::timer::id::NO_TIMER),
@@ -105,7 +105,7 @@ namespace etl
       : p_message(&message_),
         p_router(&irouter_),
         period(period_),
-        delta(etl::timer::state::INACTIVE),
+        delta(etl::timer::state::Inactive),
         destination_router_id(destination_router_id_),
         id(id_),
         previous(etl::timer::id::NO_TIMER),
@@ -119,7 +119,7 @@ namespace etl
     //*******************************************
     bool is_active() const
     {
-      return delta != etl::timer::state::INACTIVE;
+      return delta != etl::timer::state::Inactive;
     }
 
     //*******************************************
@@ -127,7 +127,7 @@ namespace etl
     //*******************************************
     void set_inactive()
     {
-      delta = etl::timer::state::INACTIVE;
+      delta = etl::timer::state::Inactive;
     }
 
     const etl::imessage*     p_message;
@@ -271,11 +271,17 @@ namespace etl
 
         timer.previous = etl::timer::id::NO_TIMER;
         timer.next     = etl::timer::id::NO_TIMER;
-        timer.delta    = etl::timer::state::INACTIVE;
+        timer.delta    = etl::timer::state::Inactive;
       }
 
       //*******************************
       etl::message_timer_data& front()
+      {
+        return ptimers[head];
+      }
+
+      //*******************************
+      const etl::message_timer_data& front() const
       {
         return ptimers[head];
       }
@@ -506,7 +512,7 @@ namespace etl
         if (timer.id != etl::timer::id::NO_TIMER)
         {
           // Has a valid period.
-          if (timer.period != etl::timer::state::INACTIVE)
+          if (timer.period != etl::timer::state::Inactive)
           {
             ETL_DISABLE_TIMER_UPDATES;
             if (timer.is_active())
@@ -583,6 +589,36 @@ namespace etl
       return false;
     }
 
+    //*******************************************
+    /// Check if there is an active timer.
+    //*******************************************
+    bool has_active_timer() const
+    {
+      ETL_DISABLE_TIMER_UPDATES;
+      bool result = !active_list.empty();
+      ETL_ENABLE_TIMER_UPDATES;
+
+      return result;
+    }
+
+    //*******************************************
+    /// Get the time to the next timer event.
+    /// Returns etl::timer::interval::No_Active_Interval if there is no active timer.
+    //*******************************************
+    uint32_t time_to_next() const
+    {
+      uint32_t delta = static_cast<uint32_t>(etl::timer::interval::No_Active_Interval);
+
+      ETL_DISABLE_TIMER_UPDATES;
+      if (!active_list.empty())
+      {        
+        delta = active_list.front().delta;
+      }
+      ETL_ENABLE_TIMER_UPDATES;
+
+      return delta;
+    }
+
   protected:
 
     //*******************************************
@@ -615,7 +651,7 @@ namespace etl
     // The list of active timers.
     private_message_timer::list active_list;
 
-    volatile bool enabled;
+    bool enabled;
 
 #if defined(ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK)
   
@@ -629,9 +665,9 @@ namespace etl
   #endif
 #endif
 
-    volatile etl::timer_semaphore_t process_semaphore;
+    mutable etl::timer_semaphore_t process_semaphore;
 #endif
-    volatile uint_least8_t registered_timers;
+    uint_least8_t registered_timers;
 
   public:
 

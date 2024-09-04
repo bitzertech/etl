@@ -29,6 +29,7 @@ SOFTWARE.
 #include "unit_test_framework.h"
 
 #include "etl/deque.h"
+#include "etl/vector.h"
 
 #include "data.h"
 
@@ -40,6 +41,8 @@ SOFTWARE.
 #include <numeric>
 #include <cstring>
 #include <memory>
+
+#include "etl/private/diagnostic_useless_cast_push.h"
 
 namespace
 {
@@ -165,7 +168,6 @@ namespace
     //*************************************************************************
     TEST(test_move_constructor)
     {
-      const size_t SIZE = 10UL;
       typedef etl::deque<std::unique_ptr<uint32_t>, SIZE> Data;
 
       std::unique_ptr<uint32_t> p1(new uint32_t(1U));
@@ -194,7 +196,6 @@ namespace
     //*************************************************************************
     TEST(test_move_insert_erase)
     {
-      const size_t SIZE = 10UL;
       typedef etl::deque<std::unique_ptr<uint32_t>, SIZE> Data;
 
       std::unique_ptr<uint32_t> p1(new uint32_t(1U));
@@ -247,13 +248,13 @@ namespace
     //*************************************************************************
     TEST(test_move_assignment)
     {
-      const size_t SIZE = 10UL;
       typedef etl::deque<std::unique_ptr<uint32_t>, SIZE> Data;
 
       std::unique_ptr<uint32_t> p1(new uint32_t(1U));
       std::unique_ptr<uint32_t> p2(new uint32_t(2U));
       std::unique_ptr<uint32_t> p3(new uint32_t(3U));
       std::unique_ptr<uint32_t> p4(new uint32_t(4U));
+      std::unique_ptr<uint32_t> p5(new uint32_t(5U));
 
       Data deque1;
       deque1.push_back(std::move(p1));
@@ -262,6 +263,7 @@ namespace
       deque1.push_back(std::move(p4));
 
       Data deque2;
+      deque2.push_back(std::move(p5));
       deque2 = std::move(deque1);
 
       CHECK_EQUAL(4U, deque2.size());
@@ -290,7 +292,6 @@ namespace
     //*************************************************************************
     TEST(test_move_assignment_interface)
     {
-      const size_t SIZE = 10UL;
       typedef etl::deque<std::unique_ptr<uint32_t>, SIZE> Data;
       typedef etl::ideque<std::unique_ptr<uint32_t>> IData;
 
@@ -298,6 +299,7 @@ namespace
       std::unique_ptr<uint32_t> p2(new uint32_t(2U));
       std::unique_ptr<uint32_t> p3(new uint32_t(3U));
       std::unique_ptr<uint32_t> p4(new uint32_t(4U));
+      std::unique_ptr<uint32_t> p5(new uint32_t(5U));
 
       Data deque1;
       deque1.push_back(std::move(p1));
@@ -306,6 +308,7 @@ namespace
       deque1.push_back(std::move(p4));
 
       Data deque2;
+      deque2.push_back(std::move(p5));
 
       IData& ideque1 = deque1;
       IData& ideque2 = deque2;
@@ -695,6 +698,72 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_reverse_iterator_difference)
+    {
+      DataNDC data(SIZE, N0);
+
+      DataNDC::reverse_iterator first  = data.rbegin() + 1;
+      DataNDC::reverse_iterator second = data.rbegin() + 4;
+
+      CHECK_EQUAL(-3, first - second);
+      CHECK_EQUAL( 3, second - first);
+    }
+
+    //*************************************************************************
+    TEST(test_const_reverse_iterator_difference)
+    {
+      DataNDC data(SIZE, N0);
+
+      DataNDC::const_reverse_iterator first  = data.crbegin() + 1;
+      DataNDC::const_reverse_iterator second = data.crbegin() + 4;
+
+      CHECK_EQUAL(-3, first - second);
+      CHECK_EQUAL( 3, second - first);
+    }
+
+    //*************************************************************************
+    TEST(test_reverse_iterator_difference_rollover)
+    {
+      DataNDC data(SIZE, N0);
+
+      data.pop_back();
+      data.pop_back();
+      data.pop_back();
+      data.pop_back();
+      data.push_front(N1);
+      data.push_front(N1);
+      data.push_front(N1);
+      data.push_front(N1);
+
+      DataNDC::reverse_iterator first  = data.rbegin() + 1;
+      DataNDC::reverse_iterator second = data.rbegin() + 4;
+
+      CHECK_EQUAL(-3,  first - second);
+      CHECK_EQUAL( 3, second - first);
+    }
+
+    //*************************************************************************
+    TEST(test_const_reverse_iterator_difference_rollover)
+    {
+      DataNDC data(SIZE, N0);
+
+      data.pop_back();
+      data.pop_back();
+      data.pop_back();
+      data.pop_back();
+      data.push_front(N1);
+      data.push_front(N1);
+      data.push_front(N1);
+      data.push_front(N1);
+
+      DataNDC::const_reverse_iterator first  = data.crbegin() + 1;
+      DataNDC::const_reverse_iterator second = data.crbegin() + 4;
+
+      CHECK_EQUAL(-3,  first - second);
+      CHECK_EQUAL( 3, second - first);
+    }
+
+    //*************************************************************************
     TEST(test_reverse_iterator_comparison)
     {
       DataNDC data(SIZE, N0);
@@ -934,7 +1003,7 @@ namespace
       DataNDC data(compare_data.begin(), compare_data.end());
 
       Compare_Data::iterator cposition = compare_data.insert(compare_data.cbegin() + 3, N14);
-      DataNDC::iterator         position  = data.insert(data.cbegin() + 3, N14);
+      DataNDC::iterator      position  = data.insert(data.cbegin() + 3, N14);
 
       CHECK_EQUAL(compare_data.size(), std::distance(data.begin(), data.end()));
       CHECK_EQUAL(compare_data.size(), data.size());
@@ -960,7 +1029,7 @@ namespace
       DataNDC data(compare_data.begin(), compare_data.end());
 
       Compare_Data::iterator cposition = compare_data.emplace(compare_data.begin() + 3, N14.value);
-      DataNDC::iterator         position = data.emplace(data.begin() + 3, N14.value);
+      DataNDC::iterator      position  = data.emplace(data.begin() + 3, N14.value);
 
       CHECK_EQUAL(compare_data.size(), std::distance(data.begin(), data.end()));
       CHECK_EQUAL(compare_data.size(), data.size());
@@ -977,6 +1046,138 @@ namespace
       CHECK_EQUAL(compare_data.size(), data.size());
       CHECK(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
       CHECK_EQUAL(std::distance(compare_data.begin(), cposition), std::distance(data.begin(), position));
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_default)
+    {
+      const int Initial = 1;
+      const int Default = 2;
+
+      struct S
+      {
+        S()
+          : value(Default)
+        {
+        }
+
+        S(int v)
+          : value(v)
+        {
+        }
+
+        bool operator ==(const S& rhs) const
+        {
+          return value == rhs.value;
+        }
+
+        int value;
+      };
+
+      // First fill with Initial values.
+      etl::deque<S, SIZE> data;
+      data.resize(SIZE, S(Initial));
+      data.clear();
+
+      // Then emplace Default values.
+      for (size_t i = 0; i < SIZE; ++i)
+      {
+        data.emplace(data.end());
+      }
+
+      // Compare with an array of default values.
+      std::array<S, SIZE> compare_data;
+      compare_data.fill(S());
+
+      CHECK_TRUE(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_front_default)
+    {
+      const int Initial = 1;
+      const int Default = 2;
+
+      struct S
+      {
+        S()
+          : value(Default)
+        {
+        }
+
+        S(int v)
+          : value(v)
+        {
+        }
+
+        bool operator ==(const S& rhs) const
+        {
+          return value == rhs.value;
+        }
+
+        int value;
+      };
+
+      // First fill with Initial values.
+      etl::deque<S, SIZE> data;
+      data.resize(SIZE, S(Initial));
+      data.clear();
+
+      // Then emplace Default values.
+      for (size_t i = 0; i < SIZE; ++i)
+      {
+        data.emplace_front();
+      }
+
+      // Compare with an array of default values.
+      std::array<S, SIZE> compare_data;
+      compare_data.fill(S());
+
+      CHECK_TRUE(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_back_default)
+    {
+      const int Initial = 1;
+      const int Default = 2;
+
+      struct S
+      {
+        S()
+          : value(Default)
+        {
+        }
+
+        S(int v)
+          : value(v)
+        {
+        }
+
+        bool operator ==(const S& rhs) const
+        {
+          return value == rhs.value;
+        }
+
+        int value;
+      };
+
+      // First fill with Initial values.
+      etl::deque<S, SIZE> data;
+      data.resize(SIZE, S(Initial));
+      data.clear();
+
+      // Then emplace Default values.
+      for (size_t i = 0; i < SIZE; ++i)
+      {
+        data.emplace_back();
+      }
+
+      // Compare with an array of default values.
+      std::array<S, SIZE> compare_data;
+      compare_data.fill(S());
+
+      CHECK_TRUE(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
     }
 
     //*************************************************************************
@@ -1934,7 +2135,6 @@ namespace
     //*************************************************************************
     TEST(test_move)
     {
-      const size_t SIZE = 10UL;
       typedef etl::deque<std::unique_ptr<uint32_t>, SIZE> Data;
 
       Data data1;
@@ -2017,7 +2217,7 @@ namespace
 #if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     TEST(test_deque_template_deduction)
     {
-      etl::deque data{ char(0), short(1), int(2), long(3), 4, 5, 6, 7, 8, 9 };
+      etl::deque data{ char(0), short(1), 2, long(3), 4, 5, 6, 7, 8, 9 };
 
       using Type = std::remove_reference_t<decltype(data[0])>;
       CHECK((std::is_same_v<long, Type>));
@@ -2065,3 +2265,5 @@ namespace
     }
   };
 }
+
+#include "etl/private/diagnostic_pop.h"

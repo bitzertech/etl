@@ -31,6 +31,7 @@ SOFTWARE.
 #include <queue>
 
 #include "etl/priority_queue.h"
+#include "etl/math.h"
 #include <functional>
 #include <string>
 
@@ -42,10 +43,17 @@ namespace
 
   struct Item
   {
+    Item()
+      : c('a')
+      , i(1)
+      , d(1.2)
+    {
+    }
+
     Item(char c_, int i_, double d_)
-      : c(c_),
-      i(i_),
-      d(d_)
+      : c(c_)
+      , i(i_)
+      , d(d_)
     {
     }
 
@@ -56,7 +64,9 @@ namespace
 
   bool operator == (const Item& lhs, const Item& rhs)
   {
+#include "etl/private/diagnostic_float_equal_push.h"
     return (lhs.c == rhs.c) && (lhs.i == rhs.i) && (lhs.d == rhs.d);
+#include "etl/private/diagnostic_pop.h"
   }
 
   bool operator < (const Item& lhs, const Item& rhs)
@@ -79,7 +89,7 @@ namespace
     {
       etl::priority_queue<int, SIZE> priority_queue;
 
-      CHECK_EQUAL(priority_queue.size(), size_t(0UL));
+      CHECK_EQUAL(priority_queue.size(), 0UL);
       CHECK_EQUAL(priority_queue.available(), SIZE);
       CHECK_EQUAL(priority_queue.max_size(), SIZE);
     }
@@ -344,8 +354,11 @@ namespace
     //*************************************************************************
     TEST(test_emplace)
     {
-      etl::priority_queue<Item, SIZE> priority_queue;
+      etl::priority_queue<Item, 5> priority_queue;
       std::priority_queue<Item> compare_priority_queue;
+
+      priority_queue.emplace();
+      compare_priority_queue.emplace();
 
       priority_queue.emplace('d', 4, 7.8);
       compare_priority_queue.emplace('d', 4, 7.8);
@@ -517,6 +530,7 @@ namespace
       priority_queue.push(std::move(b));
 
       etl::priority_queue<ItemM, SIZE> priority_queue2;
+      priority_queue2.push(ItemM("E"));
 
       priority_queue2 = std::move(priority_queue);
 

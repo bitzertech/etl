@@ -51,7 +51,7 @@ cog.outl("//********************************************************************
 // Note: You will need Python and COG installed.
 //
 // python -m cogapp -d -e -omessage_router.h -DHandlers=<n> message_router_generator.h
-// Where <n> is the number of messages to support.
+// Where <n> is the maximum number of messages to support.
 //
 // e.g.
 // To generate handlers for up to 16 messages...
@@ -66,7 +66,9 @@ cog.outl("//********************************************************************
 #include "platform.h"
 #include "message.h"
 #include "shared_message.h"
-#include "message_packet.h"
+#if ETL_HAS_VIRTUAL_MESSAGES
+  #include "message_packet.h"
+#endif
 #include "message_types.h"
 #include "alignment.h"
 #include "error_handler.h"
@@ -210,8 +212,8 @@ namespace etl
     }
 
     //********************************************
-    null_message_router(etl::imessage_router& successor)
-      : imessage_router(imessage_router::NULL_MESSAGE_ROUTER, successor)
+    null_message_router(etl::imessage_router& successor_)
+      : imessage_router(imessage_router::NULL_MESSAGE_ROUTER, successor_)
     {
     }
     
@@ -288,8 +290,8 @@ namespace etl
     }
 
     //********************************************
-    message_producer(etl::imessage_router& successor)
-      : imessage_router(imessage_router::NULL_MESSAGE_ROUTER, successor)
+    message_producer(etl::imessage_router& successor_)
+      : imessage_router(imessage_router::NULL_MESSAGE_ROUTER, successor_)
     {
     }
 
@@ -301,8 +303,8 @@ namespace etl
     }
 
     //********************************************
-    message_producer(etl::message_router_id_t id_, etl::imessage_router& successor)
-      : imessage_router(id_, successor)
+    message_producer(etl::message_router_id_t id_, etl::imessage_router& successor_)
+      : imessage_router(id_, successor_)
     {
       ETL_ASSERT(id_ <= etl::imessage_router::MAX_MESSAGE_ROUTER, ETL_ERROR(etl::message_router_illegal_id));
     }
@@ -353,10 +355,21 @@ namespace etl
   };
 
   //***************************************************************************
+  /// Is T ultimately derived from etl::imessage_router?
+  //***************************************************************************
+  template <typename T>
+  struct is_message_router : public etl::bool_constant<etl::is_base_of<etl::imessage_router, typename etl::remove_cvref<T>::type>::value>
+  {
+  };
+
+  //***************************************************************************
   /// Send a message to a router.
   //***************************************************************************
-  static inline void send_message(etl::imessage_router& destination,
-                                  const etl::imessage&  message)
+  template <typename TRouter, typename TMessage>
+  static
+  typename etl::enable_if<etl::is_message_router<TRouter>::value && etl::is_message<TMessage>::value, void>::type
+    send_message(TRouter&        destination,
+                 const TMessage& message)
   {
     destination.receive(message);
   }
@@ -364,8 +377,11 @@ namespace etl
   //***************************************************************************
   /// Send a shared message to a router.
   //***************************************************************************
-  static inline void send_message(etl::imessage_router& destination,
-                                  etl::shared_message message)
+  template <typename TRouter>
+  static
+  typename etl::enable_if<etl::is_message_router<TRouter>::value, void>::type
+    send_message(TRouter&            destination,
+                 etl::shared_message message)
   {
     destination.receive(message);
   }
@@ -373,9 +389,12 @@ namespace etl
   //***************************************************************************
   /// Send a message to a router with a particular id.
   //***************************************************************************
-  static inline void send_message(etl::imessage_router& destination,
-                                  etl::message_router_id_t id,
-                                  const etl::imessage& message)
+  template <typename TRouter, typename TMessage>
+  static
+  typename etl::enable_if<etl::is_message_router<TRouter>::value && etl::is_message<TMessage>::value, void>::type
+    send_message(TRouter&                 destination,
+                 etl::message_router_id_t id,
+                 const TMessage&          message)
   {
     destination.receive(id, message);
   }
@@ -383,9 +402,12 @@ namespace etl
   //***************************************************************************
   /// Send a shared message to a router with a particular id.
   //***************************************************************************
-  static inline void send_message(etl::imessage_router& destination,
-                                  etl::message_router_id_t id,
-                                  etl::shared_message message)
+  template <typename TRouter>
+  static
+  typename etl::enable_if<etl::is_message_router<TRouter>::value, void>::type
+    send_message(TRouter&                 destination,
+                 etl::message_router_id_t id,
+                 etl::shared_message      message)
   {
     destination.receive(id, message);
   }
@@ -402,7 +424,9 @@ namespace etl
   {
   public:
 
+#if ETL_HAS_VIRTUAL_MESSAGES
     typedef etl::message_packet<TMessageTypes...> message_packet;
+#endif
 
     //**********************************************
     message_router()
@@ -560,10 +584,12 @@ namespace etl
       cog.outl("{")
       cog.outl("public:")
       cog.outl("")
+      cog.outl("#if ETL_HAS_VIRTUAL_MESSAGES")
       cog.out("  typedef etl::message_packet<")
       for n in range(1, int(Handlers)):
           cog.out("T%s, " % n)
       cog.outl(" T%s> message_packet;" % int(Handlers))
+      cog.outl("#endif")
       cog.outl("")
       cog.outl("  //**********************************************")
       cog.outl("  message_router(etl::message_router_id_t id_)")
@@ -620,28 +646,29 @@ namespace etl
       cog.outl("  }")
       cog.outl("")
       cog.outl("  template <typename TMessage>")
-      cog.outl("  void receive(const TMessage& msg, typename etl::enable_if<etl::is_base_of<imessage, TMessage>::value, int>::type = 0)")
-      cog.outl("  {")
-      cog.out("    if ETL_IF_CONSTEXPR (etl::is_one_of<TMessage, ")
+      cog.out("  typename etl::enable_if<etl::is_base_of<imessage, TMessage>::value && etl::is_one_of<TMessage, ")
       for n in range(1, int(Handlers)):
           cog.out("T%s, " % n)
-          if n % 4 == 0:
-              cog.outl("")
-              cog.out("                                                  ")
-      cog.outl("T%s>::value)" % int(Handlers))
-      cog.outl("    {")     
-      cog.outl("      static_cast<TDerived*>(this)->on_receive(msg);")
+      cog.outl("T%s>::value, void>::type" % int(Handlers))
+      cog.outl("    receive(const TMessage& msg)")
+      cog.outl("  {")
+      cog.outl("    static_cast<TDerived*>(this)->on_receive(msg);")
+      cog.outl("  }")
+      cog.outl("")
+      cog.outl("  template <typename TMessage>")
+      cog.out("  typename etl::enable_if<etl::is_base_of<imessage, TMessage>::value && !etl::is_one_of<TMessage, ")
+      for n in range(1, int(Handlers)):
+          cog.out("T%s, " % n)
+      cog.outl("T%s>::value, void>::type" % int(Handlers))
+      cog.outl("    receive(const TMessage& msg)")
+      cog.outl("  {")
+      cog.outl("    if (has_successor())")
+      cog.outl("    {")
+      cog.outl("      get_successor().receive(msg);")
       cog.outl("    }")
       cog.outl("    else")
       cog.outl("    {")
-      cog.outl("      if (has_successor())")
-      cog.outl("      {")
-      cog.outl("        get_successor().receive(msg);")
-      cog.outl("      }")
-      cog.outl("      else")
-      cog.outl("      {")
-      cog.outl("        static_cast<TDerived*>(this)->on_receive_unknown(msg);")
-      cog.outl("      }")
+      cog.outl("      static_cast<TDerived*>(this)->on_receive_unknown(msg);")
       cog.outl("    }")
       cog.outl("  }")
       cog.outl("")
@@ -727,10 +754,12 @@ namespace etl
           cog.outl("{")
           cog.outl("public:")
           cog.outl("")
+          cog.outl("#if ETL_HAS_VIRTUAL_MESSAGES")
           cog.out("  typedef etl::message_packet<")
           for t in range(1, n):
               cog.out("T%s, " % t)
           cog.outl(" T%s> message_packet;" % n)
+          cog.outl("#endif")
           cog.outl("")
           cog.outl("  //**********************************************")
           cog.outl("  message_router(etl::message_router_id_t id_)")
@@ -787,30 +816,32 @@ namespace etl
           cog.outl("  }")
           cog.outl("")
           cog.outl("  template <typename TMessage>")
-          cog.outl("  void receive(const TMessage& msg, typename etl::enable_if<etl::is_base_of<imessage, TMessage>::value, int>::type = 0)")
-          cog.outl("  {")
-          cog.out("    if ETL_IF_CONSTEXPR (etl::is_one_of<TMessage, ")
+          cog.out("  typename etl::enable_if<etl::is_base_of<imessage, TMessage>::value && etl::is_one_of<TMessage, ")
           for t in range(1, n):
               cog.out("T%s, " % t)
-              if t % 4 == 0:
-                  cog.outl("")
-                  cog.out("                                                  ")
-          cog.outl("T%s>::value)" % n)
+          cog.outl("T%s>::value, void>::type" % n)
+          cog.outl("    receive(const TMessage& msg)")
+          cog.outl("  {")
+          cog.outl("    static_cast<TDerived*>(this)->on_receive(msg);")
+          cog.outl("  }")
+          cog.outl("")
+          cog.outl("  template <typename TMessage>")
+          cog.out("  typename etl::enable_if<etl::is_base_of<imessage, TMessage>::value && !etl::is_one_of<TMessage, ")
+          for t in range(1, n):
+              cog.out("T%s, " % t)
+          cog.outl("T%s>::value, void>::type" % n)
+          cog.outl("    receive(const TMessage& msg)")
+          cog.outl("  {")
+          cog.outl("    if (has_successor())")
           cog.outl("    {")
-          cog.outl("      static_cast<TDerived*>(this)->on_receive(msg);")
+          cog.outl("      get_successor().receive(msg);")
           cog.outl("    }")
           cog.outl("    else")
           cog.outl("    {")
-          cog.outl("      if (has_successor())")
-          cog.outl("      {")
-          cog.outl("        get_successor().receive(msg);")
-          cog.outl("      }")
-          cog.outl("      else")
-          cog.outl("      {")
-          cog.outl("        static_cast<TDerived*>(this)->on_receive_unknown(msg);")
-          cog.outl("      }")
+          cog.outl("      static_cast<TDerived*>(this)->on_receive_unknown(msg);")
           cog.outl("    }")
           cog.outl("  }")
+          cog.outl("")
           cog.outl("")
           cog.outl("  //**********************************************")
           cog.outl("  using imessage_router::accepts;")

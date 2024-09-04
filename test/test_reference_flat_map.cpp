@@ -198,7 +198,7 @@ namespace
     {
       DataDC data;
 
-      CHECK_EQUAL(data.size(), size_t(0UL));
+      CHECK_EQUAL(data.size(), 0UL);
       CHECK(data.empty());
       CHECK_EQUAL(data.capacity(), SIZE);
       CHECK_EQUAL(data.max_size(), SIZE);
@@ -265,52 +265,6 @@ namespace
 
       CHECK(!data.full());
       CHECK(data.empty());
-    }
-
-    //*************************************************************************
-    TEST_FIXTURE(SetupFixture, test_index)
-    {
-      Compare_DataDC compare_data(initial_data_dc.begin(), initial_data_dc.end());
-
-      DataDC data(initial_data_dc.begin(), initial_data_dc.end());
-
-      CHECK_EQUAL(compare_data[0], data[0]);
-      CHECK_EQUAL(compare_data[1], data[1]);
-      CHECK_EQUAL(compare_data[2], data[2]);
-      CHECK_EQUAL(compare_data[3], data[3]);
-      CHECK_EQUAL(compare_data[4], data[4]);
-      CHECK_EQUAL(compare_data[5], data[5]);
-      CHECK_EQUAL(compare_data[6], data[6]);
-      CHECK_EQUAL(compare_data[7], data[7]);
-      CHECK_EQUAL(compare_data[8], data[8]);
-      CHECK_EQUAL(compare_data[9], data[9]);
-    }
-
-    //*************************************************************************
-    TEST_FIXTURE(SetupFixture, test_index_value_changed)
-    {
-      Compare_DataDC compare_data;
-      DataDC data;
-
-      DataDC::value_type item(0, M0);
-
-      data.insert(item);
-      compare_data[0] = M0;
-
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 compare_data.begin());
-
-      CHECK(isEqual);
-
-      data[0] = M2;
-      compare_data[0] = M2;
-
-      isEqual = Check_Equal(data.begin(),
-                            data.end(),
-                            compare_data.begin());
-
-      CHECK(isEqual);
     }
 
     //*************************************************************************
@@ -726,7 +680,7 @@ namespace
       DataNDC data(initial_data.begin(), initial_data.end());
       data.clear();
 
-      CHECK_EQUAL(data.size(), size_t(0UL));
+      CHECK_EQUAL(data.size(), 0UL);
     }
 
     //*************************************************************************

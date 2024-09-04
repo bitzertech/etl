@@ -30,6 +30,7 @@ SOFTWARE.
 
 #include <string>
 #include <list>
+#include <queue>
 #include <algorithm>
 
 #include "etl/iterator.h"
@@ -79,7 +80,7 @@ namespace
     //*************************************************************************
     TEST(distance_non_random)
     {
-      ptrdiff_t d = etl::distance(non_random_iterator<int>(&dataA[0]), non_random_iterator<int>(&dataA[SIZE]));
+      ptrdiff_t d = etl::distance(non_random_iterator<int>(&dataA[0]), non_random_iterator<int>(dataA + SIZE));
 
       CHECK_EQUAL(SIZE, d);
     }
@@ -87,7 +88,7 @@ namespace
     //*************************************************************************
     TEST(distance_random)
     {
-      ptrdiff_t d = etl::distance(random_iterator<int>(&dataA[0]), random_iterator<int>(&dataA[SIZE]));
+      ptrdiff_t d = etl::distance(random_iterator<int>(&dataA[0]), random_iterator<int>(dataA + SIZE));
 
       CHECK_EQUAL(SIZE, d);
     }
@@ -561,5 +562,23 @@ namespace
       CHECK_EQUAL(expected.size(), output.size());
       CHECK(std::equal(output.begin(), output.end(), expected.begin()));
     }
+
+    //*************************************************************************
+    //TEST(test_push_insert_iterator)
+    //{
+    //  std::list<int> input = { 0, 1, 2, 3,  4,  5,  6,  7,  8,  9 };
+    //  std::list<int> expected = { 0, 1, 4, 9, 16, 25, 36, 49, 64, 81 };
+    //  std::queue<int> output;
+
+    //  auto squared = [](int value)
+    //  {
+    //    return value * value;
+    //  };
+
+    //  std::transform(input.begin(), input.cend(), etl::push_inserter(output), squared);
+
+    //  CHECK_EQUAL(expected.size(), output.size());
+    //  CHECK(std::equal(output.begin(), output.end(), expected.begin()));
+    //}
   };
 }

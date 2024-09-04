@@ -96,7 +96,7 @@ namespace
     int value;
   };
 
-  SUITE(test_forward_list)
+  SUITE(test_intrusive_links)
   {
     //*************************************************************************
     TEST(test_link_forward_link)
@@ -106,19 +106,19 @@ namespace
       FData data2(2);
       FData data3(3);
 
-      data0.FLink0::clear();
+      etl::link_clear<FLink0>(data0);
       etl::link<FLink0>(data0,  data1);
       CHECK(data0.FLink0::etl_next == &data1);
 
-      data0.FLink0::clear();
+      etl::link_clear<FLink0>(data0);
       etl::link<FLink0>(&data0, data1);
       CHECK(data0.FLink0::etl_next == &data1);
 
-      data0.FLink0::clear();
+      etl::link_clear<FLink0>(data0);
       etl::link<FLink0>(data0,  &data1);
       CHECK(data0.FLink0::etl_next == &data1);
 
-      data0.FLink0::clear();
+      etl::link_clear<FLink0>(data0);
       etl::link<FLink0>(&data0, &data1);
       CHECK(data0.FLink0::etl_next == &data1);
 
@@ -155,6 +155,49 @@ namespace
       CHECK_EQUAL(1, pdata->value);
       pdata = static_cast<FData*>(pdata->FLink1::etl_next);
       CHECK_EQUAL(0, pdata->value);
+    }
+
+    //*************************************************************************
+    TEST(test_link_forward_link_get_set)
+    {
+      FData data0(0);
+      FData data1(1);
+      FData data2(2);
+      FData data3(3);
+
+      // Use reference interface
+      data0.FLink0::set_next(data1);
+      data1.FLink0::set_next(data2);
+      data2.FLink0::set_next(data3);
+      data3.FLink0::clear();
+
+      CHECK(data0.FLink0::get_next() == &data1);
+      CHECK(data1.FLink0::get_next() == &data2);
+      CHECK(data2.FLink0::get_next() == &data3);
+      CHECK(data3.FLink0::get_next() == nullptr);
+
+      // Use pointer interface
+      data3.FLink0::set_next(&data2);
+      data2.FLink0::set_next(&data1);
+      data1.FLink0::set_next(&data0);
+      data0.FLink0::set_next(nullptr);
+
+      CHECK(data3.FLink0::get_next() == &data2);
+      CHECK(data2.FLink0::get_next() == &data1);
+      CHECK(data1.FLink0::get_next() == &data0);
+      CHECK(data0.FLink0::get_next() == nullptr);
+    }
+
+    //*************************************************************************
+    TEST(test_link_forward_link_has_links)
+    {
+      FData data0(0);
+      FData data1(1);
+
+      CHECK_FALSE(data0.FLink0::has_next());
+
+      data0.FLink0::set_next(data1);
+      CHECK_TRUE(data0.FLink0::has_next());
     }
 
     //*************************************************************************
@@ -344,10 +387,13 @@ namespace
       etl::link<FLink1>(data1, data0);
       etl::link<FLink1>(data0, nullptr);
 
-      etl::unlink_after<FLink0>(data0, data2);
-      data1.FLink0::clear();
-      data2.FLink0::clear();
-
+      FLink0* start = etl::unlink_after<FLink0>(data0, data2);
+      CHECK(data0.FLink0::etl_next == &data3);
+      CHECK(data1.FLink0::etl_next == &data2);
+      CHECK(data2.FLink0::etl_next == nullptr);
+      CHECK(data3.FLink0::etl_next == nullptr);
+      
+      etl::link_clear_range(*start);
       CHECK(data0.FLink0::etl_next == &data3);
       CHECK(data1.FLink0::etl_next == nullptr);
       CHECK(data2.FLink0::etl_next == nullptr);
@@ -370,7 +416,7 @@ namespace
 
       etl::unlink_after<FLink0>(data0);
 
-      CHECK(data0.FLink0::etl_next == &data0);
+      CHECK(data0.FLink0::etl_next == nullptr);
     }
 
     //*************************************************************************
@@ -489,6 +535,77 @@ namespace
       CHECK(data2.BLink1::etl_previous    != nullptr);
 
       data2.BLink0::unlink();
+    }
+
+    //*************************************************************************
+    TEST(test_link_bidirectional_link_get_set)
+    {
+      BData data0(0);
+      BData data1(1);
+      BData data2(2);
+      BData data3(3);
+
+      // Use reference interface    
+      data0.BLink0::set_next(data1);
+      data1.BLink0::set_next(data2);
+      data2.BLink0::set_next(data3);
+      
+      data1.BLink0::set_previous(data0);
+      data2.BLink0::set_previous(data1);
+      data3.BLink0::set_previous(data2);
+
+      CHECK(data0.BLink0::get_next() == &data1);
+      CHECK(data1.BLink0::get_next() == &data2);
+      CHECK(data2.BLink0::get_next() == &data3);
+      CHECK(data3.BLink0::get_next() == nullptr);
+
+      CHECK(data3.BLink0::get_previous() == &data2);
+      CHECK(data2.BLink0::get_previous() == &data1);
+      CHECK(data1.BLink0::get_previous() == &data0);
+      CHECK(data0.BLink0::get_previous() == nullptr);
+
+      // Use pointer interface
+      data0.BLink0::clear();
+      data1.BLink0::clear();
+      data2.BLink0::clear();
+      data3.BLink0::clear();
+
+      data3.BLink0::set_next(&data2);
+      data2.BLink0::set_next(&data1);
+      data1.BLink0::set_next(&data0);
+
+      data0.BLink0::set_previous(&data1);
+      data1.BLink0::set_previous(&data2);
+      data2.BLink0::set_previous(&data3);
+
+      CHECK(data3.BLink0::get_next() == &data2);
+      CHECK(data2.BLink0::get_next() == &data1);
+      CHECK(data1.BLink0::get_next() == &data0);
+      CHECK(data0.BLink0::get_next() == nullptr);
+
+      CHECK(data0.BLink0::get_previous() == &data1);
+      CHECK(data1.BLink0::get_previous() == &data2);
+      CHECK(data2.BLink0::get_previous() == &data3);
+      CHECK(data3.BLink0::get_previous() == nullptr);
+    }
+
+    //*************************************************************************
+    TEST(test_link_bidirectional_link_has_links)
+    {
+      BData data0(0);
+      BData data1(1);
+      BData data2(2);
+
+      CHECK_FALSE(data1.BLink0::has_previous());
+      CHECK_FALSE(data1.BLink0::has_next());
+
+      data1.BLink0::set_previous(data0);
+      CHECK_TRUE(data1.BLink0::has_previous());
+      CHECK_FALSE(data1.BLink0::has_next());
+
+      data1.BLink0::set_next(data2);
+      CHECK_TRUE(data1.BLink0::has_previous());
+      CHECK_TRUE(data1.BLink0::has_next());
     }
 
     //*************************************************************************
@@ -806,8 +923,8 @@ namespace
 
       etl::unlink<BLink0>(data0);
 
-      CHECK(data0.BLink0::etl_previous == &data0);
-      CHECK(data0.BLink0::etl_next     == &data0);
+      CHECK(data0.BLink0::etl_previous == ETL_NULLPTR);
+      CHECK(data0.BLink0::etl_next     == ETL_NULLPTR);
     }
 
     //*************************************************************************
@@ -933,6 +1050,82 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_link_tree_link_get_set)
+    {
+      TData dataParent(0);
+      TData dataNode(1);
+      TData dataLeft(2);
+      TData dataRight(3);
+
+      // Use reference interface
+      dataNode.TLink0::set_parent(dataParent);
+      dataNode.TLink0::set_left(dataLeft);
+      dataNode.TLink0::set_right(dataRight);
+
+      CHECK(dataNode.TLink0::get_parent() == &dataParent);
+      CHECK(dataNode.TLink0::get_left()   == &dataLeft);
+      CHECK(dataNode.TLink0::get_right()  == &dataRight);
+
+      // Use pointer interface
+      dataNode.TLink0::clear();
+
+      dataNode.TLink0::set_parent(&dataParent);
+      dataNode.TLink0::set_left(&dataLeft);
+      dataNode.TLink0::set_right(&dataRight);
+
+      CHECK(dataNode.TLink0::get_parent() == &dataParent);
+      CHECK(dataNode.TLink0::get_left()   == &dataLeft);
+      CHECK(dataNode.TLink0::get_right()  == &dataRight);
+    }
+
+    //*************************************************************************
+    TEST(test_link_tree_link_has_links)
+    {
+      TData dataParent(0);
+      TData dataNode(1);
+      TData dataLeft(2);
+      TData dataRight(3);
+
+      CHECK_FALSE(dataNode.TLink0::has_parent());
+      CHECK_FALSE(dataNode.TLink0::has_left());
+      CHECK_FALSE(dataNode.TLink0::has_right());
+
+      dataNode.TLink0::set_parent(dataParent);
+      CHECK_TRUE(dataNode.TLink0::has_parent());
+      CHECK_FALSE(dataNode.TLink0::has_left());
+      CHECK_FALSE(dataNode.TLink0::has_right());
+
+      dataNode.TLink0::set_left(dataLeft);
+      CHECK_TRUE(dataNode.TLink0::has_parent());
+      CHECK_TRUE(dataNode.TLink0::has_left());
+      CHECK_FALSE(dataNode.TLink0::has_right());
+
+      dataNode.TLink0::set_right(dataRight);
+      CHECK_TRUE(dataNode.TLink0::has_parent());
+      CHECK_TRUE(dataNode.TLink0::has_left());
+      CHECK_TRUE(dataNode.TLink0::has_right());
+    }
+
+    //*************************************************************************
+    TEST(test_link_tree_link_mirror)
+    {
+      TData dataParent(0);
+      TData dataNode(1);
+      TData dataLeft(2);
+      TData dataRight(3);
+
+      dataNode.TLink0::set_parent(dataParent);
+      dataNode.TLink0::set_left(dataLeft);
+      dataNode.TLink0::set_right(dataRight);
+
+      dataNode.TLink0::mirror();
+
+      CHECK(dataNode.TLink0::get_parent() == &dataParent);
+      CHECK(dataNode.TLink0::get_left()   == &dataRight);
+      CHECK(dataNode.TLink0::get_right()  == &dataLeft);
+    }
+
+    //*************************************************************************
     TEST(test_is_linked)
     {
       // Forward link
@@ -966,6 +1159,18 @@ namespace
       etl::link<BLink1>(bdata, bdata);
       CHECK(bdata.BLink0::is_linked());
       CHECK(bdata.BLink1::is_linked());
+
+      etl::unlink<BLink0>(bdata); // Global API
+      CHECK(!bdata.BLink0::is_linked());
+      CHECK(bdata.BLink1::is_linked());
+
+      bdata.BLink1::unlink();     // Member API
+      CHECK(!bdata.BLink0::is_linked());
+      CHECK(!bdata.BLink1::is_linked());
+
+      bdata.BLink0::clear();
+      CHECK(!bdata.BLink0::is_linked());
+      CHECK(!bdata.BLink1::is_linked());
 
       // Tree link
       TData tdata(0);
@@ -1032,13 +1237,13 @@ namespace
       CHECK(data3.FLink0::etl_next == nullptr);
 
       CHECK(data3.BLink1::etl_previous == nullptr);
-      CHECK(data3.BLink1::etl_next     == &data2);
+      CHECK(data3.BLink1::etl_next == &data2);
       CHECK(data2.BLink1::etl_previous == &data3);
-      CHECK(data2.BLink1::etl_next     == &data1);
+      CHECK(data2.BLink1::etl_next == &data1);
       CHECK(data1.BLink1::etl_previous == &data2);
-      CHECK(data1.BLink1::etl_next     == &data0);
+      CHECK(data1.BLink1::etl_next == &data0);
       CHECK(data0.BLink1::etl_previous == &data1);
-      CHECK(data0.BLink1::etl_next     == nullptr);
+      CHECK(data0.BLink1::etl_next == nullptr);
 
       CHECK(data0.TLink2::etl_left   == &data1);
       CHECK(data0.TLink2::etl_right  == &data2);

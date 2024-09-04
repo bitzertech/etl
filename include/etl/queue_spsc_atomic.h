@@ -47,7 +47,7 @@ SOFTWARE.
 
 namespace etl
 {
-  template <const size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
+  template <size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
   class queue_spsc_atomic_base
   {
   public:
@@ -272,6 +272,28 @@ namespace etl
       return false;
     }
 #else
+    //*************************************************************************
+    /// Constructs a value in the queue 'in place'.
+    /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
+    //*************************************************************************
+    bool emplace()
+    {
+      size_type write_index = write.load(etl::memory_order_relaxed);
+      size_type next_index = get_next_index(write_index, RESERVED);
+
+      if (next_index != read.load(etl::memory_order_acquire))
+      {
+        ::new (&p_buffer[write_index]) T();
+
+        write.store(next_index, etl::memory_order_release);
+
+        return true;
+      }
+
+      // Queue is full.
+      return false;
+    }
+
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
@@ -541,6 +563,9 @@ namespace etl
     /// The uninitialised buffer of T used in the queue_spsc.
     typename etl::aligned_storage<sizeof(T), etl::alignment_of<T>::value>::type buffer[RESERVED_SIZE];
   };
+
+  template <typename T, size_t SIZE, const size_t MEMORY_MODEL>
+  ETL_CONSTANT typename queue_spsc_atomic<T, SIZE, MEMORY_MODEL>::size_type queue_spsc_atomic<T, SIZE, MEMORY_MODEL>::MAX_SIZE;
 }
 
 #endif

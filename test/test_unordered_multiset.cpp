@@ -357,6 +357,7 @@ namespace
       data1.insert(ItemM(4));
 
       DataM data2;
+      data2.insert(ItemM(5));
 
       data2 = std::move(data1);
 
@@ -902,7 +903,7 @@ namespace
     TEST(test_iterator_value_types_bug_584)
     {
       using Set = etl::unordered_multiset<int, 1, 1>;
-      CHECK((!std::is_same_v<typename Set::const_iterator::value_type, typename Set::iterator::value_type>));
+      CHECK((!std::is_same<typename Set::const_iterator::value_type, typename Set::iterator::value_type>::value));
     }
 
     TEST(test_parameterized_eq)
@@ -927,6 +928,20 @@ namespace
         auto range = constset.equal_range(6);
         CHECK_EQUAL(std::distance(range.first, range.second), 3);
       }
+    }
+
+    //*************************************************************************
+    TEST(test_iterator_value_types_bug_803)
+    {
+      using Set1 = etl::unordered_multiset<NDC, SIZE, 5>;
+      using Set2 = etl::unordered_multiset<NDC, 2 * SIZE, 10>;
+
+      Set1 set1(initial_data.begin(), initial_data.end());
+      Set2 set2a(initial_data.begin(), initial_data.end());
+      Set2 set2b(different_data.begin(), different_data.end());
+
+      CHECK_TRUE(set1 == set2a);
+      CHECK_FALSE(set1 == set2b);
     }
   };
 }

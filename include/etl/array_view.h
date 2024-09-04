@@ -258,10 +258,10 @@ namespace etl
     //*************************************************************************
     /// Construct from C array
     //*************************************************************************
-    template<size_t ARRAY_SIZE>
-    ETL_CONSTEXPR array_view(T(&begin_)[ARRAY_SIZE])
+    template<size_t Array_Size>
+    ETL_CONSTEXPR array_view(T(&begin_)[Array_Size])
       : mbegin(begin_),
-        mend(begin_ + ARRAY_SIZE)
+        mend(begin_ + Array_Size)
     {
     }
 
@@ -421,7 +421,7 @@ namespace etl
     //*************************************************************************
     /// Returns <b>true</b> if the array size is zero.
     //*************************************************************************
-    bool empty() const
+    ETL_CONSTEXPR bool empty() const
     {
       return (mbegin == mend);
     }
@@ -429,15 +429,15 @@ namespace etl
     //*************************************************************************
     /// Returns the size of the array.
     //*************************************************************************
-    size_t size() const
+    ETL_CONSTEXPR size_t size() const
     {
-      return (mend - mbegin);
+      return static_cast<size_t>(mend - mbegin);
     }
 
     //*************************************************************************
     /// Returns the maximum possible size of the array.
     //*************************************************************************
-    size_t max_size() const
+    ETL_CONSTEXPR size_t max_size() const
     {
       return size();
     }
@@ -636,8 +636,8 @@ namespace etl
   {
     size_t operator()(const etl::array_view<T>& view) const
     {
-      return etl::private_hash::generic_hash<size_t>(reinterpret_cast<const uint8_t*>(&view[0]),
-                                                     reinterpret_cast<const uint8_t*>(&view[view.size()]));
+      return etl::private_hash::generic_hash<size_t>(reinterpret_cast<const uint8_t*>(view.data()),
+                                                     reinterpret_cast<const uint8_t*>(view.data() + view.size()));
     }
   };
 #endif

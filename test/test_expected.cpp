@@ -32,7 +32,7 @@ SOFTWARE.
 #include "etl/type_traits.h"
 
 #include <string>
-#include <variant>
+#include <vector>
 
 namespace
 {
@@ -111,6 +111,11 @@ namespace
     {
     }
 
+    operator std::string() const
+    {
+      return e;
+    }
+
     ErrorM(ErrorM&&) = default;
     ErrorM& operator =(ErrorM&&) = default;
 
@@ -132,7 +137,7 @@ namespace
 
 namespace
 {
-  SUITE(test_result)
+  SUITE(test_expected)
   {
     //*************************************************************************
     TEST(test_default_constructor)
@@ -228,19 +233,19 @@ namespace
     //*************************************************************************
     TEST(test_constructor_for_result_void_value_with_value)
     {
-       ExpectedV expected;
+      ExpectedV expected;
 
-       CHECK_TRUE(expected.has_value());
-       CHECK_TRUE(bool(expected));
+      CHECK_TRUE(expected.has_value());
+      CHECK_TRUE(bool(expected));
     }
 
     //*************************************************************************
     TEST(test_constructor_for_const_result_void_value_with_value)
     {
-       const ExpectedV expected;
+      const ExpectedV expected;
 
-       CHECK_TRUE(expected.has_value());
-       CHECK_TRUE(bool(expected));
+      CHECK_TRUE(expected.has_value());
+      CHECK_TRUE(bool(expected));
     }
 
     //*************************************************************************
@@ -324,6 +329,23 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_copy_assign_from_error)
+    {
+      Value    input = { "value 1" };
+      Expected expected(input);
+
+      Error      error = { "error 1" };
+      Unexpected unexpected(error);
+
+      expected = unexpected;
+
+      Error output = expected.error();
+
+      CHECK_FALSE(expected.has_value());
+      CHECK_EQUAL(std::string(error), std::string(expected.error()));
+    }
+
+    //*************************************************************************
     TEST(test_move_construct)
     {
       ValueM    input1 = { "value 1" };
@@ -362,6 +384,23 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_move_assign_from_error)
+    {
+      ValueM    input = { "value 1" };
+      ExpectedM expected(etl::move(input));
+
+      ErrorM      error = { "error 1" };
+      UnexpectedM unexpected(etl::move(error));
+
+      expected = etl::move(unexpected);
+
+      ErrorM output = etl::move(expected.error());
+
+      CHECK_FALSE(expected.has_value());
+      CHECK_EQUAL(std::string(error), std::string(expected.error()));
+    }
+
+    //*************************************************************************
     TEST(test_copy_construct_void_value)
     {
       Error       input1 = { "error 1" };
@@ -390,7 +429,7 @@ namespace
 
       ExpectedV   expected1(unexpected1);
       ExpectedV   expected2(unexpected2);
-      
+
       expected2 = expected1;
 
       Error output1 = expected1.error();
@@ -401,6 +440,70 @@ namespace
 
       CHECK_EQUAL(input1.e, output1.e);
       CHECK_EQUAL(input1.e, output2.e);
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_from_initializer_list)
+    {
+      struct S
+      {
+        S()
+          : vi()
+          , a(0)
+          , b(0)
+        {
+        }
+
+        S(std::initializer_list<int> il, int a_, int b_)
+          : vi(il)
+          , a(a_)
+          , b(b_)
+        {
+        }
+
+        std::vector<int> vi;
+        int a;
+        int b;
+      };
+
+      etl::expected<S, Error> exp;
+
+      S s1({ 10, 11, 12 }, 1, 2);
+      S s2 = exp.emplace({ 10, 11, 12 }, 1, 2);
+      
+      CHECK(s1.vi == s2.vi);
+      CHECK_EQUAL(s1.a, s2.a);
+      CHECK_EQUAL(s1.b, s2.b);
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_from_vargs)
+    {
+      struct S
+      {
+        S()
+          : a(0)
+          , b(0)
+        {
+        }
+
+        S(int a_, int b_)
+          : a(a_)
+          , b(b_)
+        {
+        }
+
+        int a;
+        int b;
+      };
+
+      etl::expected<S, Error> exp;
+
+      S s1(1, 2);
+      S s2 = exp.emplace(1, 2);
+
+      CHECK_EQUAL(s1.a, s2.a);
+      CHECK_EQUAL(s1.b, s2.b);
     }
 
     //*************************************************************************
@@ -443,6 +546,218 @@ namespace
 
       CHECK_EQUAL("",        output1.e);
       CHECK_EQUAL("error 1", output2.e);
+    }
+
+    //*************************************************************************
+    TEST(test_dereference_operators)
+    {
+      struct ExpectedType
+      {
+        ExpectedType(int i_)
+          : i(i_)
+        {
+        }
+
+        int i;
+      };
+
+      etl::expected<ExpectedType, int>       exp  = etl::unexpected<int>(0);
+      const etl::expected<ExpectedType, int> cexp = etl::unexpected<int>(0);
+    
+      CHECK_THROW({ int i = (*exp).i;  (void)i; }, etl::expected_invalid);
+      CHECK_THROW({ int i = (*cexp).i; (void)i; }, etl::expected_invalid);
+      CHECK_THROW({ int i = exp->i;    (void)i; }, etl::expected_invalid);
+      CHECK_THROW({ int i = cexp->i;   (void)i; }, etl::expected_invalid);
+    }
+
+    //*************************************************************************
+    struct value_or_helper
+    {
+      Expected get_value() const
+      {
+        Value value = { "value5" };
+        return Expected(value);
+      }
+
+      Expected get_error() const
+      {
+        Error error = { "error1" };
+        return Expected(Unexpected(error));
+      }
+    };
+
+    TEST(test_chained_value_or_github_bug_720)
+    {
+      value_or_helper helper{};
+
+      Value value1 = helper.get_value().value_or(Value("value1"));
+      CHECK_EQUAL("value5", value1.v);
+
+      Value value2 = helper.get_error().value_or(Value("value1"));
+      CHECK_EQUAL("value1", value2.v);
+    }
+
+    //*************************************************************************
+    TEST(test_assignment_bug_738)
+    {
+      etl::expected<int, int> test_exp{1};
+      CHECK_TRUE(test_exp.has_value());
+
+      test_exp = etl::unexpected<int>(2);
+      CHECK_FALSE(test_exp.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_expected_does_not_compile_with_ETL_LOG_ERRORS_bug_787)
+    {
+      etl::expected<int, int> test_exp = etl::unexpected<int>(0);
+      bool thrown = false;
+      std::string thrown_what;
+      std::string exception_what = etl::expected_invalid(__FILE__, __LINE__).what();
+
+      try
+      {
+        int i = *test_exp;
+        (void)i;
+      }
+      catch (etl::exception& e)
+      {
+        thrown = true;
+        thrown_what = e.what(); // what() should be accessible
+      }
+
+      CHECK_TRUE(thrown);
+      CHECK_TRUE(exception_what == thrown_what);
+    }
+
+    //*************************************************************************
+    TEST(test_expected_equal_operator)
+    {
+      etl::expected<int, int> test_exp = 1;
+      etl::expected<int, int> test_exp_equal = 1;
+      etl::expected<int, int> test_exp_unequal = 2;
+      int test_val_equal = 1;
+      int test_val_unequal = 2;
+      etl::expected<int, int> test_unexp = etl::unexpected<int>(1);
+      etl::expected<int, int> test_unexp_equal = etl::unexpected<int>(1);
+      etl::expected<int, int> test_unexp_unequal = etl::unexpected<int>(2);
+
+      CHECK_TRUE(test_exp == test_exp_equal);
+      CHECK_FALSE(test_exp != test_exp_equal);
+
+      CHECK_FALSE(test_exp == test_exp_unequal);
+      CHECK_TRUE(test_exp != test_exp_unequal);
+
+      CHECK_TRUE(test_exp == test_val_equal);
+      CHECK_FALSE(test_exp != test_val_equal);
+
+      CHECK_FALSE(test_exp == test_val_unequal);
+      CHECK_TRUE(test_exp != test_val_unequal);
+
+      CHECK_FALSE(test_exp == test_unexp);
+      CHECK_TRUE(test_exp != test_unexp);
+
+      CHECK_TRUE(test_unexp == test_unexp_equal);
+      CHECK_FALSE(test_unexp != test_unexp_equal);
+
+      CHECK_FALSE(test_unexp == test_unexp_unequal);
+      CHECK_TRUE(test_unexp != test_unexp_unequal);
+    }
+
+
+    //*************************************************************************
+    TEST(test_expected_void_equal_operator)
+    {
+      etl::expected<void, int> test_exp;
+      etl::expected<void, int> test_exp2;
+      etl::expected<void, int> test_unexp = etl::unexpected<int>(1);
+      etl::expected<void, int> test_unexp2 = etl::unexpected<int>(2);
+
+      CHECK_TRUE(test_exp == test_exp2);
+      CHECK_FALSE(test_exp != test_exp2);
+
+      CHECK_FALSE(test_exp == test_unexp);
+      CHECK_TRUE(test_exp != test_unexp);
+
+      CHECK_FALSE(test_unexp == test_unexp2);
+      CHECK_TRUE(test_unexp != test_unexp2);
+    }
+
+    //*************************************************************************
+    TEST(test_unexpected_equal_operator)
+    {
+      etl::unexpected<int> test_unexp = etl::unexpected<int>(1);
+      etl::unexpected<int> test_unexp_equal = etl::unexpected<int>(1);
+      etl::unexpected<int> test_unexp_unequal = etl::unexpected<int>(2);
+
+      CHECK_TRUE(test_unexp == test_unexp_equal);
+      CHECK_FALSE(test_unexp != test_unexp_equal);
+
+      CHECK_FALSE(test_unexp == test_unexp_unequal);
+      CHECK_TRUE(test_unexp != test_unexp_unequal);
+    }
+
+    //*************************************************************************
+    TEST(test_expected_swap)
+    {
+      etl::expected<int, int> test_exp_1 = 1;
+      etl::expected<int, int> test_exp_2 = 2;
+      etl::expected<int, int> test_unexp_1 = etl::unexpected<int>(1);
+      etl::expected<int, int> test_unexp_2 = etl::unexpected<int>(2);
+
+      etl::expected<int, int> test_exp_1_swap = test_exp_1;
+      etl::expected<int, int> test_exp_2_swap = test_exp_2;
+
+      swap(test_exp_1_swap, test_exp_2_swap);
+
+      CHECK_TRUE(test_exp_1_swap == test_exp_2);
+      CHECK_TRUE(test_exp_2_swap == test_exp_1);
+
+      etl::expected<int, int> test_unexp_1_swap = test_unexp_1;
+      etl::expected<int, int> test_unexp_2_swap = test_unexp_2;
+
+      swap(test_unexp_1_swap, test_unexp_2_swap);
+
+      CHECK_TRUE(test_unexp_1_swap == test_unexp_2);
+      CHECK_TRUE(test_unexp_2_swap == test_unexp_1);
+
+      etl::expected<int, int> test_exp_swap = test_exp_1;
+      etl::expected<int, int> test_unexp_swap = test_unexp_1;
+
+      swap(test_exp_swap, test_unexp_swap);
+
+      CHECK_TRUE(test_exp_swap == test_unexp_1);
+      CHECK_TRUE(test_unexp_swap == test_exp_1);
+    }
+
+    //*************************************************************************
+    TEST(test_expected_void_swap)
+    {
+      etl::expected<void, int> test_exp;
+      etl::expected<void, int> test_unexp = etl::unexpected<int>(1);
+
+      etl::expected<void, int> test_exp_swap = test_exp;
+      etl::expected<void, int> test_unexp_swap = test_unexp;
+
+      swap(test_exp_swap, test_unexp_swap);
+
+      CHECK_TRUE(test_exp_swap == test_unexp);
+      CHECK_TRUE(test_unexp_swap == test_exp);
+    }
+
+    //*************************************************************************
+    TEST(test_unexpected_swap)
+    {
+      etl::unexpected<int> test_unexp_1 = etl::unexpected<int>(1);
+      etl::unexpected<int> test_unexp_2 = etl::unexpected<int>(2);
+
+      etl::unexpected<int> test_unexp_1_swap = test_unexp_1;
+      etl::unexpected<int> test_unexp_2_swap = test_unexp_2;
+
+      swap(test_unexp_1_swap, test_unexp_2_swap);
+
+      CHECK_TRUE(test_unexp_1_swap == test_unexp_2);
+      CHECK_TRUE(test_unexp_2_swap == test_unexp_1);
     }
   };
 }

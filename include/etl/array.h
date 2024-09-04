@@ -83,7 +83,7 @@ namespace etl
   ///\ingroup array
   /// A replacement for std::array if you haven't got C++0x11.
   //***************************************************************************
-  template <typename T, const size_t SIZE_>
+  template <typename T, size_t SIZE_>
   class array
   {
   private:
@@ -92,20 +92,17 @@ namespace etl
 
   public:
 
-    enum
-    {
-      SIZE = SIZE_
-    };
+    static ETL_CONSTANT size_t SIZE = SIZE_;
 
-    typedef T                                     value_type;
-    typedef size_t                                size_type;
-    typedef ptrdiff_t                             difference_type;
-    typedef T&                                    reference;
-    typedef const T&                              const_reference;
-    typedef T*                                    pointer;
-    typedef const T*                              const_pointer;
-    typedef T*                                    iterator;
-    typedef const T*                              const_iterator;
+    typedef T         value_type;
+    typedef size_t    size_type;
+    typedef ptrdiff_t difference_type;
+    typedef T&        reference;
+    typedef const T&  const_reference;
+    typedef T*        pointer;
+    typedef const T*  const_pointer;
+    typedef T*        iterator;
+    typedef const T*  const_iterator;
     typedef ETL_OR_STD::reverse_iterator<iterator>       reverse_iterator;
     typedef ETL_OR_STD::reverse_iterator<const_iterator> const_reverse_iterator;
 
@@ -117,7 +114,9 @@ namespace etl
     /// Returns a reference to the value at index 'i'.
     ///\param i The index of the element to access.
     //*************************************************************************
-    ETL_CONSTEXPR reference at(size_t i)
+    ETL_NODISCARD
+    ETL_CONSTEXPR14
+    reference at(size_t i)
     {
       ETL_ASSERT(i < SIZE, ETL_ERROR(array_out_of_range));
 
@@ -128,7 +127,9 @@ namespace etl
     /// Returns a const reference to the value at index 'i'.
     ///\param i The index of the element to access.
     //*************************************************************************
-    ETL_CONSTEXPR const_reference at(size_t i) const
+    ETL_NODISCARD
+    ETL_CONSTEXPR14
+    const_reference at(size_t i) const
     {
       ETL_ASSERT(i < SIZE, ETL_ERROR(array_out_of_range));
 
@@ -140,7 +141,9 @@ namespace etl
     /// Returns a reference to the value at index 'i'.
     ///\param i The index of the element to access.
     //*************************************************************************
-    ETL_CONSTEXPR reference operator[](size_t i)
+    ETL_NODISCARD
+    ETL_CONSTEXPR14
+    reference operator[](size_t i)
     {
       return _buffer[i];
     }
@@ -150,6 +153,7 @@ namespace etl
     /// Returns a const reference to the value at index 'i'.
     ///\param i The index of the element to access.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR const_reference operator[](size_t i) const
     {
       return _buffer[i];
@@ -158,7 +162,9 @@ namespace etl
     //*************************************************************************
     /// Returns a reference to the first element.
     //*************************************************************************
-    ETL_CONSTEXPR reference front()
+    ETL_NODISCARD
+    ETL_CONSTEXPR14
+    reference front()
     {
       return _buffer[0];
     }
@@ -166,6 +172,7 @@ namespace etl
     //*************************************************************************
     /// Returns a const reference to the first element.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR const_reference front() const
     {
       return _buffer[0];
@@ -174,7 +181,9 @@ namespace etl
     //*************************************************************************
     /// Returns a reference to the last element.
     //*************************************************************************
-    ETL_CONSTEXPR reference back()
+    ETL_NODISCARD
+    ETL_CONSTEXPR14
+    reference back()
     {
       return _buffer[SIZE - 1];
     }
@@ -182,6 +191,7 @@ namespace etl
     //*************************************************************************
     /// Returns a const reference to the last element.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR const_reference back() const
     {
       return _buffer[SIZE - 1];
@@ -190,7 +200,9 @@ namespace etl
     //*************************************************************************
     /// Returns a pointer to the first element of the internal buffer.
     //*************************************************************************
-    ETL_CONSTEXPR pointer data() ETL_NOEXCEPT
+    ETL_NODISCARD
+    ETL_CONSTEXPR14
+    pointer data() ETL_NOEXCEPT
     {
       return &_buffer[0];
     }
@@ -198,6 +210,7 @@ namespace etl
     //*************************************************************************
     /// Returns a const pointer to the first element of the internal buffer.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR const_pointer data() const ETL_NOEXCEPT
     {
       return &_buffer[0];
@@ -210,7 +223,9 @@ namespace etl
     //*************************************************************************
     /// Returns an iterator to the beginning of the array.
     //*************************************************************************
-    ETL_CONSTEXPR iterator begin() ETL_NOEXCEPT
+    ETL_NODISCARD
+    ETL_CONSTEXPR14
+    iterator begin() ETL_NOEXCEPT
     {
       return &_buffer[0];
     }
@@ -218,6 +233,7 @@ namespace etl
     //*************************************************************************
     /// Returns a const iterator to the beginning of the array.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR const_iterator begin() const ETL_NOEXCEPT
     {
       return &_buffer[0];
@@ -226,6 +242,7 @@ namespace etl
     //*************************************************************************
     /// Returns a const iterator to the beginning of the array.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR const_iterator cbegin() const ETL_NOEXCEPT
     {
       return begin();
@@ -234,31 +251,37 @@ namespace etl
     //*************************************************************************
     /// Returns an iterator to the end of the array.
     //*************************************************************************
-    ETL_CONSTEXPR iterator end() ETL_NOEXCEPT
+    ETL_NODISCARD
+    ETL_CONSTEXPR14
+    iterator end() ETL_NOEXCEPT
     {
-      return &_buffer[SIZE];
+      return _buffer + SIZE;
     }
 
     //*************************************************************************
     /// Returns a const iterator to the end of the array.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR const_iterator end() const ETL_NOEXCEPT
     {
-      return &_buffer[SIZE];
+      return _buffer + SIZE;
     }
 
     //*************************************************************************
     // Returns a const iterator to the end of the array.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR const_iterator cend() const ETL_NOEXCEPT
     {
-      return &_buffer[SIZE];
+      return _buffer + SIZE;
     }
 
     //*************************************************************************
     // Returns an reverse iterator to the reverse beginning of the array.
     //*************************************************************************
-    ETL_CONSTEXPR reverse_iterator rbegin() ETL_NOEXCEPT
+    ETL_NODISCARD
+    ETL_CONSTEXPR14
+    reverse_iterator rbegin() ETL_NOEXCEPT
     {
       return reverse_iterator(end());
     }
@@ -266,6 +289,7 @@ namespace etl
     //*************************************************************************
     /// Returns a const reverse iterator to the reverse beginning of the array.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR const_reverse_iterator rbegin() const ETL_NOEXCEPT
     {
       return const_reverse_iterator(end());
@@ -274,6 +298,7 @@ namespace etl
     //*************************************************************************
     /// Returns a const reverse iterator to the reverse beginning of the array.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR const_reverse_iterator crbegin() const ETL_NOEXCEPT
     {
       return const_reverse_iterator(end());
@@ -282,7 +307,9 @@ namespace etl
     //*************************************************************************
     /// Returns a reverse iterator to the end of the array.
     //*************************************************************************
-    ETL_CONSTEXPR reverse_iterator rend() ETL_NOEXCEPT
+    ETL_NODISCARD
+    ETL_CONSTEXPR14
+    reverse_iterator rend() ETL_NOEXCEPT
     {
       return reverse_iterator(begin());
     }
@@ -290,6 +317,7 @@ namespace etl
     //*************************************************************************
     /// Returns a const reverse iterator to the end of the array.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR const_reverse_iterator rend() const ETL_NOEXCEPT
     {
       return const_reverse_iterator(begin());
@@ -298,6 +326,7 @@ namespace etl
     //*************************************************************************
     /// Returns a const reverse iterator to the end of the array.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR const_reverse_iterator crend() const ETL_NOEXCEPT
     {
       return const_reverse_iterator(begin());
@@ -310,6 +339,7 @@ namespace etl
     //*************************************************************************
     /// Returns <b>true</b> if the array size is zero.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR bool empty() const ETL_NOEXCEPT
     {
       return (SIZE == 0);
@@ -318,6 +348,7 @@ namespace etl
     //*************************************************************************
     /// Returns the size of the array.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR size_t size() const ETL_NOEXCEPT
     {
       return SIZE;
@@ -326,6 +357,7 @@ namespace etl
     //*************************************************************************
     /// Returns the maximum possible size of the array.
     //*************************************************************************
+    ETL_NODISCARD
     ETL_CONSTEXPR size_t max_size() const ETL_NOEXCEPT
     {
       return SIZE;
@@ -339,16 +371,16 @@ namespace etl
     /// Fills the array with the specified value.
     ///\param value The value to fill the array with.
     //*************************************************************************
-    void fill(parameter_t value)
+    ETL_CONSTEXPR14 void fill(parameter_t value)
     {
-      etl::fill(begin(), end(), value);
+      etl::fill(_buffer, _buffer + SIZE, value);
     }
 
     //*************************************************************************
     /// Swaps the contents of this array and another.
     ///\param other A reference to the other array.
     //*************************************************************************
-    void swap(array& other) ETL_NOEXCEPT
+    ETL_CONSTEXPR14 void swap(array& other) ETL_NOEXCEPT
     {
       using ETL_OR_STD::swap; // Allow ADL
 
@@ -363,11 +395,12 @@ namespace etl
     /// If the range is smaller than the array then the unused array elements are left unmodified.
     ///\param first The iterator to the first item in the range.
     ///\param last  The iterator to one past the final item in the range.
+    ///\return An iterator to the first unassigned array element, or end().
     //*************************************************************************
     template <typename TIterator>
-    void assign(TIterator first, const TIterator last)
+    iterator assign(TIterator first, const TIterator last)
     {
-      etl::copy_s(first, last, begin(), end());
+      return etl::copy_s(first, last, begin(), end());
     }
 
     //*************************************************************************
@@ -375,15 +408,18 @@ namespace etl
     /// If the range is smaller than the array then the unused array elements are initialised with the supplied value.
     ///\param first The iterator to the first item in the range.
     ///\param last  The iterator to one past the final item in the range.
+    ///\return An iterator to the first array element set to 'value', or end().
     //*************************************************************************
     template <typename TIterator>
-    void assign(TIterator first, const TIterator last, parameter_t value)
+    iterator assign(TIterator first, const TIterator last, parameter_t value)
     {
       // Copy from the range.
-      iterator p = etl::copy(first, last, begin());
+      iterator p = etl::copy_s(first, last, begin(), end());
 
       // Initialise any that are left.
       etl::fill(p, end(), value);
+
+      return p;
     }
 
     //*************************************************************************
@@ -563,6 +599,9 @@ namespace etl
     }
   };
 
+  template <typename T, size_t SIZE_>
+  ETL_CONSTANT size_t array<T, SIZE_>::SIZE;
+
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
@@ -578,7 +617,7 @@ namespace etl
   template <typename T, typename... TValues>
   constexpr auto make_array(TValues&&... values) -> etl::array<T, sizeof...(TValues)>
   {
-    return { { etl::forward<T>(values)... } };
+    return { etl::forward<T>(values)... };
   }
 #endif
 

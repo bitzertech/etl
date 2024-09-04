@@ -49,33 +49,6 @@ SOFTWARE.
 namespace etl
 {
   //***************************************************************************
-  /// Exception base for bit streams
-  //***************************************************************************
-  class bit_stream_exception : public etl::exception
-  {
-  public:
-
-    bit_stream_exception(string_type reason_, string_type file_name_, numeric_type line_number_)
-      : exception(reason_, file_name_, line_number_)
-    {
-    }
-  };
-
-  //***************************************************************************
-  ///\ingroup string
-  /// String empty exception.
-  //***************************************************************************
-  class bit_stream_overflow : public etl::bit_stream_exception
-  {
-  public:
-
-    bit_stream_overflow(string_type file_name_, numeric_type line_number_)
-      : bit_stream_exception(ETL_ERROR_TEXT("bit_stream:overflow", ETL_BIT_STREAM_FILE_ID"A"), file_name_, line_number_)
-    {
-    }
-  };
-
-  //***************************************************************************
   /// Encodes and decodes bitstreams.
   /// Data must be stored in the stream in network order.
   //***************************************************************************
@@ -89,8 +62,8 @@ namespace etl
     /// Default constructor.
     //***************************************************************************
     bit_stream()
-      : pdata(ETL_NULLPTR),
-        length_chars(0U)
+      : pdata(ETL_NULLPTR)
+      , length_chars(0U)
     {
       restart();
     }
@@ -99,8 +72,8 @@ namespace etl
     /// Construct from range.
     //***************************************************************************
     bit_stream(void* begin_, void* end_)
-      : pdata(reinterpret_cast<unsigned char*>(begin_)),
-        length_chars(etl::distance(reinterpret_cast<unsigned char*>(begin_), reinterpret_cast<unsigned char*>(end_)))
+      : pdata(reinterpret_cast<unsigned char*>(begin_))
+      , length_chars(etl::distance(reinterpret_cast<unsigned char*>(begin_), reinterpret_cast<unsigned char*>(end_)))
     {
       restart();
     }
@@ -109,8 +82,8 @@ namespace etl
     /// Construct from begin and length.
     //***************************************************************************
     bit_stream(void* begin_, size_t length_)
-      : pdata(reinterpret_cast<unsigned char*>(begin_)),
-        length_chars(length_)
+      : pdata(reinterpret_cast<unsigned char*>(begin_))
+      , length_chars(length_)
     {
       restart();
     }
@@ -377,7 +350,8 @@ namespace etl
           {
             unsigned char mask_width = static_cast<unsigned char>(etl::min(nbits, bits_available_in_char));
             nbits -= mask_width;
-            uint32_t mask = ((uint32_t(1U) << mask_width) - 1U) << nbits;
+            uint32_t mask = ((1U << mask_width) - 1U) << nbits;
+            //uint32_t mask = ((uint32_t(1U) << mask_width) - 1U) << nbits;
 
             // Move chunk to lowest char bits.
             // Chunks are never larger than one char.
@@ -562,7 +536,8 @@ namespace etl
     //***************************************************************************
     /// Construct from span.
     //***************************************************************************
-    bit_stream_writer(etl::span<char> span_, etl::endian stream_endianness_, callback_type callback_ = callback_type())
+    template <size_t Length>
+    bit_stream_writer(const etl::span<char, Length>& span_, etl::endian stream_endianness_, callback_type callback_ = callback_type())
       : pdata(span_.begin())
       , length_chars(span_.size_bytes())
       , stream_endianness(stream_endianness_)
@@ -574,7 +549,8 @@ namespace etl
     //***************************************************************************
     /// Construct from span.
     //***************************************************************************
-    bit_stream_writer(etl::span<unsigned char> span_, etl::endian stream_endianness_, callback_type callback_ = callback_type())
+    template <size_t Length>
+    bit_stream_writer(const etl::span<unsigned char, Length>& span_, etl::endian stream_endianness_, callback_type callback_ = callback_type())
       : pdata(reinterpret_cast<char*>(span_.begin()))
       , length_chars(span_.size_bytes())
       , stream_endianness(stream_endianness_)
@@ -653,7 +629,7 @@ namespace etl
     void write_unchecked(bool value)
     {
       unsigned char chunk = value ? 1 : 0;
-      write_data<unsigned char>(static_cast<unsigned char>(chunk), 1);
+      write_data<unsigned char>(chunk, 1);
     }
 
     //***************************************************************************
@@ -666,10 +642,6 @@ namespace etl
       if (success)
       {
         write_unchecked(value);
-      }
-      else
-      {
-        ETL_ASSERT_FAIL(ETL_ERROR(etl::bit_stream_overflow));
       }
 
       return success;
@@ -700,10 +672,6 @@ namespace etl
       {
         write_unchecked(value, nbits);
       }
-      else
-      {
-        ETL_ASSERT_FAIL(ETL_ERROR(etl::bit_stream_overflow));
-      }
 
       return success;
     }
@@ -729,10 +697,6 @@ namespace etl
         {
           step(static_cast<unsigned char>(nbits));
         }
-      }
-      else
-      {
-        ETL_ASSERT_FAIL(ETL_ERROR(etl::bit_stream_overflow));
       }
 
       return success;
@@ -897,7 +861,7 @@ namespace etl
     }
 
     //***************************************************************************
-    /// Sets the function to call afer every write.
+    /// Sets the function to call after every write.
     //***************************************************************************
     void set_callback(callback_type callback_)
     {
@@ -905,7 +869,7 @@ namespace etl
     }
 
     //***************************************************************************
-    /// Gets the function to call afer every write.
+    /// Gets the function to call after every write.
     //***************************************************************************
     callback_type get_callback() const
     {
@@ -1070,7 +1034,8 @@ namespace etl
     //***************************************************************************
     /// Construct from span.
     //***************************************************************************
-    bit_stream_reader(etl::span<char> span_, etl::endian stream_endianness_)
+    template <size_t Length>
+    bit_stream_reader(const etl::span<char, Length>& span_, etl::endian stream_endianness_)
       : pdata(span_.begin())
       , length_chars(span_.size_bytes())
       , stream_endianness(stream_endianness_)
@@ -1081,8 +1046,33 @@ namespace etl
     //***************************************************************************
     /// Construct from span.
     //***************************************************************************
-    bit_stream_reader(etl::span<unsigned char> span_, etl::endian stream_endianness_)
-      : pdata(reinterpret_cast<char*>(span_.begin()))
+    template <size_t Length>
+    bit_stream_reader(const etl::span<unsigned char, Length>& span_, etl::endian stream_endianness_)
+      : pdata(reinterpret_cast<const char*>(span_.begin()))
+      , length_chars(span_.size_bytes())
+      , stream_endianness(stream_endianness_)
+    {
+      restart();
+    }
+
+    //***************************************************************************
+    /// Construct from span.
+    //***************************************************************************
+    template <size_t Length>
+    bit_stream_reader(const etl::span<const char, Length>& span_, etl::endian stream_endianness_)
+      : pdata(span_.begin())
+      , length_chars(span_.size_bytes())
+      , stream_endianness(stream_endianness_)
+    {
+      restart();
+    }
+
+    //***************************************************************************
+    /// Construct from span.
+    //***************************************************************************
+    template <size_t Length>
+    bit_stream_reader(const etl::span<const unsigned char, Length>& span_, etl::endian stream_endianness_)
+      : pdata(reinterpret_cast<const char*>(span_.begin()))
       , length_chars(span_.size_bytes())
       , stream_endianness(stream_endianness_)
     {
@@ -1093,8 +1083,8 @@ namespace etl
     /// Construct from range.
     //***************************************************************************
     bit_stream_reader(void* begin_, void* end_, etl::endian stream_endianness_)
-      : pdata(reinterpret_cast<char*>(begin_))
-      , length_chars(etl::distance(reinterpret_cast<char*>(begin_), reinterpret_cast<char*>(end_)))
+      : pdata(reinterpret_cast<const char*>(begin_))
+      , length_chars(etl::distance(reinterpret_cast<const char*>(begin_), reinterpret_cast<const char*>(end_)))
       , stream_endianness(stream_endianness_)
     {
       restart();
@@ -1104,7 +1094,7 @@ namespace etl
     /// Construct from begin and length.
     //***************************************************************************
     bit_stream_reader(void* begin_, size_t length_, etl::endian stream_endianness_)
-      : pdata(reinterpret_cast<char*>(begin_))
+      : pdata(reinterpret_cast<const char*>(begin_))
       , length_chars(length_)
       , stream_endianness(stream_endianness_)
     {
@@ -1144,10 +1134,6 @@ namespace etl
       {
         result = read_unchecked<bool>();
       }
-      else
-      {
-        ETL_ASSERT_FAIL(ETL_ERROR(etl::bit_stream_overflow));
-      }
 
       return result;
     }
@@ -1179,10 +1165,6 @@ namespace etl
       if (bits_available >= nbits)
       {
         result = read_unchecked<T>(nbits); 
-      }
-      else
-      {
-        ETL_ASSERT_FAIL(ETL_ERROR(etl::bit_stream_overflow));
       }
 
       return result;
@@ -1265,10 +1247,6 @@ namespace etl
         {
           step(static_cast<unsigned char>(nbits));
         }
-      }
-      else
-      {
-        ETL_ASSERT_FAIL_AND_RETURN_VALUE(ETL_ERROR(etl::bit_stream_overflow), false);
       }
 
       return success;
@@ -1369,7 +1347,7 @@ namespace etl
       bits_available -= nbits;
     }
 
-    char*             pdata;                  ///< The start of the bitstream buffer.
+    const char*       pdata;                  ///< The start of the bitstream buffer.
     size_t            length_chars;           ///< The length, in char, of the bitstream buffer.
     const etl::endian stream_endianness;      ///< The endianness of the stream data.
     unsigned char     bits_available_in_char; ///< The number of available bits in the current char.

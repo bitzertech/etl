@@ -31,7 +31,9 @@
 
 #include "platform.h"
 #include "atomic.h"
+#include "exception.h"
 #include "error_handler.h"
+#include "utility.h"
 
 #include <stdint.h>
 
@@ -170,7 +172,7 @@ namespace etl
     //***************************************************************************
     ETL_NODISCARD virtual int32_t decrement_reference_count() ETL_OVERRIDE
     {
-      return int32_t(1);
+      return 1;
     }
 
     //***************************************************************************
@@ -178,7 +180,7 @@ namespace etl
     //***************************************************************************
     ETL_NODISCARD virtual int32_t get_reference_count() const ETL_OVERRIDE
     {
-      return int32_t(1);
+      return 1;
     }
   };
 
@@ -221,6 +223,17 @@ namespace etl
       : object(object_)
     {
     }
+
+#if ETL_USING_CPP11
+    //***************************************************************************
+    /// Constructor.
+    //***************************************************************************
+    template <typename... TArgs>
+    reference_counted_object(TArgs&&... args)
+      : object(etl::forward<TArgs>(args)...)
+    {
+    }
+#endif
 
     //***************************************************************************
     /// Get a reference to the counted object.

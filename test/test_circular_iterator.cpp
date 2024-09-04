@@ -8,7 +8,7 @@ https://www.etlcpp.com
 Copyright(c) 2022 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining data copy
-of this software and associated documentation ciles(the "Software"), to deal
+of this software and associated documentation files(the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
 copies of the Software, and to permit persons to whom the Software is
@@ -31,7 +31,19 @@ SOFTWARE.
 #include <forward_list>
 #include <array>
 
+#include "etl/iterator.h"
 #include "etl/circular_iterator.h"
+
+#if ETL_USING_STL
+  #if  ETL_USING_CPP14
+    #define ETL_OR_STD_R std
+  #else
+    // STL doesn't have rbegin() or rend() before C++14
+    #define ETL_OR_STD_R etl
+  #endif
+#else
+  #define ETL_OR_STD_R etl
+#endif
 
 namespace 
 {		
@@ -63,8 +75,8 @@ namespace
       CHECK(std::begin(data) == ci.begin());
       CHECK(std::end(data)   == ci.end());
       CHECK(std::begin(data) == ci.current());
-      CHECK_EQUAL(std::size(data), size_t(std::distance(ci.begin(), ci.end())));
-      CHECK_EQUAL(std::size(data), ci.size());
+      CHECK_EQUAL(ETL_OR_STD17::size(data), size_t(std::distance(ci.begin(), ci.end())));
+      CHECK_EQUAL(ETL_OR_STD17::size(data), ci.size());
     }
 
     //*************************************************************************
@@ -80,8 +92,8 @@ namespace
       CHECK(std::begin(data) == ci.begin());
       CHECK(std::end(data)   == ci.end());
       CHECK(start            == ci.current());
-      CHECK_EQUAL(std::size(data), size_t(std::distance(ci.begin(), ci.end())));
-      CHECK_EQUAL(std::size(data), ci.size());
+      CHECK_EQUAL(ETL_OR_STD17::size(data), size_t(std::distance(ci.begin(), ci.end())));
+      CHECK_EQUAL(ETL_OR_STD17::size(data), ci.size());
     }
 
     //*************************************************************************
@@ -151,7 +163,7 @@ namespace
     {
       const DataL data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-      etl::circular_iterator<DataL::const_reverse_iterator> ci(std::rbegin(data), std::rend(data));
+      etl::circular_iterator<DataL::const_reverse_iterator> ci(ETL_OR_STD_R::rbegin(data), ETL_OR_STD_R::rend(data));
 
       CHECK(data.rbegin() == ci.begin());
       CHECK(data.rend()   == ci.end());
@@ -164,10 +176,10 @@ namespace
     {
       const DataL data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-      DataL::const_reverse_iterator start = std::rbegin(data);
+      DataL::const_reverse_iterator start = ETL_OR_STD_R::rbegin(data);
       start++;
 
-      etl::circular_iterator<DataL::const_reverse_iterator> ci(std::rbegin(data), std::rend(data), start);
+      etl::circular_iterator<DataL::const_reverse_iterator> ci(ETL_OR_STD_R::rbegin(data), ETL_OR_STD_R::rend(data), start);
 
       CHECK(data.rbegin() == ci.begin());
       CHECK(data.rend()   == ci.end());
@@ -293,7 +305,7 @@ namespace
       const int data[]     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
       const DataE expected = { 8, 7, 6, 5, 4, 3, 2, 1, 0, 9 };
 
-      etl::circular_iterator<ConstReversePointer> ci(std::rbegin(data), std::rend(data));
+      etl::circular_iterator<ConstReversePointer> ci(ETL_OR_STD_R::rbegin(data), ETL_OR_STD_R::rend(data));
 
       for (int i = 0; i < 20; ++i)
       {
@@ -307,7 +319,7 @@ namespace
       const DataL data     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
       const DataE expected = { 8, 7, 6, 5, 4, 3, 2, 1, 0, 9 };
 
-      etl::circular_iterator<DataL::const_reverse_iterator> ci(std::rbegin(data), std::rend(data));
+      etl::circular_iterator<DataL::const_reverse_iterator> ci(ETL_OR_STD_R::rbegin(data), ETL_OR_STD_R::rend(data));
 
       for (int i = 0; i < 20; ++i)
       {
@@ -321,7 +333,7 @@ namespace
       const int data[]     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
       const DataE expected = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
 
-      etl::circular_iterator<ConstReversePointer> ci(std::rbegin(data), std::rend(data));
+      etl::circular_iterator<ConstReversePointer> ci(ETL_OR_STD_R::rbegin(data), ETL_OR_STD_R::rend(data));
 
       for (int i = 0; i < 20; ++i)
       {
@@ -335,7 +347,7 @@ namespace
       const DataL data     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
       const DataE expected = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
 
-      etl::circular_iterator<DataL::const_reverse_iterator> ci(std::rbegin(data), std::rend(data));
+      etl::circular_iterator<DataL::const_reverse_iterator> ci(ETL_OR_STD_R::rbegin(data), ETL_OR_STD_R::rend(data));
 
       for (int i = 0; i < 20; ++i)
       {
@@ -377,7 +389,7 @@ namespace
       const int data[]     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
       const DataE expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-      etl::circular_iterator<ConstReversePointer> ci(std::rbegin(data), std::rend(data));
+      etl::circular_iterator<ConstReversePointer> ci(ETL_OR_STD_R::rbegin(data), ETL_OR_STD_R::rend(data));
 
       for (int i = 0; i < 20; ++i)
       {
@@ -391,7 +403,7 @@ namespace
       const DataL data     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
       const DataE expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-      etl::circular_iterator<DataL::const_reverse_iterator> ci(std::rbegin(data), std::rend(data));
+      etl::circular_iterator<DataL::const_reverse_iterator> ci(ETL_OR_STD_R::rbegin(data), ETL_OR_STD_R::rend(data));
 
       for (int i = 0; i < 20; ++i)
       {
@@ -433,7 +445,7 @@ namespace
       const int data[]     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
       const DataE expected = { 9, 0, 1, 2, 3, 4, 5, 6, 7, 8 };
 
-      etl::circular_iterator<ConstReversePointer> ci(std::rbegin(data), std::rend(data));
+      etl::circular_iterator<ConstReversePointer> ci(ETL_OR_STD_R::rbegin(data), ETL_OR_STD_R::rend(data));
 
       for (int i = 0; i < 20; ++i)
       {
@@ -447,7 +459,7 @@ namespace
       const DataL data     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
       const DataE expected = { 9, 0, 1, 2, 3, 4, 5, 6, 7, 8 };
 
-      etl::circular_iterator<DataL::const_reverse_iterator> ci(std::rbegin(data), std::rend(data));
+      etl::circular_iterator<DataL::const_reverse_iterator> ci(ETL_OR_STD_R::rbegin(data), ETL_OR_STD_R::rend(data));
 
       for (int i = 0; i < 20; ++i)
       {
@@ -458,46 +470,46 @@ namespace
     //*************************************************************************
     TEST(test_member_dereference_operator_for_random_access_iterator)
     {
-      struct Test
+      struct Object
       {
         int data;
         int b;
       };
 
-      Test test[] = { { 1, 2 }, { 3, 4 }, { 5, 6 } };
+      Object object[] = { { 1, 2 }, { 3, 4 }, { 5, 6 } };
 
-      etl::circular_iterator<Test*> ci(std::begin(test), std::end(test));
+      etl::circular_iterator<Object*> ci(std::begin(object), std::end(object));
 
-      CHECK_EQUAL(test[0].data, ci->data);
-      CHECK_EQUAL(test[0].b, ci->b);
+      CHECK_EQUAL(object[0].data, ci->data);
+      CHECK_EQUAL(object[0].b, ci->b);
 
       *ci = { 7, 8 };
 
-      CHECK_EQUAL(test[0].data, ci->data);
-      CHECK_EQUAL(test[0].b, ci->b);
+      CHECK_EQUAL(object[0].data, ci->data);
+      CHECK_EQUAL(object[0].b, ci->b);
 
       ++ci;
-      CHECK_EQUAL(test[1].data, ci->data);
-      CHECK_EQUAL(test[1].b, ci->b);
+      CHECK_EQUAL(object[1].data, ci->data);
+      CHECK_EQUAL(object[1].b, ci->b);
 
       ++ci;
-      CHECK_EQUAL(test[2].data, ci->data);
-      CHECK_EQUAL(test[2].b, ci->b);
+      CHECK_EQUAL(object[2].data, ci->data);
+      CHECK_EQUAL(object[2].b, ci->b);
     }
 
     //*************************************************************************
     TEST(test_member_dereference_operator_for_bidirectional_iterator)
     {
-      struct Test
+      struct Object
       {
         int data;
         int b;
       };
 
-      std::list<Test> test = { { 1, 2 }, { 3, 4 }, { 5, 6 } };
-      std::list<Test>::iterator itr = test.begin();
+      std::list<Object> object = { { 1, 2 }, { 3, 4 }, { 5, 6 } };
+      std::list<Object>::iterator itr = object.begin();
 
-      etl::circular_iterator<std::list<Test>::iterator> ci(std::begin(test), std::end(test));
+      etl::circular_iterator<std::list<Object>::iterator> ci(std::begin(object), std::end(object));
 
       CHECK_EQUAL(itr->b, ci->b);
 
@@ -516,16 +528,16 @@ namespace
     //*************************************************************************
     TEST(test_member_dereference_operator_for_forward_iterator)
     {
-      struct Test
+      struct Object
       {
         int data;
         int b;
       };
 
-      std::forward_list<Test> test = { { 1, 2 }, { 3, 4 }, { 5, 6 } };
-      std::forward_list<Test>::iterator itr = test.begin();
+      std::forward_list<Object> object = { { 1, 2 }, { 3, 4 }, { 5, 6 } };
+      std::forward_list<Object>::iterator itr = object.begin();
 
-      etl::circular_iterator<std::forward_list<Test>::iterator> ci(std::begin(test), std::end(test));
+      etl::circular_iterator<std::forward_list<Object>::iterator> ci(std::begin(object), std::end(object));
 
       CHECK_EQUAL(itr->b, ci->b);
 
@@ -645,7 +657,7 @@ namespace
         
         for (int i = 0; i < 20; i += step)
         {
-          CHECK_EQUAL(expected[i % std::size(data)], *ci);
+          CHECK_EQUAL(expected[i % ETL_OR_STD17::size(data)], *ci);
           ci -= step;
         }
       }
@@ -663,7 +675,7 @@ namespace
 
         for (int i = 0; i < 20; i += step)
         {
-          CHECK_EQUAL(expected[i % std::size(data)], *ci);
+          CHECK_EQUAL(expected[i % ETL_OR_STD17::size(data)], *ci);
           ci = ci - step;
         }
       }

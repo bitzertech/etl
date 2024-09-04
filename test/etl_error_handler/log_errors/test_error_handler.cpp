@@ -31,8 +31,6 @@ SOFTWARE.
 #include <stdio.h>
 #include <iostream>
 
-etl::error_handler eh;
-
 //*****************************************************************************
 struct ErrorLog
 {
@@ -88,7 +86,7 @@ void AssertFail()
 //*****************************************************************************
 void AssertAndReturn(bool state)
 {
-  ETL_ASSERT_AND_RETURN(state, ETL_ERROR(test_exception_1));
+  ETL_ASSERT_OR_RETURN(state, ETL_ERROR(test_exception_1));
 
   ++assert_return_count;
 }
@@ -104,7 +102,7 @@ void AssertFailAndReturn()
 //*****************************************************************************
 bool AssertAndReturnValue(bool state)
 {
-  ETL_ASSERT_AND_RETURN_VALUE(state, ETL_ERROR(test_exception_1), true);
+  ETL_ASSERT_OR_RETURN_VALUE(state, ETL_ERROR(test_exception_1), true);
 
   ++assert_return_count;
   return false;
@@ -124,7 +122,7 @@ int main()
 {
   static ErrorLog error_log;
 
-  etl::error_handler::set_callback<ErrorLog, &ErrorLog::Log>(error_log);
+  etl::error_handler::set_callback<ErrorLog, error_log, &ErrorLog::Log>();
 
   Assert(false);
   Assert(true);

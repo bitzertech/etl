@@ -85,7 +85,7 @@ namespace etl
   ///\ingroup binary
   //***************************************************************************
   /// Definition for non-zero NBITS.
-  template <const size_t NBITS>
+  template <size_t NBITS>
   struct max_value_for_nbits
   {
     typedef typename etl::smallest_uint_for_bits<NBITS>::type value_type;
@@ -96,15 +96,15 @@ namespace etl
   template <>
   struct max_value_for_nbits<0>
   {
-      typedef etl::smallest_uint_for_bits<0>::type value_type;
-      static ETL_CONSTANT value_type value = 0;
+    typedef etl::smallest_uint_for_bits<0>::type value_type;
+    static ETL_CONSTANT value_type value = 0;
   };
 
-  template <const size_t NBITS>
+  template <size_t NBITS>
   ETL_CONSTANT typename max_value_for_nbits<NBITS>::value_type max_value_for_nbits<NBITS>::value;
 
 #if ETL_USING_CPP17
-  template <const size_t NBITS>
+  template <size_t NBITS>
   inline constexpr typename etl::max_value_for_nbits<NBITS>::value_type max_value_for_nbits_v = max_value_for_nbits<NBITS>::value;
 #endif
 
@@ -344,62 +344,28 @@ namespace etl
   }
 
   //***************************************************************************
-  /// Find the position of the first set bit.
-  /// Starts from LSB.
-  ///\ingroup binary
-  //***************************************************************************
-  template <typename T>
-  ETL_CONSTEXPR14 uint_least8_t first_set_bit_position(T value)
-  {
-    return count_trailing_zeros(value);
-  }
-
-  //***************************************************************************
-  /// Find the position of the first clear bit.
-  /// Starts from LSB.
-  ///\ingroup binary
-  //***************************************************************************
-  template <typename T>
-  ETL_CONSTEXPR14 uint_least8_t first_clear_bit_position(T value)
-  {
-    value = ~value;
-    return count_trailing_zeros(value);
-  }
-
-  //***************************************************************************
-  /// Find the position of the first bit that is clear or set.
-  /// Starts from LSB.
-  ///\ingroup binary
-  //***************************************************************************
-  template <typename T>
-  ETL_CONSTEXPR14 uint_least8_t first_bit_position(bool state, T value)
-  {
-    if (!state)
-    {
-      value = ~value;
-    }
-
-    return count_trailing_zeros(value);
-  }
-
-  //***************************************************************************
   /// Gets the value of the bit at POSITION
   /// Starts from LSB.
   ///\ingroup binary
   //***************************************************************************
-  template <const size_t POSITION>
+  template <size_t POSITION>
   struct bit
   {
-    typedef typename etl::smallest_uint_for_bits<POSITION + 1>::type value_type;
+    typedef typename etl::smallest_uint_for_bits<POSITION + 1U>::type value_type;
     static ETL_CONSTANT value_type value = value_type(1) << POSITION;
   };
 
-  template <const size_t POSITION>
+  template <size_t POSITION>
   ETL_CONSTANT typename bit<POSITION>::value_type bit<POSITION>::value;
 
+#if ETL_USING_CPP11
+  template <size_t POSITION>
+  using bit_t = typename etl::bit<POSITION>::value_type;
+#endif
+
 #if ETL_USING_CPP17
-  template <const size_t POSITION>
-  inline constexpr typename bit<POSITION>::value_type bit_v = bit<POSITION>::value;
+  template <size_t POSITION>
+  inline constexpr bit_t<POSITION> bit_v = etl::bit<POSITION>::value;
 #endif
 
   //***************************************************************************
@@ -544,6 +510,9 @@ namespace etl
     static ETL_CONSTANT uint8_t value = uint8_t((value2 >> 4U) | ((value2 & 0x0FU) << 4U));
   };
 
+  template <uint8_t Value>
+  ETL_CONSTANT uint8_t reverse_bits_const<uint8_t, Value>::value;
+
   //***********************************
   template <int8_t Value>
   struct reverse_bits_const<int8_t, Value>
@@ -557,6 +526,9 @@ namespace etl
 
     static ETL_CONSTANT int8_t value = int8_t((value2 >> 4U) | ((value2 & 0x0FU) << 4U));
   };
+
+  template <int8_t Value>
+  ETL_CONSTANT int8_t reverse_bits_const<int8_t, Value>::value;
 #endif
 
   //***************************************************************************
@@ -591,6 +563,9 @@ namespace etl
     static ETL_CONSTANT uint16_t value = uint16_t((value3 >> 8U) | ((value3 & 0xFFU) << 8U));
   };
 
+  template <uint16_t Value>
+  ETL_CONSTANT uint16_t reverse_bits_const<uint16_t, Value>::value;
+
   //***********************************
   template <int16_t Value>
   struct reverse_bits_const<int16_t, Value>
@@ -605,6 +580,9 @@ namespace etl
 
     static ETL_CONSTANT int16_t value = int16_t((value3 >> 8U) | ((value3 & 0xFFU) << 8U));
   };
+
+  template <int16_t Value>
+  ETL_CONSTANT int16_t reverse_bits_const<int16_t, Value>::value;
 
   //***************************************************************************
   /// Reverse 32 bits.
@@ -640,6 +618,9 @@ namespace etl
     static ETL_CONSTANT uint32_t value = uint32_t((value4 >> 16U) | ((value4 & 0xFFFFU) << 16U));
   };
 
+  template <uint32_t Value>
+  ETL_CONSTANT uint32_t reverse_bits_const<uint32_t, Value>::value;
+
   //***********************************
   template <int32_t Value>
   struct reverse_bits_const<int32_t, Value>
@@ -655,6 +636,9 @@ namespace etl
 
     static ETL_CONSTANT int32_t value = int32_t((value4 >> 16U) | ((value4 & 0xFFFFUL) << 16U));
   };
+
+  template <int32_t Value>
+  ETL_CONSTANT int32_t reverse_bits_const<int32_t, Value>::value;
 
 #if ETL_USING_64BIT_TYPES
   //***************************************************************************
@@ -693,6 +677,9 @@ namespace etl
     static ETL_CONSTANT uint64_t value = uint64_t((value5 >> 32U) | ((value5 & 0xFFFFFFFFULL) << 32U));
   };
 
+  template <uint64_t Value>
+  ETL_CONSTANT uint64_t reverse_bits_const<uint64_t, Value>::value;
+
   //***********************************
   template <int64_t Value>
   struct reverse_bits_const<int64_t, Value>
@@ -709,6 +696,9 @@ namespace etl
 
     static ETL_CONSTANT int64_t value = int64_t((value5 >> 32U) | ((value5 & 0xFFFFFFFFULL) << 32U));
   };
+
+  template <int64_t Value>
+  ETL_CONSTANT int64_t reverse_bits_const<int64_t, Value>::value;
 #endif
 
   //***************************************************************************
@@ -2068,6 +2058,45 @@ namespace etl
     return static_cast<T>(count_leading_ones(static_cast<unsigned_t>(value)));
   }
 
+  //***************************************************************************
+  /// Find the position of the first set bit.
+  /// Starts from LSB.
+  ///\ingroup binary
+  //***************************************************************************
+  template <typename T>
+  ETL_CONSTEXPR14 uint_least8_t first_set_bit_position(T value)
+  {
+    return count_trailing_zeros(value);
+  }
+
+  //***************************************************************************
+  /// Find the position of the first clear bit.
+  /// Starts from LSB.
+  ///\ingroup binary
+  //***************************************************************************
+  template <typename T>
+  ETL_CONSTEXPR14 uint_least8_t first_clear_bit_position(T value)
+  {
+    value = ~value;
+    return count_trailing_zeros(value);
+  }
+
+  //***************************************************************************
+  /// Find the position of the first bit that is clear or set.
+  /// Starts from LSB.
+  ///\ingroup binary
+  //***************************************************************************
+  template <typename T>
+  ETL_CONSTEXPR14 uint_least8_t first_bit_position(bool state, T value)
+  {
+    if (!state)
+    {
+      value = ~value;
+    }
+
+    return count_trailing_zeros(value);
+  }
+
 #if ETL_USING_8BIT_TYPES
   //*****************************************************************************
   /// Binary interleave
@@ -2187,17 +2216,31 @@ namespace etl
   {
   public:
 
+    ETL_STATIC_ASSERT(NBits <= etl::integral_limits<T>::bits, "Mask exceeds type size");
+
     static ETL_CONSTANT T value = static_cast<T>(etl::max_value_for_nbits<NBits>::value);
   };
 
+  template <typename T, size_t NBits>
+  ETL_CONSTANT T lsb_mask<T, NBits>::value;
+
+  //***********************************
+  template <typename T, size_t NBits>
+  ETL_CONSTEXPR T make_lsb_mask()
+  {
+    ETL_STATIC_ASSERT(NBits <= etl::integral_limits<T>::bits, "Mask exceeds type size");
+
+    return lsb_mask<T, NBits>::value;
+  }
+
   //***********************************
   template <typename T>
-  ETL_CONSTEXPR14 T make_lsb_mask(size_t nbits)
+  ETL_CONSTEXPR T make_lsb_mask(size_t nbits)
   {
     typedef typename etl::make_unsigned<T>::type type;
 
-    return (nbits == etl::integral_limits<type>::bits) ? static_cast<T>(etl::integral_limits<type>::max)
-                                                       : static_cast<T>((static_cast<type>(1U) << nbits) - 1U);
+    return (nbits == 0U) ? static_cast<T>(0)
+      : static_cast<T>(static_cast<type>(~0) >> (etl::integral_limits<type>::bits - nbits));
   }
 
   //***********************************
@@ -2206,15 +2249,137 @@ namespace etl
   {
   public:
 
+    ETL_STATIC_ASSERT(NBits <= etl::integral_limits<T>::bits, "Mask exceeds type size");
+
     static ETL_CONSTANT T value = static_cast<T>(etl::reverse_bits_const<T, lsb_mask<T, NBits>::value>::value);
   };
+
+  template <typename T, size_t NBits>
+  ETL_CONSTANT T msb_mask<T, NBits>::value;
 
   //***********************************
   template <typename T>
   ETL_CONSTEXPR T make_msb_mask(size_t nbits)
   {
-    return static_cast<T>(etl::reverse_bits(make_lsb_mask<T>(nbits)));
+    typedef typename etl::make_unsigned<T>::type type;
+
+    return (nbits == 0U) ? static_cast<T>(0)
+                         : static_cast<T>(static_cast<type>(~0) << (etl::integral_limits<type>::bits - nbits));
   }
+
+  //***********************************
+  template <typename T, size_t NBits>
+  ETL_CONSTEXPR T make_msb_mask()
+  {
+    ETL_STATIC_ASSERT(NBits <= etl::integral_limits<T>::bits, "Mask exceeds type size");
+
+    return msb_mask<T, NBits>::value;
+  }
+
+  //***************************************************************************
+  /// Bit 'not' a value
+  ///\ingroup binary
+  //***************************************************************************
+  template <typename T>
+  struct binary_not : public etl::unary_function<T, T>
+  {
+    //***********************************
+    ETL_NODISCARD
+    ETL_CONSTEXPR
+    T operator ()(T value) const ETL_NOEXCEPT
+    {
+      ETL_STATIC_ASSERT(etl::is_integral<T>::value, "Not an integral type");
+
+      return ~value;
+    }
+  };
+
+  //***************************************************************************
+  /// Bit 'and' a value with another
+  ///\ingroup binary
+  //***************************************************************************
+  template <typename T>
+  struct binary_and : public etl::unary_function<T, T>
+  {
+    //***********************************
+    ETL_CONSTEXPR 
+    explicit binary_and(T parameter_) ETL_NOEXCEPT
+      : parameter(parameter_)
+    {
+    }
+
+    //***********************************
+    ETL_NODISCARD
+    ETL_CONSTEXPR 
+    T operator ()(T value) const ETL_NOEXCEPT
+    {
+      ETL_STATIC_ASSERT(etl::is_integral<T>::value, "Not an integral type");
+
+      return value & parameter;
+    }
+
+  private:
+
+    T parameter;
+  };
+
+  //***************************************************************************
+  /// Bit 'or' a value with another
+  ///\ingroup binary
+  //***************************************************************************
+  template <typename T>
+  struct binary_or : public etl::unary_function<T, T>
+  {
+    //***********************************
+    ETL_CONSTEXPR
+    explicit binary_or(T parameter_) ETL_NOEXCEPT
+      : parameter(parameter_)
+    {
+    }
+
+    //***********************************
+    ETL_NODISCARD
+    ETL_CONSTEXPR
+    T operator ()(T value) const ETL_NOEXCEPT
+    {
+      ETL_STATIC_ASSERT(etl::is_integral<T>::value, "Not an integral type");
+
+      return value | parameter;
+    }
+
+  private:
+
+    T parameter;
+  };
+
+  //***************************************************************************
+  /// Bit 'exclusive-or' a value with another
+  ///\ingroup binary
+  //***************************************************************************
+  template <typename T>
+  struct binary_xor : public etl::unary_function<T, T>
+  {
+    //***********************************
+    ETL_CONSTEXPR
+    explicit binary_xor(T parameter_) ETL_NOEXCEPT
+      : parameter(parameter_)
+    {
+    }
+
+    //***********************************
+    ETL_NODISCARD
+    ETL_CONSTEXPR
+    T operator ()(T value) const ETL_NOEXCEPT
+    {
+      ETL_STATIC_ASSERT(etl::is_integral<T>::value, "Not an integral type");
+
+      return value ^ parameter;
+    }
+
+  private:
+
+    T parameter;
+  };
 
   //***************************************************************************
   /// 8 bit binary byte constants.

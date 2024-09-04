@@ -95,9 +95,14 @@ SOFTWARE.
   #define ETL_OBSERVER_FORCE_CPP03_IMPLEMENTATION
   #define ETL_MESSAGE_ROUTER_FORCE_CPP03_IMPLEMENTATION
   #define ETL_FSM_FORCE_CPP03_IMPLEMENTATION
-  #define ETL_DELEGATE_FORCE_CPP03_IMPLEMENTATION
+  //#define ETL_DELEGATE_FORCE_CPP03_IMPLEMENTATION // C++03 implementation is tested at the same time as the C++11 and above.
   #define ETL_SINGLETON_FORCE_CPP03_IMPLEMENTATION
   #define ETL_BYTE_FORCE_CPP03_IMPLEMENTATION
+  #define ETL_LIST_FORCE_CPP03_IMPLEMENTATION
+  #define ETL_FORWARD_LIST_FORCE_CPP03_IMPLEMENTATION
+  #define ETL_FLAT_SET_FORCE_CPP03_IMPLEMENTATION
+  #define ETL_FLAT_MULTISET_FORCE_CPP03_IMPLEMENTATION
+  #define ETL_VARIANT_POOL_FORCE_CPP03_IMPLEMENTATION
 #endif
 
 #if defined(ETL_FORCE_TEST_CPP11)
@@ -108,10 +113,6 @@ SOFTWARE.
 #include "../include/etl/profiles/determine_compiler_language_support.h"
 #include "../include/etl/profiles/determine_compiler_version.h"
 #include "../include/etl/profiles/determine_development_os.h"
-
-#if ETL_CPP17_NOT_SUPPORTED
-  #error THE UNIT TESTS REQUIRE C++17 SUPPORT
-#endif
 
 #if defined(ETL_COMPILER_GCC)
   #if (ETL_COMPILER_VERSION < 8)

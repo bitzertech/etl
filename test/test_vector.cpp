@@ -216,6 +216,7 @@ namespace
     {
       Data data(initial_data.begin(), initial_data.end());
       Data other_data;
+      other_data.push_back(1);
 
       other_data = std::move(data);
 
@@ -417,6 +418,15 @@ namespace
       }
 
       CHECK_EQUAL(data.size(), NEW_SIZE);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_reserve)
+    {
+      Data data;
+
+      CHECK_NO_THROW(data.reserve(data.max_size()));
+      CHECK_THROW(data.reserve(data.max_size() + 1), etl::vector_out_of_bounds);
     }
 
     //*************************************************************************
@@ -793,6 +803,94 @@ namespace
 
         CHECK(is_equal);
       }
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_default)
+    {
+      const int Initial = 1;
+      const int Default = 2;
+
+      struct S
+      {
+        S()
+          : value(Default)
+        {
+        }
+
+        S(int v)
+          : value(v)
+        {
+        }
+
+        bool operator ==(const S& rhs) const
+        {
+          return value == rhs.value;
+        }
+
+        int value;
+      };
+
+      // First fill with Initial values.
+      etl::vector<S, SIZE> data;
+      data.resize(SIZE, S(Initial));
+      data.clear();
+
+      // Then emplace Default values.
+      for (size_t i = 0; i < SIZE; ++i)
+      {
+        data.emplace(data.end());
+      }
+
+      // Compare with an array of default values.
+      std::array<S, SIZE> compare_data;
+      compare_data.fill(S());
+
+      CHECK_TRUE(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_back_default)
+    {
+      const int Initial = 1;
+      const int Default = 2;
+
+      struct S
+      {
+        S()
+          : value(Default)
+        {
+        }
+
+        S(int v)
+          : value(v)
+        {
+        }
+
+        bool operator ==(const S& rhs) const
+        {
+          return value == rhs.value;
+        }
+
+        int value;
+      };
+
+      // First fill with Initial values.
+      etl::vector<S, SIZE> data;
+      data.resize(SIZE, S(Initial));
+      data.clear();
+
+      // Then emplace Default values.
+      for (size_t i = 0; i < SIZE; ++i)
+      {
+        data.emplace_back();
+      }
+
+      // Compare with an array of default values.
+      std::array<S, SIZE> compare_data;
+      compare_data.fill(S());
+
+      CHECK_TRUE(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
     }
 
     //*************************************************************************
@@ -1267,7 +1365,7 @@ namespace
 
         }
 
-        S(int i): i(i){}
+        S(int i_): i(i_){}
 
         int i;
       };
@@ -1300,7 +1398,7 @@ namespace
 
         }
 
-        S(int i): i(i){}
+        S(int i_): i(i_){}
 
         int i;
       };
@@ -1338,12 +1436,14 @@ namespace
     }
 
     //*************************************************************************
+#include "etl/private/diagnostic_uninitialized_push.h"
     TEST(test_three_parameter_insert_same_type_not_iterator)
     {
       // No compilation error.
       etl::vector<int, 10> v;
       v.insert(v.end(), 5, 5);
     }
+#include "etl/private/diagnostic_pop.h"
 
     //*************************************************************************
     TEST(remove)
@@ -1379,8 +1479,8 @@ namespace
     {
       auto data = etl::make_vector<char>(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 
-      using Type = std::remove_reference_t<decltype(data[0])>;
-      CHECK((std::is_same_v<int, Type>));
+      using Type = typename std::remove_reference<decltype(data[0])>::type;
+      CHECK((std::is_same<int, Type>::value));
 
       CHECK_EQUAL(0, data[0]);
       CHECK_EQUAL(1, data[1]);
@@ -1392,6 +1492,29 @@ namespace
       CHECK_EQUAL(7, data[7]);
       CHECK_EQUAL(8, data[8]);
       CHECK_EQUAL(9, data[9]);
+    }
+#endif
+
+    //*************************************************************************
+#if ETL_HAS_INITIALIZER_LIST
+    TEST(test_make_vector_issue_931_two_pairs)
+    {
+      auto data3 = etl::make_vector(etl::make_pair(1, 2),
+                                    etl::make_pair(3, 4),
+                                    etl::make_pair(5, 6));
+      CHECK_EQUAL(1, data3[0].first);
+      CHECK_EQUAL(2, data3[0].second);
+      CHECK_EQUAL(3, data3[1].first);
+      CHECK_EQUAL(4, data3[1].second);
+      CHECK_EQUAL(5, data3[2].first);
+      CHECK_EQUAL(6, data3[2].second);
+
+      auto data2 = etl::make_vector(etl::make_pair(1, 2),
+                                    etl::make_pair(3, 4));
+      CHECK_EQUAL(1, data3[0].first);
+      CHECK_EQUAL(2, data3[0].second);
+      CHECK_EQUAL(3, data3[1].first);
+      CHECK_EQUAL(4, data3[1].second);
     }
 #endif
 

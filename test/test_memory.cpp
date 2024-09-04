@@ -40,14 +40,12 @@ SOFTWARE.
 #include <numeric>
 #include <stdint.h>
 #include <vector>
-
 #include <memory>
-
 
 namespace
 {
-  typedef std::string non_trivial_t;
-  typedef uint32_t    trivial_t;
+  typedef std::string    non_trivial_t;
+  typedef uint32_t       trivial_t;
   typedef TestDataM<int> moveable_t;
 
   const size_t SIZE = 10UL;
@@ -640,25 +638,25 @@ namespace
     //*************************************************************************
     TEST(test_create_copy)
     {
-      struct Test : etl::create_copy<Test>
+      struct Object : etl::create_copy<Object>
       {
         std::string text;
       };
 
-      char buffer[sizeof(Test)];
+      char buffer[sizeof(Object)];
 
-      Test test1;
-      test1.text = "12345678";
-      test1.create_copy_at(buffer);
-      test1.text = "87654321";
+      Object object1;
+      object1.text = "12345678";
+      object1.create_copy_at(buffer);
+      object1.text = "87654321";
 
-      Test& test2 = *reinterpret_cast<Test*>(buffer);
+      Object& object2 = *reinterpret_cast<Object*>(buffer);
 
-      CHECK_EQUAL(std::string("87654321"), test1.text);
-      CHECK_EQUAL(std::string("12345678"), test2.text);
+      CHECK_EQUAL(std::string("87654321"), object1.text);
+      CHECK_EQUAL(std::string("12345678"), object2.text);
 
       int count = 0;
-      test1.create_copy_at(buffer, count);
+      object1.create_copy_at(buffer, count);
 
       CHECK_EQUAL(1, count);
     }
@@ -666,23 +664,23 @@ namespace
     //*************************************************************************
     TEST(test_create_make_copy)
     {
-      struct Test : etl::create_copy<Test>
+      struct Object : etl::create_copy<Object>
       {
         std::string text;
       };
 
-      char buffer[sizeof(Test)];
+      char buffer[sizeof(Object)];
 
-      Test test1;
-      test1.text = "12345678";
-      Test& test2 = test1.make_copy_at(buffer);
-      test1.text = "87654321";
+      Object object1;
+      object1.text = "12345678";
+      Object& object2 = object1.make_copy_at(buffer);
+      object1.text = "87654321";
 
-      CHECK_EQUAL(std::string("87654321"), test1.text);
-      CHECK_EQUAL(std::string("12345678"), test2.text);
+      CHECK_EQUAL(std::string("87654321"), object1.text);
+      CHECK_EQUAL(std::string("12345678"), object2.text);
 
       int count = 0;
-      test1.make_copy_at(buffer, count);
+      object1.make_copy_at(buffer, count);
 
       CHECK_EQUAL(1, count);
     }
@@ -925,6 +923,17 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_unique_ptr_nullptr_from_nullptr_assignment)
+    {
+      etl::unique_ptr<int> up;
+
+      up = nullptr;
+
+      CHECK(up.get() == nullptr);
+      CHECK(!bool(up));
+    }
+
+    //*************************************************************************
     TEST(test_unique_ptr_move_assignment)
     {
       etl::unique_ptr<int> up1(new int(1));
@@ -1118,10 +1127,10 @@ namespace
     //*************************************************************************
     TEST(test_uninitialized_buffer)
     {
-      typedef etl::uninitialized_buffer<sizeof(uint32_t), 4, etl::alignment_of_v<uint32_t>> storage32_t;
+      typedef etl::uninitialized_buffer<sizeof(uint32_t), 4, etl::alignment_of<uint32_t>::value> storage32_t;
 
-      size_t alignment = etl::alignment_of_v<storage32_t>;
-      size_t expected  = std::alignment_of_v<uint32_t>;
+      size_t alignment = etl::alignment_of<storage32_t>::value;
+      size_t expected  = std::alignment_of<uint32_t>::value;
 
       CHECK_EQUAL(expected, alignment);
     }
@@ -1154,8 +1163,8 @@ namespace
       CHECK_EQUAL(2U, refbuffer[2]);
       CHECK_EQUAL(3U, refbuffer[3]);
 
-      size_t alignment = etl::alignment_of_v<storage32_t>;
-      size_t expected  = std::alignment_of_v<uint32_t>;
+      size_t alignment = etl::alignment_of<storage32_t>::value;
+      size_t expected  = std::alignment_of<uint32_t>::value;
 
       CHECK_EQUAL(expected, alignment);
     }

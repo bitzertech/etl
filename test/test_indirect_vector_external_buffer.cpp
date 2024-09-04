@@ -149,7 +149,7 @@ namespace
 
       DataDC data(lookup, pool);
 
-      CHECK_EQUAL(data.size(), size_t(0UL));
+      CHECK_EQUAL(data.size(), 0UL);
       CHECK(data.empty());
       CHECK_EQUAL(data.capacity(), SIZE);
       CHECK_EQUAL(data.max_size(), SIZE);
@@ -223,7 +223,7 @@ namespace
       const NDC INITIAL_VALUE("1");
 
       std::vector<NDC> compare_data(INITIAL_SIZE, INITIAL_VALUE);
-      DataNDC data(size_t(5UL), NDC("1"), lookup, pool);
+      DataNDC data(5UL, NDC("1"), lookup, pool);
 
       CHECK(data.size() == INITIAL_SIZE);
       CHECK(!data.empty());
@@ -364,6 +364,7 @@ namespace
       std::unique_ptr<uint32_t> p2(new uint32_t(2U));
       std::unique_ptr<uint32_t> p3(new uint32_t(3U));
       std::unique_ptr<uint32_t> p4(new uint32_t(4U));
+      std::unique_ptr<uint32_t> p5(new uint32_t(5U));
 
       Data data1(lookup1, pool1);
       data1.push_back(std::move(p1));
@@ -377,6 +378,7 @@ namespace
       CHECK(!bool(p4));
 
       Data data2(lookup2, pool2);
+      data2.push_back(std::move(p5));
       data2 = std::move(data1);
 
       CHECK_EQUAL(0U, data1.size());
@@ -428,6 +430,7 @@ namespace
       std::unique_ptr<uint32_t> p2(new uint32_t(2U));
       std::unique_ptr<uint32_t> p3(new uint32_t(3U));
       std::unique_ptr<uint32_t> p4(new uint32_t(4U));
+      std::unique_ptr<uint32_t> p5(new uint32_t(5U));
 
       Data data1(lookup1, pool1);
       data1.push_back(std::move(p1));
@@ -436,6 +439,7 @@ namespace
       data1.push_back(std::move(p4));
 
       Data data2(lookup2, pool2);
+      data2.push_back(std::move(p5));
 
       IData& idata1 = data1;
       IData& idata2 = data2;
@@ -590,6 +594,17 @@ namespace
       data.resize(NEW_SIZE, INITIAL_VALUE);
 
       CHECK_EQUAL(data.size(), NEW_SIZE);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_reserve)
+    {
+      LookupNDC lookup;
+      PoolNDC   pool;
+      DataNDC   data(lookup, pool);
+
+      CHECK_NO_THROW(data.reserve(data.max_size()));
+      CHECK_THROW(data.reserve(data.max_size() + 1), etl::vector_out_of_bounds);
     }
 
     //*************************************************************************
@@ -1241,7 +1256,7 @@ namespace
       DataNDC data(compare_data.begin(), compare_data.end(), lookup, pool);
       data.clear();
 
-      CHECK_EQUAL(data.size(), size_t(0UL));
+      CHECK_EQUAL(data.size(), 0UL);
     }
 
     //*************************************************************************
@@ -1545,9 +1560,9 @@ namespace
     {
       struct functor
       {
-        void operator()(const NDC& ndc)
+        void operator()(const NDC& object)
         {
-          result += ndc.value;
+          result += object.value;
         }
 
         std::string result;
@@ -1579,9 +1594,9 @@ namespace
     {
       struct functor
       {
-        bool operator()(const NDC& ndc)
+        bool operator()(const NDC& object)
         {
-          return ndc.value == "4";
+          return object.value == "4";
         }
 
         std::string result;

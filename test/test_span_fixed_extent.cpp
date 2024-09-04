@@ -35,6 +35,9 @@ SOFTWARE.
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#if ETL_USING_CPP20
+  #include <span>
+#endif
 
 namespace
 {
@@ -47,7 +50,12 @@ namespace
     typedef std::vector<int> StlVData;
 
     typedef etl::span<int, 10U> View;
+    typedef etl::span<int, 9U> SView;
     typedef etl::span<const int, 10U> CView;
+
+#if ETL_USING_CPP20
+    using StdView = std::span<int, 10U>;
+#endif
 
     EtlData etldata = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     StlData stldata = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -68,15 +76,20 @@ namespace
     const int ccdata[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     const int* pccdata = ccdata;
 
+#if ETL_USING_CPP20
     //*************************************************************************
-    TEST(test_default_constructor)
+    TEST(test_construct_from_std_span)
     {
-      View view;
+      StdView stdview(stldata);
+      View view(stdview);
 
-      CHECK_EQUAL(10U, view.size());
-      CHECK_EQUAL(10U, view.max_size());
-      CHECK(!view.empty());
+      CHECK_EQUAL(stdview.size(), view.size());
+      CHECK_EQUAL(stdview.size(), view.size());
+
+      bool isEqual = std::equal(view.begin(), view.end(), stdview.begin());
+      CHECK(isEqual);
     }
+#endif
 
     //*************************************************************************
     TEST(test_constructor_etl_array_1)
@@ -249,9 +262,7 @@ namespace
     //*************************************************************************
     TEST(test_implicit_constructor_c_array_2)
     {
-      CView view;
-
-      view = ccdata;
+      CView view(ccdata);
 
       CHECK_EQUAL(SIZE, view.size());
       CHECK_EQUAL(SIZE, view.max_size());
@@ -306,15 +317,44 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_copy_constructor_from_same_span_type)
+    {
+      etl::array<char, 10> data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+      const etl::span<char, 10> view1(data.data(), data.data() + data.size());
+      etl::span<char, 10> view2(view1);
+
+      CHECK_EQUAL(data.size(), view1.size());
+      CHECK_EQUAL(data.size(), view2.size());
+
+      bool isEqual = std::equal(view1.begin(), view1.end(), view2.begin());
+      CHECK(isEqual);
+    }
+
+    //*************************************************************************
+    TEST(test_copy_constructor_from_different_span_type)
+    {
+      etl::array<char, 10> data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+      const etl::span<char, 10> view1(data.data(), data.data() + data.size());
+      etl::span<const char, 10> view2(view1);
+
+      CHECK_EQUAL(data.size(), view1.size());
+      CHECK_EQUAL(data.size(), view2.size());
+
+      bool isEqual = std::equal(view1.begin(), view1.end(), view2.begin());
+      CHECK(isEqual);
+    }
+
+    //*************************************************************************
     TEST(test_assign_from_span)
     {
       View view1(etldata);
-      View view2;
+      View view2 = view1;
 
       CView cview1(etldata);
-      CView cview2;
+      CView cview2 = view2;
 
-      view2 = view1;
       cview2 = cview1;
 
       CHECK_EQUAL(view1.size(), view2.size());
@@ -610,8 +650,8 @@ namespace
       View  view(etldata.begin(), etldata.end());
       CView cview(etldata.begin(), etldata.end());
 
-      size_t hashdata = etl::private_hash::generic_hash<size_t>(reinterpret_cast<const uint8_t*>(&etldata[0]),
-                                                                reinterpret_cast<const uint8_t*>(&etldata[etldata.size()]));
+      size_t hashdata = etl::private_hash::generic_hash<size_t>(reinterpret_cast<const uint8_t*>(etldata.data()),
+                                                                reinterpret_cast<const uint8_t*>(etldata.data() + etldata.size()));
 
       size_t hashview  = etl::hash<View>()(view);
       size_t hashcview = etl::hash<CView>()(cview);
@@ -620,6 +660,7 @@ namespace
       CHECK_EQUAL(hashdata, hashcview);
     }
 
+#if ETL_USING_CPP17
     //*************************************************************************
     TEST(test_template_deduction_guide_for_c_array)
     {
@@ -627,8 +668,8 @@ namespace
 
       etl::span s = data;
 
-      CHECK_EQUAL(std::size(data), s.extent);
-      CHECK_EQUAL(std::size(data), s.size());
+      CHECK_EQUAL(ETL_OR_STD17::size(data), s.extent);
+      CHECK_EQUAL(ETL_OR_STD17::size(data), s.size());
       CHECK((std::is_same_v<int, std::remove_reference_t<decltype(s.front())>>));
     }
 
@@ -640,8 +681,8 @@ namespace
 
       etl::span s = data;
 
-      CHECK_EQUAL(std::size(data), s.extent);
-      CHECK_EQUAL(std::size(data), s.size());
+      CHECK_EQUAL(ETL_OR_STD17::size(data), s.extent);
+      CHECK_EQUAL(ETL_OR_STD17::size(data), s.size());
       CHECK((std::is_same_v<int, std::remove_reference_t<decltype(s.front())>>));
     }
 #endif
@@ -653,8 +694,8 @@ namespace
 
       etl::span s = data;
 
-      CHECK_EQUAL(std::size(data), s.extent);
-      CHECK_EQUAL(std::size(data), s.size());
+      CHECK_EQUAL(ETL_OR_STD17::size(data), s.extent);
+      CHECK_EQUAL(ETL_OR_STD17::size(data), s.size());
       CHECK((std::is_same_v<int, std::remove_reference_t<decltype(s.front())>>));
     }
 
@@ -681,6 +722,7 @@ namespace
       CHECK_EQUAL(4U, s.size());
       CHECK((std::is_same_v<int, std::remove_reference_t<decltype(s.front())>>));
     }
+#endif
 
     //*************************************************************************
     void f_issue_481(etl::span<const char, 10>)
@@ -751,8 +793,8 @@ namespace
     //*************************************************************************
     TEST(test_circular_iterator_pre_increment)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array expected{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
+      etl::array<int, 10> data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 20> expected{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
 
       View view{ data };
 
@@ -767,8 +809,8 @@ namespace
     //*************************************************************************
     TEST(test_circular_iterator_pre_increment_for_subspan)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array expected{ 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5, 2 };
+      etl::array<int, 10> data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 20> expected{ 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5, 2 };
 
       View view{ data };
       etl::span<int, 4U> subspan = view.subspan<2, 4>();
@@ -784,8 +826,8 @@ namespace
     //*************************************************************************
     TEST(test_circular_iterator_post_increment)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array expected{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 20> expected{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
       View view{ data };
 
@@ -793,15 +835,15 @@ namespace
 
       for (int i = 0; i < 20; ++i)
       {
-        CHECK_EQUAL(expected[i % std::size(expected)], *sci++);
+        CHECK_EQUAL(expected[i % ETL_OR_STD17::size(expected)], *sci++);
       }
     }
 
     //*************************************************************************
     TEST(test_circular_iterator_post_increment_for_subspan)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array expected{ 2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5 };
+      etl::array<int, 10> data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 20> expected{ 2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5 };
 
       View view{ data };
       etl::span<int, 4U> subspan = view.subspan<2, 4>();
@@ -817,8 +859,8 @@ namespace
     //*************************************************************************
     TEST(test_circular_reverse_iterator_pre_increment)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array expected{ 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 9 };
+      etl::array<int, 10> data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 20> expected{ 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 9 };
 
       View view{ data };
 
@@ -826,15 +868,15 @@ namespace
 
       for (int i = 0; i < 20; ++i)
       {
-        CHECK_EQUAL(expected[i % std::size(expected)], *++sci);
+        CHECK_EQUAL(expected[i % ETL_OR_STD17::size(expected)], *++sci);
       }
     }
 
     //*************************************************************************
     TEST(test_circular_reverse_iterator_pre_increment_for_subspan)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array expected{ 4, 3, 2, 5, 4, 3, 2, 5, 4, 3, 2, 5, 4, 3, 2, 5, 4, 3, 2, 5 };
+      etl::array<int, 10> data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 20> expected{ 4, 3, 2, 5, 4, 3, 2, 5, 4, 3, 2, 5, 4, 3, 2, 5, 4, 3, 2, 5 };
 
       View view{ data };
       etl::span<int, 4U> subspan = view.subspan<2, 4>();
@@ -843,15 +885,15 @@ namespace
 
       for (int i = 0; i < 20; ++i)
       {
-        CHECK_EQUAL(expected[i % std::size(expected)], *++sci);
+        CHECK_EQUAL(expected[i % ETL_OR_STD17::size(expected)], *++sci);
       }
     }
 
     //*************************************************************************
     TEST(test_circular_reverse_iterator_post_increment)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array expected{ 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
+      etl::array<int, 10> data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 20> expected{ 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
 
       View view{ data };
 
@@ -859,15 +901,15 @@ namespace
 
       for (int i = 0; i < 20; ++i)
       {
-        CHECK_EQUAL(expected[i % std::size(expected)], *sci++);
+        CHECK_EQUAL(expected[i % ETL_OR_STD17::size(expected)], *sci++);
       }
     }
 
     //*************************************************************************
     TEST(test_circular_reverse_iterator_post_increment_for_subspan)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array expected{ 5, 4, 3, 2, 5, 4, 3, 2, 5, 4, 3, 2, 5, 4, 3, 2, 5, 4, 3, 2 };
+      etl::array<int, 10> data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 20> expected{ 5, 4, 3, 2, 5, 4, 3, 2, 5, 4, 3, 2, 5, 4, 3, 2, 5, 4, 3, 2 };
 
       View view{ data };
       etl::span<int, 4U> subspan = view.subspan<2, 4>();
@@ -876,15 +918,15 @@ namespace
 
       for (int i = 0; i < 20; ++i)
       {
-        CHECK_EQUAL(expected[i % std::size(expected)], *sci++);
+        CHECK_EQUAL(expected[i % ETL_OR_STD17::size(expected)], *sci++);
       }
     }
 
     //*************************************************************************
     TEST(test_operator_plus_equals)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array expected{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 20> expected{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
       View view{ data };
 
@@ -903,8 +945,8 @@ namespace
     //*************************************************************************
     TEST(test_operator_plus)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array expected{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> expected{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
       View view{ data };
 
@@ -923,8 +965,8 @@ namespace
     //*************************************************************************
     TEST(test_operator_minus_equals)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array expected{ 0, 9, 8, 7, 6, 5, 4, 3, 2, 1 };
+      etl::array<int, 10> data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> expected{ 0, 9, 8, 7, 6, 5, 4, 3, 2, 1 };
 
       View view{ data };
 
@@ -943,8 +985,8 @@ namespace
     //*************************************************************************
     TEST(test_operator_minus)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array expected{ 0, 9, 8, 7, 6, 5, 4, 3, 2, 1 };
+      etl::array<int, 10> data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> expected{ 0, 9, 8, 7, 6, 5, 4, 3, 2, 1 };
 
       View view{ data };
 
@@ -963,109 +1005,122 @@ namespace
     //*************************************************************************
     TEST(test_operator_equality)
     {
-      etl::array data1{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array data2{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array data3{ 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
+      etl::array<int, 10> data1{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> data2{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> data3{ 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
+      etl::array<int, 9>  data4{ 0, 1, 2, 3, 4, 5, 6, 7, 8 };
 
       View view1{ data1 };
       View view2{ data1 };
       View view3{ data2 };
       View view4{ data3 };
-      View view6;
-      View view7;
+      SView view8{ data4 };
 
       CHECK_TRUE(etl::equal(view1, view2));
       CHECK_TRUE(etl::equal(view1, view3));
       CHECK_FALSE(etl::equal(view1, view4));
-      CHECK_TRUE(etl::equal(view6, view6));
-      CHECK_TRUE(etl::equal(view6, view7));
+      CHECK_FALSE(etl::equal(view1, view8));
 
       CHECK_TRUE(view1 == view2);
       CHECK_FALSE(view1 == view3);
       CHECK_FALSE(view1 == view4);
-      CHECK_TRUE(view6 == view6);
-      CHECK_TRUE(view6 == view7);
+      CHECK_FALSE(view1 == view8);
     }
 
     //*************************************************************************
     TEST(test_operator_equality_one_is_const)
     {
-      etl::array data1{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array data2{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array data3{ 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
+      etl::array<int, 10> data1{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> data2{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> data3{ 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
 
       View view1{ data1 };
       CView view2{ data1 };
       CView view3{ data2 };
       CView view4{ data3 };
-      View view6;
-      CView view7;
 
       CHECK_TRUE(etl::equal(view1, view2));
       CHECK_TRUE(etl::equal(view1, view3));
       CHECK_FALSE(etl::equal(view1, view4));
-      CHECK_TRUE(etl::equal(view6, view6));
-      CHECK_TRUE(etl::equal(view6, view7));
 
       CHECK_TRUE(view1 == view2);
       CHECK_FALSE(view1 == view3);
       CHECK_FALSE(view1 == view4);
-      CHECK_TRUE(view6 == view6);
-      CHECK_TRUE(view6 == view7);
     }
 
     //*************************************************************************
     TEST(test_operator_not_equal)
     {
-      etl::array data1{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array data2{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array data3{ 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
+      etl::array<int, 10> data1{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> data2{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> data3{ 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
 
       View view1{ data1 };
       View view2{ data1 };
       View view3{ data2 };
       View view4{ data3 };
-      View view6;
-      View view7;
 
       CHECK_TRUE(etl::equal(view1, view2));
       CHECK_TRUE(etl::equal(view1, view3));
       CHECK_FALSE(etl::equal(view1, view4));
-      CHECK_TRUE(etl::equal(view6, view6));
-      CHECK_TRUE(etl::equal(view6, view7));
 
       CHECK_FALSE(view1 != view2);
       CHECK_TRUE(view1 != view3);
       CHECK_TRUE(view1 != view4);
-      CHECK_FALSE(view6 != view6);
-      CHECK_FALSE(view6 != view7);
     }
 
     //*************************************************************************
     TEST(test_operator_not_equal_one_is_const)
     {
-      etl::array data1{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array data2{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      etl::array data3{ 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
+      etl::array<int, 10> data1{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> data2{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array<int, 10> data3{ 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
 
       View view1{ data1 };
       CView view2{ data1 };
       CView view3{ data2 };
       CView view4{ data3 };
-      View view6;
-      View view7;
 
       CHECK_TRUE(etl::equal(view1, view2));
       CHECK_TRUE(etl::equal(view1, view3));
       CHECK_FALSE(etl::equal(view1, view4));
-      CHECK_TRUE(etl::equal(view6, view6));
-      CHECK_TRUE(etl::equal(view6, view7));
 
       CHECK_FALSE(view1 != view2);
       CHECK_TRUE(view1 != view3);
       CHECK_TRUE(view1 != view4);
-      CHECK_FALSE(view6 != view6);
-      CHECK_FALSE(view6 != view7);
+    }
+
+    //*************************************************************************
+    TEST(test_convert_span_any_to_span_byte)
+    {
+      float data[2]{3.141592f, 2.71828f};
+
+#if ETL_USING_CPP17
+      auto const const_bytes    = etl::as_bytes(etl::span{ data });
+      auto const writable_bytes = etl::as_writable_bytes(etl::span{ data });
+#else
+      auto const const_bytes    = etl::as_bytes(etl::span<float, 2>(data));
+      auto const writable_bytes = etl::as_writable_bytes(etl::span<float, 2>(data));
+#endif
+
+      CHECK_EQUAL(const_bytes.size(),    sizeof(data));
+      CHECK_EQUAL(writable_bytes.size(), sizeof(data));
+
+      etl::byte* pdata = reinterpret_cast<etl::byte*>(data);
+
+      // Test the reading of bytes.
+      for (size_t i = 0; i < sizeof(data); ++i)
+      {
+        CHECK_EQUAL(int(pdata[i]), int(const_bytes[i]));
+        CHECK_EQUAL(int(pdata[i]), int(writable_bytes[i]));
+      }
+
+      // Test writing of bytes.
+      for (size_t i = 0; i < writable_bytes.size(); ++i)
+      {
+        writable_bytes[i] = ~writable_bytes[i];
+        CHECK_EQUAL(int(pdata[i]), int(writable_bytes[i]));
+      }
     }
 
 #include "etl/private/diagnostic_pop.h"

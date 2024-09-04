@@ -324,6 +324,21 @@ namespace etl
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
     //*************************************************************************
+    bool emplace()
+    {
+      lock();
+
+      bool result = emplace_implementation();
+
+      unlock();
+
+      return result;
+    }
+
+    //*************************************************************************
+    /// Constructs a value in the queue 'in place'.
+    /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
+    //*************************************************************************
     template <typename T1>
     bool emplace(const T1& value1)
     {
@@ -643,6 +658,26 @@ namespace etl
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     //*************************************************************************
+    bool emplace_implementation()
+    {
+      if (this->current_size != this->MAX_SIZE)
+      {
+        ::new (&p_buffer[this->write_index]) T();
+
+        this->write_index = this->get_next_index(this->write_index, this->MAX_SIZE);
+
+        ++this->current_size;
+
+        return true;
+      }
+
+      // Queue is full.
+      return false;
+    }
+
+    //*************************************************************************
+    /// Constructs a value in the queue 'in place'.
+    //*************************************************************************
     template <typename T1>
     bool emplace_implementation(const T1& value1)
     {
@@ -833,9 +868,9 @@ namespace etl
     /// Default constructor.
     //*************************************************************************
 
-    queue_spsc_locked(const etl::ifunction<void>& lock,
-                      const etl::ifunction<void>& unlock)
-      : base_t(reinterpret_cast<T*>(buffer.raw), MAX_SIZE, lock, unlock)
+    queue_spsc_locked(const etl::ifunction<void>& lock_,
+                      const etl::ifunction<void>& unlock_)
+      : base_t(reinterpret_cast<T*>(buffer.raw), MAX_SIZE, lock_, unlock_)
     {
     }
 
@@ -860,6 +895,9 @@ namespace etl
     /// The uninitialised buffer of T used in the queue_lockable.
     etl::uninitialized_buffer_of<T, MAX_SIZE> buffer;
   };
+
+  template <typename T, size_t SIZE, const size_t MEMORY_MODEL>
+  ETL_CONSTANT typename queue_spsc_locked<T, SIZE, MEMORY_MODEL>::size_type queue_spsc_locked<T, SIZE, MEMORY_MODEL>::MAX_SIZE;
 }
 
 #endif

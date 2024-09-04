@@ -34,6 +34,8 @@ SOFTWARE.
 #include <vector>
 #include <numeric>
 
+#include "etl/private/diagnostic_useless_cast_push.h"
+
 namespace
 {
   //***********************************
@@ -112,7 +114,7 @@ namespace
     std::vector<char> data;
   };
 
-  SUITE(test_bit_stream_big_endian)
+  SUITE(test_bit_stream_writer_big_endian)
   {
     //*************************************************************************
     TEST(test_bit_stream_writer_construction)
@@ -160,7 +162,7 @@ namespace
       CHECK_EQUAL(1U, bit_stream.used_data().size());
 
       // One too many.
-      CHECK_THROW(bit_stream.write(true), etl::bit_stream_overflow);
+      CHECK_FALSE(bit_stream.write(true));
 
       CHECK_EQUAL(1U, bit_stream.data().size());
       CHECK_EQUAL(1U, bit_stream.used_data().size());
@@ -185,7 +187,7 @@ namespace
       }
 
       // One too many.
-      CHECK_THROW(bit_stream.write(int8_t(0)), etl::bit_stream_overflow);
+      CHECK_FALSE(bit_stream.write(int8_t(0)));
 
       CHECK_EQUAL(256U, bit_stream.data().size());
       CHECK_EQUAL(256U, bit_stream.used_data().size());
@@ -213,7 +215,7 @@ namespace
       }
 
       // One too many.
-      CHECK_THROW(bit_stream.write(int8_t(0)), etl::bit_stream_overflow);
+      CHECK_FALSE(bit_stream.write(int8_t(0)));
 
       CHECK_EQUAL(256U, bit_stream.data().size());
       CHECK_EQUAL(256U, bit_stream.used_data().size());
@@ -247,7 +249,7 @@ namespace
       CHECK_EQUAL(sizeof(int16_t) * 4, bit_stream.used_data().size());
 
       // One too many.
-      CHECK_THROW(bit_stream.write(int16_t(0)), etl::bit_stream_overflow);
+      CHECK_FALSE(bit_stream.write(int16_t(0)));
 
       CHECK_EQUAL(sizeof(int16_t) * 4, bit_stream.data().size());
       CHECK_EQUAL(sizeof(int16_t) * 4, bit_stream.used_data().size());
@@ -281,7 +283,7 @@ namespace
       CHECK_EQUAL(sizeof(uint16_t) * 4, bit_stream.used_data().size());
 
       // One too many.
-      CHECK_THROW(bit_stream.write(uint16_t(0)), etl::bit_stream_overflow);
+      CHECK_FALSE(bit_stream.write(uint16_t(0)));
 
       CHECK_EQUAL(sizeof(uint16_t) * 4, bit_stream.data().size());
       CHECK_EQUAL(sizeof(uint16_t) * 4, bit_stream.used_data().size());
@@ -315,7 +317,7 @@ namespace
       CHECK_EQUAL(sizeof(int32_t) * 4, bit_stream.used_data().size());
 
       // One too many.
-      CHECK_THROW(bit_stream.write(int32_t(0)), etl::bit_stream_overflow);
+      CHECK_FALSE(bit_stream.write(int32_t(0)));
 
       CHECK_EQUAL(sizeof(int32_t) * 4, bit_stream.data().size());
       CHECK_EQUAL(sizeof(int32_t) * 4, bit_stream.used_data().size());
@@ -349,7 +351,7 @@ namespace
       CHECK_EQUAL(sizeof(uint32_t) * 4, bit_stream.used_data().size());
 
       // One too many.
-      CHECK_THROW(bit_stream.write(uint32_t(0)), etl::bit_stream_overflow);
+      CHECK_FALSE(bit_stream.write(uint32_t(0)));
 
       CHECK_EQUAL(sizeof(uint32_t) * 4, bit_stream.data().size());
       CHECK_EQUAL(sizeof(uint32_t) * 4, bit_stream.used_data().size());
@@ -383,7 +385,7 @@ namespace
       CHECK_EQUAL(sizeof(int64_t) * 4, bit_stream.used_data().size());
 
       // One too many.
-      CHECK_THROW(bit_stream.write(int64_t(0)), etl::bit_stream_overflow);
+      CHECK_FALSE(bit_stream.write(int64_t(0)));
 
       CHECK_EQUAL(sizeof(int64_t) * 4, bit_stream.data().size());
       CHECK_EQUAL(sizeof(int64_t) * 4, bit_stream.used_data().size());
@@ -417,7 +419,7 @@ namespace
       CHECK_EQUAL(sizeof(uint64_t) * 4, bit_stream.used_data().size());
 
       // One too many.
-      CHECK_THROW(bit_stream.write(uint64_t(0)), etl::bit_stream_overflow);
+      CHECK_FALSE(bit_stream.write(uint64_t(0)));
 
       CHECK_EQUAL(sizeof(uint64_t) * 4, bit_stream.data().size());
       CHECK_EQUAL(sizeof(uint64_t) * 4, bit_stream.used_data().size());
@@ -766,9 +768,9 @@ namespace
     {
       std::array<char, 2 * sizeof(Object)> storage;
       storage.fill(0);
-      std::array expected{ char(0xEC), char(0xBA), char(0xDE), char(0x68),
-                           char(0xAF), char(0xD2), char(0xC5), char(0xC8),
-                           char(0x65), char(0xD3), char(0xDF), char(0x80) };
+      std::array<char, 12U> expected{ char(0xEC), char(0xBA), char(0xDE), char(0x68),
+                                      char(0xAF), char(0xD2), char(0xC5), char(0xC8),
+                                      char(0x65), char(0xD3), char(0xDF), char(0x80) };
 
       etl::bit_stream_writer bit_stream(storage.data(), storage.size(), etl::endian::big);
 
@@ -793,4 +795,6 @@ namespace
     }
   };
 }
+
+#include "etl/private/diagnostic_pop.h"
 

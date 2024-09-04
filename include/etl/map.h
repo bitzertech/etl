@@ -450,7 +450,7 @@ namespace etl
     size_type current_size;   ///< The number of the used nodes.
     const size_type CAPACITY; ///< The maximum size of the map.
     Node* root_node;          ///< The node that acts as the map root.
-    ETL_DECLARE_DEBUG_COUNT
+    ETL_DECLARE_DEBUG_COUNT;
   };
 
   //***************************************************************************
@@ -474,6 +474,14 @@ namespace etl
     typedef value_type*                    pointer;
     typedef const value_type*              const_pointer;
     typedef size_t                         size_type;
+
+    /// Defines the parameter types
+    typedef const key_type&    const_key_reference;
+#if ETL_USING_CPP11
+    typedef key_type&&         rvalue_key_reference;
+#endif
+    typedef mapped_type&       mapped_reference;
+    typedef const mapped_type& const_mapped_reference;
 
     class value_compare
     {
@@ -509,9 +517,6 @@ namespace etl
       value_type value;
     };
 
-    /// Defines the key value parameter type
-    typedef const TKey& key_parameter_t;
-
     //*************************************************************************
     /// How to compare node elements.
     //*************************************************************************
@@ -520,12 +525,12 @@ namespace etl
       return kcompare(node1.value.first, node2.value.first);
     }
 
-    bool node_comp(const Data_Node& node, key_parameter_t key) const
+    bool node_comp(const Data_Node& node, const_key_reference key) const
     {
       return kcompare(node.value.first, key);
     }
 
-    bool node_comp(key_parameter_t key, const Data_Node& node) const
+    bool node_comp(const_key_reference key, const Data_Node& node) const
     {
       return kcompare(key, node.value.first);
     }
@@ -912,29 +917,62 @@ namespace etl
       return const_reverse_iterator(const_iterator(*this, find_limit_node(root_node, kLeft)));
     }
 
+#if ETL_USING_CPP11
     //*********************************************************************
     /// Returns a reference to the value at index 'key'
     ///\param key The key.
     ///\return A reference to the value at index 'key'
     //*********************************************************************
-    mapped_type& operator [](key_parameter_t key)
+    mapped_reference operator [](rvalue_key_reference key)
+    {
+      iterator i_element = find(etl::move(key));
+
+      if (!i_element.p_node)
+      {
+        // Default to no inserted node
+        Node* inserted_node = ETL_NULLPTR;
+
+        ETL_ASSERT(!full(), ETL_ERROR(map_full));
+
+        // Get next available free node
+        Data_Node& node = allocate_data_node_with_key(etl::move(key));
+
+        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+        inserted_node = insert_node(root_node, node);
+
+        // Insert node into tree and return iterator to new node location in tree
+        i_element = iterator(*this, inserted_node);
+      }
+
+      return i_element->second;
+    }
+#endif
+
+    //*********************************************************************
+    /// Returns a reference to the value at index 'key'
+    ///\param key The key.
+    ///\return A reference to the value at index 'key'
+    //*********************************************************************
+    mapped_reference operator [](const_key_reference key)
     {
       iterator i_element = find(key);
 
       if (!i_element.p_node)
       {
-        // Doesn't exist, so create a new one.
-        i_element = insert(ETL_OR_STD::make_pair(key, mapped_type())).first;
+        // Default to no inserted node
+        Node* inserted_node = ETL_NULLPTR;
 
-        ETL_ASSERT(i_element.p_node != ETL_NULLPTR, ETL_ERROR(map_out_of_bounds));
+        ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
-        //Undefined behaviour
-        if (!i_element.p_node)
-        {
-          return end()->second;
-        }
+        // Get next available free node
+        Data_Node& node = allocate_data_node_with_key(key);
+
+        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+        inserted_node = insert_node(root_node, node);
+
+        // Insert node into tree and return iterator to new node location in tree
+        i_element = iterator(*this, inserted_node);
       }
-
 
       return i_element->second;
     }
@@ -945,7 +983,7 @@ namespace etl
     ///\param key The key.
     ///\return A reference to the value at index 'key'
     //*********************************************************************
-    mapped_type& at(key_parameter_t key)
+    mapped_reference at(const_key_reference key)
     {
       iterator i_element = find(key);
 
@@ -957,7 +995,7 @@ namespace etl
 #if ETL_USING_CPP11
     //*********************************************************************
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
-    mapped_type& at(const K& key)
+    mapped_reference at(const K& key)
     {
       iterator i_element = find(key);
 
@@ -973,7 +1011,7 @@ namespace etl
     ///\param key The key.
     ///\return A const reference to the value at index 'key'
     //*********************************************************************
-    const mapped_type& at(key_parameter_t key) const
+    const_mapped_reference at(const_key_reference key) const
     {
       const_iterator i_element = find(key);
 
@@ -985,7 +1023,7 @@ namespace etl
 #if ETL_USING_CPP11
     //*********************************************************************
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
-    const mapped_type& at(const K& key) const
+    const_mapped_reference at(const K& key) const
     {
       const_iterator i_element = find(key);
 
@@ -1022,7 +1060,7 @@ namespace etl
     ///\param key The key to search for.
     ///\return 1 if element was found, 0 otherwise.
     //*********************************************************************
-    size_type count(key_parameter_t key) const
+    size_type count(const_key_reference key) const
     {
       return find_node(root_node, key) ? 1 : 0;
     }
@@ -1040,7 +1078,7 @@ namespace etl
     /// Returns two iterators with bounding (lower bound, upper bound) the key
     /// provided
     //*************************************************************************
-    ETL_OR_STD::pair<iterator, iterator> equal_range(key_parameter_t key)
+    ETL_OR_STD::pair<iterator, iterator> equal_range(const_key_reference key)
     {
       return ETL_OR_STD::make_pair<iterator, iterator>(iterator(*this, find_lower_node(root_node, key)),
                                                        iterator(*this, find_upper_node(root_node, key)));
@@ -1060,7 +1098,7 @@ namespace etl
     /// Returns two const iterators with bounding (lower bound, upper bound)
     /// the key provided.
     //*************************************************************************
-    ETL_OR_STD::pair<const_iterator, const_iterator> equal_range(key_parameter_t key) const
+    ETL_OR_STD::pair<const_iterator, const_iterator> equal_range(const_key_reference key) const
     {
       return ETL_OR_STD::make_pair<const_iterator, const_iterator>(const_iterator(*this, find_lower_node(root_node, key)),
                                                                    const_iterator(*this, find_upper_node(root_node, key)));
@@ -1094,7 +1132,7 @@ namespace etl
     //*************************************************************************
     // Erase the key specified.
     //*************************************************************************
-    size_type erase(key_parameter_t key)
+    size_type erase(const_key_reference key)
     {
       // Return 1 if key value was found and removed
       return remove_node(root_node, key) ? 1 : 0;
@@ -1128,7 +1166,7 @@ namespace etl
     ///\param key The key to search for.
     ///\return An iterator pointing to the element or end() if not found.
     //*********************************************************************
-    iterator find(key_parameter_t key)
+    iterator find(const_key_reference key)
     {
       return iterator(*this, find_node(root_node, key));
     }
@@ -1147,7 +1185,7 @@ namespace etl
     ///\param key The key to search for.
     ///\return An iterator pointing to the element or end() if not found.
     //*********************************************************************
-    const_iterator find(key_parameter_t key) const
+    const_iterator find(const_key_reference key) const
     {
       return const_iterator(*this, find_node(root_node, key));
     }
@@ -1175,13 +1213,12 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
       // Get next available free node
-      Data_Node* node = allocate_data_node(value);
-      if (node != nullptr)
-      {
-        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-        inserted_node = insert_node(root_node, *node);
-        inserted = inserted_node == node;
-      }
+      Data_Node& node = allocate_data_node(value);
+
+      // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+      inserted_node = insert_node(root_node, node);
+      inserted = inserted_node == &node;
+
       // Insert node into tree and return iterator to new node location in tree
       return ETL_OR_STD::make_pair(iterator(*this, inserted_node), inserted);
     }
@@ -1201,14 +1238,11 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
       // Get next available free node
-      Data_Node* node = allocate_data_node(etl::move(value));
+      Data_Node& node = allocate_data_node(etl::move(value));
 
-      if (node != nullptr)
-      {
-        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-        inserted_node = insert_node(root_node, *node);
-        inserted = inserted_node == node;
-      }
+      // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+      inserted_node = insert_node(root_node, node);
+      inserted = inserted_node == &node;
 
       // Insert node into tree and return iterator to new node location in tree
       return ETL_OR_STD::make_pair(iterator(*this, inserted_node), inserted);
@@ -1229,13 +1263,11 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
       // Get next available free node
-      Data_Node* node = allocate_data_node(value);
+      Data_Node& node = allocate_data_node(value);
 
-      if (node != nullptr)
-      {
-        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-        inserted_node = insert_node(root_node, *node);
-      }
+      // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+      inserted_node = insert_node(root_node, node);
+
       // Insert node into tree and return iterator to new node location in tree
       return iterator(*this, inserted_node);
     }
@@ -1255,13 +1287,11 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
       // Get next available free node
-      Data_Node* node = allocate_data_node(etl::move(value));
+      Data_Node& node = allocate_data_node(etl::move(value));
 
-      if (node != nullptr)
-      {
-        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-        inserted_node = insert_node(root_node, *node);
-      }
+      // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+      inserted_node = insert_node(root_node, node);
+
       // Insert node into tree and return iterator to new node location in tree
       return iterator(*this, inserted_node);
     }
@@ -1290,7 +1320,7 @@ namespace etl
     /// if all keys are considered to go before the key provided.
     ///\return An iterator pointing to the element not before key or end()
     //*********************************************************************
-    iterator lower_bound(key_parameter_t key)
+    iterator lower_bound(const_key_reference key)
     {
       return iterator(*this, find_lower_node(root_node, key));
     }
@@ -1310,7 +1340,7 @@ namespace etl
     /// or end() if all keys are considered to go before the key provided.
     ///\return An const_iterator pointing to the element not before key or end()
     //*********************************************************************
-    const_iterator lower_bound(key_parameter_t key) const
+    const_iterator lower_bound(const_key_reference key) const
     {
       return const_iterator(*this, find_lower_node(root_node, key));
     }
@@ -1330,7 +1360,7 @@ namespace etl
     /// if all keys are considered to go after the key provided.
     ///\return An iterator pointing to the element after key or end()
     //*********************************************************************
-    iterator upper_bound(key_parameter_t key)
+    iterator upper_bound(const_key_reference key)
     {
       return iterator(*this, find_upper_node(root_node, key));
     }
@@ -1350,7 +1380,7 @@ namespace etl
     /// or end() if all keys are considered to go after the key provided.
     ///\return An const_iterator pointing to the element after key or end()
     //*********************************************************************
-    const_iterator upper_bound(key_parameter_t key) const
+    const_iterator upper_bound(const_key_reference key) const
     {
       return const_iterator(*this, find_upper_node(root_node, key));
     }
@@ -1464,37 +1494,58 @@ namespace etl
     //*************************************************************************
     /// Allocate a Data_Node.
     //*************************************************************************
-    Data_Node* allocate_data_node(const_reference value)
+    Data_Node& allocate_data_node(const_reference value)
     {
-      Data_Node* node = create_data_node();
-      if (node != nullptr)
-      {
-        ::new (&node->value) value_type(value);
-        ETL_INCREMENT_DEBUG_COUNT
-      }
-      return node;
+      Data_Node* node = allocate_data_node();
+      ::new (&node->value) value_type(value);
+      ETL_INCREMENT_DEBUG_COUNT;
+      return *node;
+    }
+
+    //*************************************************************************
+    /// Allocate a Data_Node with the supplied key.
+    //*************************************************************************
+    Data_Node& allocate_data_node_with_key(const_key_reference key)
+    {
+      Data_Node* node = allocate_data_node();
+
+      ::new ((void*)etl::addressof(node->value.first))  key_type(key);
+      ::new ((void*)etl::addressof(node->value.second)) mapped_type();
+      ETL_INCREMENT_DEBUG_COUNT;
+      return *node;
     }
 
 #if ETL_USING_CPP11
     //*************************************************************************
     /// Allocate a Data_Node.
     //*************************************************************************
-    Data_Node* allocate_data_node(rvalue_reference value)
+    Data_Node& allocate_data_node(rvalue_reference value)
     {
-      Data_Node* node = create_data_node();
-      if (node != nullptr)
-      {
-        ::new (&node->value) value_type(etl::move(value));
-        ETL_INCREMENT_DEBUG_COUNT
-      }
-      return node;
+      Data_Node* node = allocate_data_node();
+      ::new (&node->value) value_type(etl::move(value));
+      ETL_INCREMENT_DEBUG_COUNT;
+      return *node;
     }
+
+    //*************************************************************************
+    /// Allocate a Data_Node with the supplied key.
+    //*************************************************************************
+    Data_Node& allocate_data_node_with_key(rvalue_key_reference key)
+    {
+      Data_Node* node = allocate_data_node();
+
+      ::new ((void*)etl::addressof(node->value.first))  key_type(etl::move(key));
+      ::new ((void*)etl::addressof(node->value.second)) mapped_type();
+      ETL_INCREMENT_DEBUG_COUNT;
+      return *node;
+    }
+
 #endif
 
     //*************************************************************************
     /// Create a Data_Node.
     //*************************************************************************
-    Data_Node* create_data_node()
+    Data_Node* allocate_data_node()
     {
       Data_Node* (etl::ipool::*func)() = &etl::ipool::allocate<Data_Node>;
       return (p_node_pool->*func)();
@@ -1507,13 +1558,13 @@ namespace etl
     {
       node.value.~value_type();
       p_node_pool->release(&node);
-      ETL_DECREMENT_DEBUG_COUNT
+      ETL_DECREMENT_DEBUG_COUNT;
     }
 
     //*************************************************************************
     /// Find the value matching the node provided
     //*************************************************************************
-    Node* find_node(Node* position, key_parameter_t key)
+    Node* find_node(Node* position, const_key_reference key)
     {
       Node* found = position;
       while (found)
@@ -1580,7 +1631,7 @@ namespace etl
     //*************************************************************************
     /// Find the value matching the node provided
     //*************************************************************************
-    const Node* find_node(const Node* position, key_parameter_t key) const
+    const Node* find_node(const Node* position, const_key_reference key) const
     {
       const Node* found = position;
       while (found)
@@ -1788,7 +1839,7 @@ namespace etl
     //*************************************************************************
     /// Find the node whose key is not considered to go before the key provided
     //*************************************************************************
-    Node* find_lower_node(Node* position, key_parameter_t key) const
+    Node* find_lower_node(Node* position, const_key_reference key) const
     {
       // Something at this position? keep going
       Node* lower_node = ETL_NULLPTR;
@@ -1871,7 +1922,7 @@ namespace etl
     //*************************************************************************
     /// Find the node whose key is considered to go after the key provided
     //*************************************************************************
-    Node* find_upper_node(Node* position, key_parameter_t key) const
+    Node* find_upper_node(Node* position, const_key_reference key) const
     {
       // Keep track of parent of last upper node
       Node* upper_node = ETL_NULLPTR;
@@ -2202,7 +2253,7 @@ namespace etl
     /// Remove the node specified from somewhere starting at the position
     /// provided
     //*************************************************************************
-    Node* remove_node(Node*& position, key_parameter_t key)
+    Node* remove_node(Node*& position, const_key_reference key)
     {
       // Step 1: Find the target node that matches the key provided, the
       // replacement node (might be the same as target node), and the critical
@@ -2741,6 +2792,9 @@ namespace etl
     etl::pool<typename etl::imap<TKey, TValue, TCompare>::Data_Node, MAX_SIZE> node_pool;
   };
 
+  template <typename TKey, typename TValue, const size_t MAX_SIZE_, typename TCompare>
+  ETL_CONSTANT size_t map<TKey, TValue, MAX_SIZE_, TCompare>::MAX_SIZE;
+
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
@@ -2758,7 +2812,7 @@ namespace etl
   template <typename TKey, typename TMapped, typename TKeyCompare = etl::less<TKey>, typename... TPairs>
   constexpr auto make_map(TPairs&&... pairs) -> etl::map<TKey, TMapped, sizeof...(TPairs), TKeyCompare>
   {
-    return { {etl::forward<TPairs>(pairs)...} };
+    return { etl::forward<TPairs>(pairs)... };
   }
 #endif
 

@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include "etl/overload.h"
 
+#if ETL_USING_CPP11
+
 #include <iostream>
 
 namespace
@@ -73,7 +75,7 @@ namespace
   SUITE(test_overload)
   {
     //*************************************************************************
-    TEST(test_overload_lambdas)
+    TEST(test_overload_lambdas_make_overload)
     {
       auto overload = etl::make_overload([](int i) { result.bi = true; },
                                          [](double d) { result.bd = true; },
@@ -98,10 +100,10 @@ namespace
       CHECK(result.bs == true);
     }
 
+#if ETL_USING_CPP_17
     //*************************************************************************
-    TEST(test_overload_lambdas_cpp17)
+    TEST(test_overload_lambdas_initializer_list)
     {
-#if !defined(ETL_OVERLOAD_FORCE_CPP14)
       result.clear();
       Function(int(1), etl::overload
                        {
@@ -134,8 +136,8 @@ namespace
       CHECK(result.bi == false);
       CHECK(result.bd == false);
       CHECK(result.bs == true);
-#endif
     }
+#endif
 
     //*************************************************************************
     TEST(test_visitor_overload)
@@ -162,3 +164,5 @@ namespace
     }
   };
 }
+
+#endif

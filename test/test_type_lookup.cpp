@@ -32,6 +32,8 @@ SOFTWARE.
 
 #include <type_traits>
 
+#include "etl/private/diagnostic_useless_cast_push.h"
+
 namespace
 {
   //***********************************
@@ -253,7 +255,7 @@ namespace
       CHECK_EQUAL((unsigned int)Type16::ID, (unsigned int)Type_Id_Lookup16::get_id_from_type(Type16()));
     }
 
-#if !defined(ETL_TYPE_SELECT_FORCE_CPP03_IMPLEMENTATION)
+#if ETL_USING_CPP17 && !defined(ETL_TYPE_SELECT_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     TEST(test_id_from_type_v_16)
     {
@@ -306,7 +308,7 @@ namespace
       CHECK_EQUAL((unsigned int)Type16::ID, (unsigned int)Type_Id_Lookup8::get_id_from_type(Type16()));
     }
 
-#if !defined(ETL_TYPE_SELECT_FORCE_CPP03_IMPLEMENTATION)
+#if ETL_USING_CPP17 && !defined(ETL_TYPE_SELECT_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     TEST(test_id_from_type_v_8)
     {
@@ -330,7 +332,7 @@ namespace
       CHECK_EQUAL((unsigned int)Type16::ID, (unsigned int)Type_Id_Lookup1::get_id_from_type(Type16()));
     }
 
-#if !defined(ETL_TYPE_SELECT_FORCE_CPP03_IMPLEMENTATION)
+#if ETL_USING_CPP17 && !defined(ETL_TYPE_SELECT_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     TEST(test_id_from_type_v_1)
     {
@@ -425,3 +427,5 @@ namespace
 #endif
   };
 }
+
+#include "etl/private/diagnostic_pop.h"

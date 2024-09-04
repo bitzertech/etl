@@ -372,6 +372,20 @@ namespace etl
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     //*************************************************************************
+    bool emplace()
+    {
+      this->lock();
+
+      bool result = emplace_implementation();
+
+      this->unlock();
+
+      return result;
+    }
+
+    //*************************************************************************
+    /// Constructs a value in the queue 'in place'.
+    //*************************************************************************
     template <typename T1>
     bool emplace(const T1& value1)
     {
@@ -837,6 +851,12 @@ namespace etl
     /// The uninitialised buffer of T used in the queue_lockable.
     etl::uninitialized_buffer_of<T, Max_Size> buffer;
   };
+
+  template <typename T, size_t VSize, size_t VMemory_Model>
+  ETL_CONSTANT typename queue_lockable<T, VSize, VMemory_Model>::size_type queue_lockable<T, VSize, VMemory_Model>::Max_Size;
+  
+  template <typename T, size_t VSize, size_t VMemory_Model>
+  ETL_CONSTANT typename queue_lockable<T, VSize, VMemory_Model>::size_type queue_lockable<T, VSize, VMemory_Model>::Memory_Model;
 }
 
 #endif

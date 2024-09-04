@@ -222,7 +222,7 @@ namespace etl
         if (timer.id != etl::timer::id::NO_TIMER)
         {
           // Has a valid period.
-          if (timer.period != etl::timer::state::INACTIVE)
+          if (timer.period != etl::timer::state::Inactive)
           {
             lock();
             if (timer.is_active())
@@ -309,6 +309,64 @@ namespace etl
       unlock   = unlock_;
     }
 
+    //*******************************************
+    /// Check if there is an active timer.
+    //*******************************************
+    bool has_active_timer() const
+    {
+      lock();
+      bool result = !active_list.empty();
+      unlock();
+
+      return result;
+    }
+
+    //*******************************************
+    /// Get the time to the next timer event.
+    /// Returns etl::timer::interval::No_Active_Interval if there is no active timer.
+    //*******************************************
+    uint32_t time_to_next() const
+    {
+      uint32_t delta = static_cast<uint32_t>(etl::timer::interval::No_Active_Interval);
+
+      lock();
+      if (!active_list.empty())
+      {
+        delta = active_list.front().delta;
+      }
+      unlock();
+
+      return delta;
+    }
+
+    //*******************************************
+    /// Checks if a timer is currently active.
+    /// Returns <b>true</b> if the timer is active, otherwise <b>false</b>.
+    //*******************************************
+    bool is_active(etl::timer::id::type id_) const
+    {
+      bool result = false;
+
+      // Valid timer id?
+      if (is_valid_timer_id(id_))
+      {
+        if (has_active_timer())
+        {
+          lock();
+          const timer_data& timer = timer_array[id_];
+
+          // Registered timer?
+          if (timer.id != etl::timer::id::NO_TIMER)
+          {
+            result = timer.is_active();
+          }
+          unlock();
+        }
+      }
+
+      return result;
+    }
+
   protected:
 
     //*************************************************************************
@@ -319,7 +377,7 @@ namespace etl
       timer_data()
         : callback()
         , period(0U)
-        , delta(etl::timer::state::INACTIVE)
+        , delta(etl::timer::state::Inactive)
         , id(etl::timer::id::NO_TIMER)
         , previous(etl::timer::id::NO_TIMER)
         , next(etl::timer::id::NO_TIMER)
@@ -336,7 +394,7 @@ namespace etl
                  bool                 repeating_)
         : callback(callback_)
         , period(period_)
-        , delta(etl::timer::state::INACTIVE)
+        , delta(etl::timer::state::Inactive)
         , id(id_)
         , previous(etl::timer::id::NO_TIMER)
         , next(etl::timer::id::NO_TIMER)
@@ -349,7 +407,7 @@ namespace etl
       //*******************************************
       bool is_active() const
       {
-        return delta != etl::timer::state::INACTIVE;
+        return delta != etl::timer::state::Inactive;
       }
 
       //*******************************************
@@ -357,7 +415,7 @@ namespace etl
       //*******************************************
       void set_inactive()
       {
-        delta = etl::timer::state::INACTIVE;
+        delta = etl::timer::state::Inactive;
       }
 
       callback_type        callback;
@@ -511,11 +569,17 @@ namespace etl
 
         timer.previous = etl::timer::id::NO_TIMER;
         timer.next = etl::timer::id::NO_TIMER;
-        timer.delta = etl::timer::state::INACTIVE;
+        timer.delta = etl::timer::state::Inactive;
       }
 
       //*******************************
       timer_data& front()
+      {
+        return ptimers[head];
+      }
+
+      //*******************************
+      const timer_data& front() const
       {
         return ptimers[head];
       }
@@ -567,14 +631,22 @@ namespace etl
       timer_data* const ptimers;
     };
 
+    //*******************************************
+    /// Check that the timer id is valid.
+    //*******************************************
+    bool is_valid_timer_id(etl::timer::id::type id_) const
+    {
+      return (id_ < MAX_TIMERS);
+    }
+
     // The array of timer data structures.
     timer_data* const timer_array;
 
     // The list of active timers.
     timer_list active_list;
 
-    volatile bool enabled;
-    volatile uint_least8_t number_of_registered_timers;
+    bool enabled;
+    uint_least8_t number_of_registered_timers;
 
     try_lock_type try_lock; ///< The callback that tries to lock.
     lock_type     lock;     ///< The callback that locks.

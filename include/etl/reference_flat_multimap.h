@@ -1041,6 +1041,9 @@ namespace etl
     etl::vector<node_t*, MAX_SIZE> lookup;
   };
 
+  template <typename TKey, typename TValue, const size_t MAX_SIZE_, typename TCompare>
+  ETL_CONSTANT size_t reference_flat_multimap< TKey, TValue, MAX_SIZE_, TCompare>::MAX_SIZE;
+
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
@@ -1058,7 +1061,7 @@ namespace etl
   template <typename TKey, typename TMapped, typename TKeyCompare = etl::less<TKey>, typename... TPairs>
   constexpr auto make_reference_flat_multimap(TPairs&&... pairs) -> etl::reference_flat_multimap<TKey, TMapped, sizeof...(TPairs), TKeyCompare>
   {
-    return { {etl::forward<TPairs>(pairs)...} };
+    return { etl::forward<TPairs>(pairs)... };
   }
 #endif
 }

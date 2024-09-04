@@ -67,11 +67,11 @@ namespace
   //*****************************************************************************
   // The test class with member functions.
   //*****************************************************************************
-  class Test
+  class Object
   {
   public:
 
-    Test()
+    Object()
     {
     }
 
@@ -82,18 +82,18 @@ namespace
     }
   };
 
-  Test test;
+  Object object;
 
   // Callback for 'member'.
-  constexpr etl::delegate<void(size_t)> member_callback = etl::delegate<void(size_t)>::create<Test, test, &Test::member>();
+  ETL_CONSTEXPR14 etl::delegate<void(size_t)> member_callback = etl::delegate<void(size_t)>::create<Object, object, &Object::member>();
 
   // Callback for 'global'.
-  constexpr etl::delegate<void(size_t)> global_callback = etl::delegate<void(size_t)>::create<global>();
+  ETL_CONSTEXPR14 etl::delegate<void(size_t)> global_callback = etl::delegate<void(size_t)>::create<global>();
 
   // Callback for 'unhandled'.
-  constexpr etl::delegate<void(size_t)> unhandled_callback = etl::delegate<void(size_t)>::create<unhandled>();
+  ETL_CONSTEXPR14 etl::delegate<void(size_t)> unhandled_callback = etl::delegate<void(size_t)>::create<unhandled>();
 
-  constexpr etl::delegate<void(size_t)> delegate_list[]
+  ETL_CONSTEXPR14 etl::delegate<void(size_t)> delegate_list[]
   {
     global_callback,
     member_callback,

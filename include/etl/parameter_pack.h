@@ -121,12 +121,29 @@ namespace etl
     using type_from_index_t = typename type_from_index<I>::type;
   };
 
+  //***********************************
   template <size_t Index, typename... TTypes>
   using parameter_pack_t = typename etl::parameter_pack<TTypes...>::template type_from_index_t<Index>;
+
+  //***********************************
+  template <typename... TTypes>
+  constexpr size_t parameter_pack<TTypes...>::size;
 
 #if ETL_USING_CPP17
   template <typename T, typename... TTypes>
   inline constexpr size_t parameter_pack_v = etl::parameter_pack<TTypes...>::template index_of_type<T>::value;
+#endif
+
+#if ETL_USING_CPP17 && (!ETL_USING_GCC_COMPILER || (__GNUC__ > 7))
+  //***********************************
+  template <typename... TTypes>
+  template <typename T>
+  constexpr size_t parameter_pack<TTypes...>::template index_of_type<T>::value;
+#else
+  //***********************************
+  template <typename... TTypes>
+  template <typename T>
+  constexpr size_t parameter_pack<TTypes...>::index_of_type<T>::value;
 #endif
 }
 #endif
