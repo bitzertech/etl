@@ -353,7 +353,7 @@ namespace etl
           ::new (pvalue) value_type(value);
           result = refmap_t::insert_at(i_element, *pvalue);
         }
-        ETL_INCREMENT_DEBUG_COUNT
+        ETL_INCREMENT_DEBUG_COUNT;
       }
 
       return result;
@@ -382,7 +382,7 @@ namespace etl
           ::new (pvalue) value_type(etl::move(value));
           result = refmap_t::insert_at(i_element, *pvalue);
         }
-        ETL_INCREMENT_DEBUG_COUNT
+        ETL_INCREMENT_DEBUG_COUNT;
       }
 
       return result;
