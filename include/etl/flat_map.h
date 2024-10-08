@@ -1225,7 +1225,8 @@ namespace etl
         ETL_INCREMENT_DEBUG_COUNT;
         return refmap_t::insert_at(i_element, *pvalue);
       }
-      return refmap_t::insert_at(i_element, etl::forward<TValueType>(value));
+      value_type on_stack(etl::forward<TValueType>(value));
+      return refmap_t::insert_at(end(), on_stack);
     }
 #else
     //*************************************************************************
@@ -1255,7 +1256,8 @@ namespace etl
 
         return refmap_t::insert_at(i_element, *pvalue);
       }
-      return refmap_t::insert_at(i_element, mapped_type());
+      value_type on_stack(etl::move(key), mapped_type());
+      return refmap_t::insert_at(end(), on_stack);
     }
 #endif
 
@@ -1273,7 +1275,8 @@ namespace etl
 
         return refmap_t::insert_at(i_element, *pvalue);
       }
-      return refmap_t::insert_at(i_element, mapped_type());
+      value_type on_stack(etl::move(key), mapped_type());
+      return refmap_t::insert_at(end(), on_stack);
     }
 
     //*************************************************************************
