@@ -935,13 +935,20 @@ namespace etl
         ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
         // Get next available free node
-        Data_Node& node = allocate_data_node_with_key(etl::move(key));
+        Data_Node* node = allocate_data_node_with_key(etl::move(key));
 
         // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-        inserted_node = insert_node(root_node, node);
+        if (node)
+        {
+          inserted_node = insert_node(root_node, *node);
 
-        // Insert node into tree and return iterator to new node location in tree
-        i_element = iterator(*this, inserted_node);
+          // Insert node into tree and return iterator to new node location in tree
+          i_element = iterator(*this, inserted_node);
+        }
+        else
+        {
+          i_element->second = mapped_type{};
+        }
       }
 
       return i_element->second;
@@ -965,13 +972,20 @@ namespace etl
         ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
         // Get next available free node
-        Data_Node& node = allocate_data_node_with_key(key);
+        Data_Node* node = allocate_data_node_with_key(key);
 
         // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-        inserted_node = insert_node(root_node, node);
+        if (node)
+        {
+          inserted_node = insert_node(root_node, *node);
 
-        // Insert node into tree and return iterator to new node location in tree
-        i_element = iterator(*this, inserted_node);
+          // Insert node into tree and return iterator to new node location in tree
+          i_element = iterator(*this, inserted_node);
+        }
+        else
+        {
+          i_element->second = mapped_type{};
+        }
       }
 
       return i_element->second;
@@ -1213,11 +1227,14 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
       // Get next available free node
-      Data_Node& node = allocate_data_node(value);
+      Data_Node* node = allocate_data_node(value);
 
-      // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-      inserted_node = insert_node(root_node, node);
-      inserted = inserted_node == &node;
+      if (node)
+      {
+        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+        inserted_node = insert_node(root_node, *node);
+        inserted = inserted_node == node;
+      }
 
       // Insert node into tree and return iterator to new node location in tree
       return ETL_OR_STD::make_pair(iterator(*this, inserted_node), inserted);
@@ -1238,11 +1255,14 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
       // Get next available free node
-      Data_Node& node = allocate_data_node(etl::move(value));
+      Data_Node* node = allocate_data_node(etl::move(value));
 
-      // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-      inserted_node = insert_node(root_node, node);
-      inserted = inserted_node == &node;
+      if (node)
+      {
+        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+        inserted_node = insert_node(root_node, *node);
+        inserted = inserted_node == node;
+      }
 
       // Insert node into tree and return iterator to new node location in tree
       return ETL_OR_STD::make_pair(iterator(*this, inserted_node), inserted);
@@ -1263,10 +1283,13 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
       // Get next available free node
-      Data_Node& node = allocate_data_node(value);
+      Data_Node* node = allocate_data_node(value);
 
-      // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-      inserted_node = insert_node(root_node, node);
+      if (node)
+      {
+        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+        inserted_node = insert_node(root_node, *node);
+      }
 
       // Insert node into tree and return iterator to new node location in tree
       return iterator(*this, inserted_node);
@@ -1287,10 +1310,13 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
       // Get next available free node
-      Data_Node& node = allocate_data_node(etl::move(value));
+      Data_Node* node = allocate_data_node(etl::move(value));
 
-      // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-      inserted_node = insert_node(root_node, node);
+      if (node)
+      {
+        // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
+        inserted_node = insert_node(root_node, *node);
+      }
 
       // Insert node into tree and return iterator to new node location in tree
       return iterator(*this, inserted_node);
@@ -1412,7 +1438,7 @@ namespace etl
     //*************************************************************************
     /// Move assignment operator.
     //*************************************************************************
-    imap& operator = (imap&& rhs)
+    imap& operator = (imap&& rhs) noexcept
     {
       // Skip if doing self assignment
       if (this != &rhs)
@@ -1494,50 +1520,62 @@ namespace etl
     //*************************************************************************
     /// Allocate a Data_Node.
     //*************************************************************************
-    Data_Node& allocate_data_node(const_reference value)
+    Data_Node* allocate_data_node(const_reference value)
     {
       Data_Node* node = allocate_data_node();
-      ::new (&node->value) value_type(value);
+      if (node)
+      {
+        ::new (&node->value) value_type(value);
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      return *node;
+      return node;
     }
 
     //*************************************************************************
     /// Allocate a Data_Node with the supplied key.
     //*************************************************************************
-    Data_Node& allocate_data_node_with_key(const_key_reference key)
+    Data_Node* allocate_data_node_with_key(const_key_reference key)
     {
       Data_Node* node = allocate_data_node();
 
-      ::new ((void*)etl::addressof(node->value.first))  key_type(key);
-      ::new ((void*)etl::addressof(node->value.second)) mapped_type();
+      if (node)
+      {
+        ::new ((void*)etl::addressof(node->value.first))  key_type(key);
+        ::new ((void*)etl::addressof(node->value.second)) mapped_type();
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      return *node;
+      return node;
     }
 
 #if ETL_USING_CPP11
     //*************************************************************************
     /// Allocate a Data_Node.
     //*************************************************************************
-    Data_Node& allocate_data_node(rvalue_reference value)
+    Data_Node* allocate_data_node(rvalue_reference value)
     {
       Data_Node* node = allocate_data_node();
-      ::new (&node->value) value_type(etl::move(value));
+      if (node)
+      {
+        ::new (&node->value) value_type(etl::move(value));
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      return *node;
+      return node;
     }
 
     //*************************************************************************
     /// Allocate a Data_Node with the supplied key.
     //*************************************************************************
-    Data_Node& allocate_data_node_with_key(rvalue_key_reference key)
+    Data_Node* allocate_data_node_with_key(rvalue_key_reference key)
     {
       Data_Node* node = allocate_data_node();
 
-      ::new ((void*)etl::addressof(node->value.first))  key_type(etl::move(key));
-      ::new ((void*)etl::addressof(node->value.second)) mapped_type();
+      if (node)
+      {
+        ::new ((void*)etl::addressof(node->value.first))  key_type(etl::move(key));
+        ::new ((void*)etl::addressof(node->value.second)) mapped_type();
+      }
       ETL_INCREMENT_DEBUG_COUNT;
-      return *node;
+      return node;
     }
 
 #endif
@@ -2800,8 +2838,8 @@ namespace etl
   //*************************************************************************
 #if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST
   template <typename... TPairs>
-  map(TPairs...) -> map<typename etl::nth_type_t<0, TPairs...>::first_type, 
-                        typename etl::nth_type_t<0, TPairs...>::second_type, 
+  map(TPairs...) -> map<typename etl::nth_type_t<0, TPairs...>::first_type,
+                        typename etl::nth_type_t<0, TPairs...>::second_type,
                         sizeof...(TPairs)>;
 #endif
 
