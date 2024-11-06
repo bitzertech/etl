@@ -940,6 +940,10 @@ namespace etl
           // tree
           i_element = iterator(*this, inserted_node);
         }
+        else
+        {
+          i_element->second = mapped_type{};
+        }
       }
 
       return i_element->second;
@@ -1637,7 +1641,7 @@ namespace etl
     //*************************************************************************
     /// Move assignment operator.
     //*************************************************************************
-    imap& operator=(imap&& rhs)
+    imap& operator=(imap&& rhs) ETL_NOEXCEPT
     {
       // Skip if doing self assignment
       if (this != &rhs)
