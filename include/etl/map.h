@@ -550,7 +550,8 @@ namespace etl
 
     /// The pool of data nodes used in the map.
     ipool* p_node_pool;
-
+    value_type dummy_value;
+    Data_Node dummy_node;
     key_compare   kcompare;
     value_compare vcompare;
 
@@ -978,6 +979,10 @@ namespace etl
           // Insert node into tree and return iterator to new node location in
           // tree
           i_element = iterator(*this, inserted_node);
+        }
+        else
+        {
+          i_element = iterator(*this, &dummy_node);
         }
       }
 
@@ -1702,6 +1707,8 @@ namespace etl
     imap(etl::ipool& node_pool, size_t max_size_)
       : etl::map_base(max_size_)
       , p_node_pool(&node_pool)
+      , dummy_value()
+      , dummy_node(dummy_value)
     {
     }
 
