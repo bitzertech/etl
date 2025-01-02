@@ -948,7 +948,7 @@ namespace etl
         }
         else
         {
-          i_element->second = mapped_type{};
+          i_element = iterator(*this, &dummy_node);
         }
       }
 
