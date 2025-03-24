@@ -353,7 +353,7 @@ namespace etl
           ::new (pvalue) value_type(value);
           result = refmap_t::insert_at(i_element, *pvalue);
         }
-        ETL_INCREMENT_DEBUG_COUNT
+        ETL_INCREMENT_DEBUG_COUNT;
       }
 
       return result;
@@ -382,7 +382,7 @@ namespace etl
           ::new (pvalue) value_type(etl::move(value));
           result = refmap_t::insert_at(i_element, *pvalue);
         }
-        ETL_INCREMENT_DEBUG_COUNT
+        ETL_INCREMENT_DEBUG_COUNT;
       }
 
       return result;
@@ -1070,9 +1070,14 @@ namespace etl
       ETL_ASSERT(!refmap_t::full(), ETL_ERROR(flat_map_full));
 
       value_type* pvalue = storage.allocate<value_type>();
-      ::new (pvalue) value_type(etl::forward<TValueType>(value));
-      ETL_INCREMENT_DEBUG_COUNT;
-      return refmap_t::insert_at(i_element, *pvalue);
+      if (pvalue)
+      {
+        ::new (pvalue) value_type(etl::forward<TValueType>(value));
+        ETL_INCREMENT_DEBUG_COUNT;
+        return refmap_t::insert_at(i_element, *pvalue);
+      }
+      value_type on_stack(etl::forward<TValueType>(value));
+      return refmap_t::insert_at(end(), on_stack);
     }
 #else
     //*************************************************************************
@@ -1094,11 +1099,16 @@ namespace etl
       ETL_ASSERT(!refmap_t::full(), ETL_ERROR(flat_map_full));
 
       value_type* pvalue = storage.allocate<value_type>();
-      ::new ((void*)etl::addressof(pvalue->first)) key_type(etl::move(key));
-      ::new ((void*)etl::addressof(pvalue->second)) mapped_type();
-      ETL_INCREMENT_DEBUG_COUNT;
+      if (pvalue)
+      {
+        ::new ((void*)etl::addressof(pvalue->first)) key_type(etl::move(key));
+        ::new ((void*)etl::addressof(pvalue->second)) mapped_type();
+        ETL_INCREMENT_DEBUG_COUNT;
 
-      return refmap_t::insert_at(i_element, *pvalue);
+        return refmap_t::insert_at(i_element, *pvalue);
+      }
+      value_type on_stack(etl::move(key), mapped_type());
+      return refmap_t::insert_at(end(), on_stack);
     }
 #endif
 
@@ -1108,11 +1118,16 @@ namespace etl
       ETL_ASSERT(!refmap_t::full(), ETL_ERROR(flat_map_full));
 
       value_type* pvalue = storage.allocate<value_type>();
-      ::new ((void*)etl::addressof(pvalue->first)) key_type(key);
-      ::new ((void*)etl::addressof(pvalue->second)) mapped_type();
-      ETL_INCREMENT_DEBUG_COUNT;
+      if (pvalue)
+      {
+        ::new ((void*)etl::addressof(pvalue->first)) key_type(key);
+        ::new ((void*)etl::addressof(pvalue->second)) mapped_type();
+        ETL_INCREMENT_DEBUG_COUNT;
 
-      return refmap_t::insert_at(i_element, *pvalue);
+        return refmap_t::insert_at(i_element, *pvalue);
+      }
+      value_type on_stack(etl::move(key), mapped_type());
+      return refmap_t::insert_at(end(), on_stack);
     }
 
     //*************************************************************************
