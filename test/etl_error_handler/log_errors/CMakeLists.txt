@@ -27,11 +27,14 @@ elseif (ETL_CXX_STANDARD MATCHES "14")
 	message(STATUS "Compiling for C++14")    
 	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 14)
 elseif (ETL_CXX_STANDARD MATCHES "17")
-	message(STATUS "Compiling for C++17")    
+	message(STATUS "Compiling for C++17")
 	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 17)
-else()
+elseif (ETL_CXX_STANDARD MATCHES "20")
 	message(STATUS "Compiling for C++20")
 	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 20)
+else()
+	message(STATUS "Compiling for C++23")
+	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 23)
 endif()
 
 if (ETL_OPTIMISATION MATCHES "-O1")
@@ -67,11 +70,11 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 			PRIVATE
 			-fno-omit-frame-pointer
 			-fno-common
+			-fno-exceptions
 			-Wall
 			-Wextra
 			-Werror
 			-Wfloat-equal
-			-Wuseless-cast
 			-Wshadow
 			-Wnull-dereference
 			)
@@ -82,6 +85,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 			PRIVATE
 			-fno-omit-frame-pointer
 			-fno-common
+			-fno-exceptions
 			-Wall
 			-Wextra
 			-Werror

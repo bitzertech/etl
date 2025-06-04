@@ -1,14 +1,14 @@
 #######################################################################
 # The Embedded Template Library (https://www.etlcpp.com/)
 #######################################################################
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.10)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/helpers.cmake)
 
 set(MSG_PREFIX "etl |")
-determine_version_with_git(${GIT_DIR_LOOKUP_POLICY})
+etl_determine_version_with_git(${GIT_DIR_LOOKUP_POLICY})
 if(NOT ETL_VERSION)
-    determine_version_with_file("version.txt")
+    etl_determine_version_with_file("version.txt")
 endif()
 
 project(etl VERSION ${ETL_VERSION} LANGUAGES CXX)
@@ -52,11 +52,24 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     )
     if(ETL_VERSION)
         # Generate the package configuration files using CMake provided macros
-        write_basic_package_version_file(
-            "${PROJECT_NAME}ConfigVersion.cmake"
-            COMPATIBILITY SameMajorVersion
-            ARCH_INDEPENDENT
-        )
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.14)
+            # Generate the package configuration files using CMake provided macros
+            write_basic_package_version_file(
+                "${PROJECT_NAME}ConfigVersion.cmake"
+                COMPATIBILITY SameMajorVersion
+                ARCH_INDEPENDENT
+            )
+        else()
+            # This is needed for CMake < 3.14
+            # because the ARCH_INDEPENDENT option is not available
+            # in CMake < 3.14
+            # See https://cmake.org/cmake/help/latest/module/CMakePackageConfigHelpers.html
+            # for more information
+            write_basic_package_version_file(
+                "${PROJECT_NAME}ConfigVersion.cmake"
+                COMPATIBILITY SameMajorVersion
+            )
+        endif()
     endif()
     configure_package_config_file(
         "${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in"

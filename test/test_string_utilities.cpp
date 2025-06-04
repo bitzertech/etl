@@ -34,12 +34,18 @@ SOFTWARE.
 #include "etl/vector.h"
 
 #include <string>
+#include <string_view>
+#include <vector>
+#include <list>
 
 #undef STR
 #define STR(x) x
 
 #undef STR_PTR
 #define STR_PTR const char*
+
+#undef STR_TYPE
+#define STR_TYPE char
 
 namespace
 {
@@ -53,6 +59,9 @@ namespace
     using Char       = etl::istring::value_type;
     using Vector     = etl::vector<String, 15>;
     using SizeType   = etl::istring::size_type;
+
+    using VectorOfViews7 = etl::vector<StringView, 7>;
+    using VectorOfViews5 = etl::vector<StringView, 5>;
 
 #if ETL_USING_CPP17
     constexpr auto Whitespace = etl::whitespace_v<String::value_type>;
@@ -1086,6 +1095,121 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_split_to_vector_of_string_view_all_tokens_captured_ignore_empty_tokens)
+    {
+      String text(STR(",,,The,cat,sat,,on,the,mat"));
+      VectorOfViews7 views;
+
+      bool all_views_found = etl::get_token_list(text, views, STR(","), true);
+
+      CHECK_TRUE(all_views_found);
+      CHECK_EQUAL(6, views.size());
+      CHECK_EQUAL(std::string("The"), std::string(views[0].begin(), views[0].end()));
+      CHECK_EQUAL(std::string("cat"), std::string(views[1].begin(), views[1].end()));
+      CHECK_EQUAL(std::string("sat"), std::string(views[2].begin(), views[2].end()));
+      CHECK_EQUAL(std::string("on"),  std::string(views[3].begin(), views[3].end()));
+      CHECK_EQUAL(std::string("the"), std::string(views[4].begin(), views[4].end()));
+      CHECK_EQUAL(std::string("mat"), std::string(views[5].begin(), views[5].end()));
+    }
+
+    //*************************************************************************
+    TEST(test_get_token_list_to_vector_of_string_view_all_but_1_tokens_captured_ignore_empty_tokens)
+    {
+      String text(STR(",,,The,cat,sat,,on,the,mat"));
+      VectorOfViews5 views;
+
+      bool all_views_found = etl::get_token_list(text, views, STR(","), true);
+
+      CHECK_FALSE(all_views_found);
+      CHECK_EQUAL(5, views.size());
+      CHECK_EQUAL(std::string("The"), std::string(views[0].begin(), views[0].end()));
+      CHECK_EQUAL(std::string("cat"), std::string(views[1].begin(), views[1].end()));
+      CHECK_EQUAL(std::string("sat"), std::string(views[2].begin(), views[2].end()));
+      CHECK_EQUAL(std::string("on"),  std::string(views[3].begin(), views[3].end()));
+      CHECK_EQUAL(std::string("the"), std::string(views[4].begin(), views[4].end()));
+    }
+
+#if ETL_USING_CPP17
+    //*************************************************************************
+    TEST(test_get_token_list_to_std_vector_of_std_string_view_all_tokens_captured_ignore_empty_tokens)
+    {
+      std::string text(STR(",,,The,cat,sat,,on,the,mat"));
+      std::vector<std::string_view> views;
+
+      bool all_views_found = etl::get_token_list(text, views, STR(","), true);
+
+      CHECK_TRUE(all_views_found);
+      CHECK_EQUAL(6, views.size());
+      CHECK_EQUAL(std::string("The"), std::string(views[0].begin(), views[0].end()));
+      CHECK_EQUAL(std::string("cat"), std::string(views[1].begin(), views[1].end()));
+      CHECK_EQUAL(std::string("sat"), std::string(views[2].begin(), views[2].end()));
+      CHECK_EQUAL(std::string("on"),  std::string(views[3].begin(), views[3].end()));
+      CHECK_EQUAL(std::string("the"), std::string(views[4].begin(), views[4].end()));
+      CHECK_EQUAL(std::string("mat"), std::string(views[5].begin(), views[5].end()));
+    }
+#endif
+
+    //*************************************************************************
+    TEST(test_get_token_list_to_vector_of_string_view_all_tokens_captured_ignore_empty_tokens_maximum_of_3_tokens)
+    {
+      String text(STR(",,,The,cat,sat,,on,the,mat"));
+      VectorOfViews7 views;
+
+      bool all_views_found = etl::get_token_list(text, views, STR(","), true, 3);
+
+      CHECK_FALSE(all_views_found);
+      CHECK_EQUAL(3, views.size());
+      CHECK_EQUAL(std::string("The"), std::string(views[0].begin(), views[0].end()));
+      CHECK_EQUAL(std::string("cat"), std::string(views[1].begin(), views[1].end()));
+      CHECK_EQUAL(std::string("sat"), std::string(views[2].begin(), views[2].end()));
+    }
+
+#if ETL_USING_CPP17
+    //*************************************************************************
+    TEST(test_get_token_list_to_std_vector_of_std_string_view_all_tokens_captured_ignore_empty_tokens_maximum_of_3_tokens)
+    {
+      std::string text(STR(",,,The,cat,sat,,on,the,mat"));
+      std::vector<std::string_view> views;
+
+      bool all_views_found = etl::get_token_list(text, views, STR(","), true, 3);
+
+      CHECK_FALSE(all_views_found);
+      CHECK_EQUAL(3, views.size());
+      CHECK_EQUAL(std::string("The"), std::string(views[0].begin(), views[0].end()));
+      CHECK_EQUAL(std::string("cat"), std::string(views[1].begin(), views[1].end()));
+      CHECK_EQUAL(std::string("sat"), std::string(views[2].begin(), views[2].end()));
+    }
+#endif
+
+#if ETL_USING_CPP17
+    //*************************************************************************
+    TEST(test_get_token_list_to_std_list_of_std_string_view_all_tokens_captured_ignore_empty_tokens)
+    {
+      std::string text(STR(",,,The,cat,sat,,on,the,mat"));
+      std::list<std::string_view> views;
+
+      bool all_views_found = etl::get_token_list(text, views, STR(","), true);
+
+      CHECK_TRUE(all_views_found);
+      CHECK_EQUAL(6, views.size());
+
+      auto itr = views.begin();
+
+      CHECK_EQUAL(std::string("The"), std::string(itr->begin(), itr->end()));
+      ++itr;
+      CHECK_EQUAL(std::string("cat"), std::string(itr->begin(), itr->end()));
+      ++itr;
+      CHECK_EQUAL(std::string("sat"), std::string(itr->begin(), itr->end()));
+      ++itr;
+      CHECK_EQUAL(std::string("on"),  std::string(itr->begin(), itr->end()));
+      ++itr;
+      CHECK_EQUAL(std::string("the"), std::string(itr->begin(), itr->end()));
+      ++itr;
+      CHECK_EQUAL(std::string("mat"), std::string(itr->begin(), itr->end()));
+    }
+#endif
+
+    //*************************************************************************
     TEST(test_pad_left)
     {
       String text(STR("Hello World"));
@@ -1659,6 +1783,82 @@ namespace
       etl::to_sentence_case(text);
 
       CHECK(text == expected);
+    }
+
+    //*************************************************************************
+    TEST(test_str_n_copy_destination_larger)
+    {
+      STR_PTR  src = STR("Hello World");
+      STR_TYPE dst[15];
+
+      etl::str_n_copy_result result = etl::str_n_copy(src, 15, dst);
+      CHECK_EQUAL(etl::strlen(src), result.count);
+      CHECK_FALSE(result.truncated);
+      CHECK_TRUE(result.terminated);
+      CHECK(dst[11] == 0);
+
+      bool are_equal = etl::equal(src, src + 12, dst);
+      CHECK(are_equal);
+    }
+
+    //*************************************************************************
+    TEST(test_str_n_copy_destination_exact_include_space_for_terminator)
+    {
+      STR_PTR  src = STR("Hello World");
+      STR_TYPE dst[12];
+
+      etl::str_n_copy_result result = etl::str_n_copy(src, 12, dst);
+      CHECK_EQUAL(11, result.count);
+      CHECK_FALSE(result.truncated);
+      CHECK_TRUE(result.terminated);
+      CHECK(dst[11] == 0);
+
+      bool are_equal = etl::equal(src, src + 12, dst);
+      CHECK(are_equal);
+    }
+
+    //*************************************************************************
+    TEST(test_str_n_copy_destination_exclude_space_for_terminator_exact_no_termination)
+    {
+      STR_PTR  src = STR("Hello World");
+      STR_TYPE dst[11];
+
+      etl::str_n_copy_result result = etl::str_n_copy(src, 11, dst);
+      CHECK_EQUAL(11, result.count);
+      CHECK_FALSE(result.truncated);
+      CHECK_FALSE(result.terminated);
+      CHECK(dst[10] != 0);
+
+      bool are_equal = etl::equal(src, src + 11, dst);
+      CHECK(are_equal);
+    }
+
+    //*************************************************************************
+    TEST(test_str_n_copy_destination_smaller_no_termination)
+    {
+      STR_PTR  src = STR("Hello World");
+      STR_TYPE dst[9];
+
+      etl::str_n_copy_result result = etl::str_n_copy(src, 9, dst);
+      CHECK_EQUAL(9, result.count);
+      CHECK_TRUE(result.truncated);
+      CHECK_FALSE(result.terminated);
+      CHECK(dst[8] != 0);
+
+      bool are_equal = etl::equal(src, src + 9, dst);
+      CHECK(are_equal);
+    }
+
+    //*************************************************************************
+    TEST(test_str_n_copy_zero_sized_destination)
+    {
+      STR_PTR  src = STR("Hello World");
+      STR_TYPE dst[15];
+
+      etl::str_n_copy_result result = etl::str_n_copy(src, 0, dst);
+      CHECK_EQUAL(0, result.count);
+      CHECK_TRUE(result.truncated);
+      CHECK_FALSE(result.terminated);
     }
   };
 }
