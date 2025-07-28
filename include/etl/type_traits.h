@@ -40,12 +40,12 @@ SOFTWARE.
 // To generate to header file, run this at the command line.
 // Note: You will need Python and COG installed.
 //
-// python -m cogapp -d -e -otypes.h -DHandlers=<n> types_generator.h
+// cog -d -e -otypes.h -DHandlers=<n> types_generator.h
 // Where <n> is the number of types to support.
 //
 // e.g.
 // To generate handlers for up to 16 types...
-// python -m cogapp -d -e -otype_traits.h -DIsOneOf=16 type_traits_generator.h
+// cog -d -e -otype_traits.h -DIsOneOf=16 type_traits_generator.h
 //
 // See generate.bat
 //***************************************************************************
@@ -2412,12 +2412,11 @@ typedef integral_constant<bool, true>  true_type;
   };
 #else
   /// Primary template for etl::underlying_type
-  /// Users must spelialise this template for their enumerations. 
+  /// Users must specialise this template for their enumerations.
   template <typename T>
   struct underlying_type
   {
-    ETL_STATIC_ASSERT(false, "No user defined specialisation of etl::underlying_type for this type");
-    typedef char type;
+    typedef int type;
   };
 #endif
 

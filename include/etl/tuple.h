@@ -333,7 +333,7 @@ namespace etl
                                                                   etl::is_convertible<UHead, THead>::value, int> = 0>
     ETL_CONSTEXPR14
     tuple(tuple<UHead, UTail...>&& other)
-      : base_type(etl::forward<tuple<UHead, UTail...>>(other.get_base()))
+      : base_type(etl::forward<tuple<UTail...>>(other.get_base()))
       , value(etl::forward<UHead>(other.get_value()))
     {
     }
@@ -347,7 +347,7 @@ namespace etl
                                                                   !etl::is_convertible<UHead, THead>::value, int> = 0>
     ETL_CONSTEXPR14 
     explicit tuple(tuple<UHead, UTail...>&& other)
-      : base_type(etl::forward<tuple<UHead, UTail...>>(other.get_base()))
+      : base_type(etl::forward<tuple<UTail...>>(other.get_base()))
       , value(etl::forward<UHead>(other.get_value()))
     {
     }
@@ -361,8 +361,8 @@ namespace etl
                                                                   etl::is_convertible<UHead, THead>::value, int> = 0>
     ETL_CONSTEXPR14
     tuple(const tuple<UHead, UTail...>&& other)
-      : base_type(etl::forward<tuple<UHead, UTail...>>(other.get_base()))
-      , value(etl::forward<UHead>(other.get_value()))
+      : base_type(other.get_base())
+      , value(other.get_value())
     {
     }
 
@@ -375,8 +375,8 @@ namespace etl
                                                                   !etl::is_convertible<UHead, THead>::value, int> = 0>
     ETL_CONSTEXPR14 
     explicit tuple(const tuple<UHead, UTail...>&& other)
-      : base_type(etl::forward<tuple<UHead, UTail...>>(other.get_base()))
-      , value(etl::forward<UHead>(other.get_value()))
+      : base_type(other.get_base())
+      , value(other.get_value())
     {
     }
 
@@ -1277,6 +1277,15 @@ namespace etl
 
 namespace std
 {
+#if ETL_NOT_USING_STL && !((defined(ETL_DEVELOPMENT_OS_APPLE) || \
+    (ETL_COMPILER_FULL_VERSION >= 190000)) && defined(ETL_COMPILER_CLANG))
+  template <typename T>
+  struct tuple_size;
+
+  template <size_t I, typename TType>
+  struct tuple_element;
+#endif
+
   //***************************************************************************
   /// Specialisation of tuple_size to allow the use of C++ structured bindings.
   //***************************************************************************

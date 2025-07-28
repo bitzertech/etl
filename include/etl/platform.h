@@ -139,6 +139,16 @@ SOFTWARE.
 #endif
 
 //*************************************
+// For when the runtime library is compiled without wchar_t support.
+#if defined(ETL_NO_WIDE_CHARACTERS)
+  #define ETL_USING_WIDE_CHARACTERS     0
+  #define ETL_NOT_USING_WIDE_CHARACTERS 1
+#else
+  #define ETL_USING_WIDE_CHARACTERS     1
+  #define ETL_NOT_USING_WIDE_CHARACTERS 0
+#endif
+
+//*************************************
 // Figure out things about the compiler, if haven't already done so in etl_profile.h
 #include "profiles/determine_compiler_version.h"
 #include "profiles/determine_compiler_language_support.h"
@@ -235,8 +245,10 @@ SOFTWARE.
 // Indicate if C++ exceptions are enabled.
 #if defined(ETL_THROW_EXCEPTIONS)
   #define ETL_USING_EXCEPTIONS 1
+  #define ETL_NOT_USING_EXCEPTIONS 0
 #else
   #define ETL_USING_EXCEPTIONS 0
+  #define ETL_NOT_USING_EXCEPTIONS 1
 #endif
 
 //*************************************
@@ -450,6 +462,16 @@ SOFTWARE.
 #endif
 
 //*************************************
+// Determine if the ETL can use libc's wchar.h
+#if defined(ETL_NO_LIBC_WCHAR_H)
+  #define ETL_USING_LIBC_WCHAR_H     0
+  #define ETL_NOT_USING_LIBC_WCHAR_H 1
+#else
+  #define ETL_USING_LIBC_WCHAR_H     1
+  #define ETL_NOT_USING_LIBC_WCHAR_H 0
+#endif
+
+//*************************************
 // Determine if the ETL should support atomics.
 #if defined(ETL_NO_ATOMICS) || \
     defined(ETL_TARGET_DEVICE_ARM_CORTEX_M0) || \
@@ -559,6 +581,7 @@ namespace etl
     static ETL_CONSTANT bool using_generic_compiler           = (ETL_USING_GENERIC_COMPILER == 1);
     static ETL_CONSTANT bool using_legacy_bitset              = (ETL_USING_LEGACY_BITSET == 1);
     static ETL_CONSTANT bool using_exceptions                 = (ETL_USING_EXCEPTIONS == 1);
+    static ETL_CONSTANT bool using_libc_wchar_h               = (ETL_USING_LIBC_WCHAR_H == 1);
     
     // Has...
     static ETL_CONSTANT bool has_initializer_list             = (ETL_HAS_INITIALIZER_LIST == 1);
@@ -589,6 +612,7 @@ namespace etl
     static ETL_CONSTANT bool has_chrono_literals_milliseconds = (ETL_HAS_CHRONO_LITERALS_DURATION == 1);
     static ETL_CONSTANT bool has_chrono_literals_microseconds = (ETL_HAS_CHRONO_LITERALS_DURATION == 1);
     static ETL_CONSTANT bool has_chrono_literals_nanoseconds  = (ETL_HAS_CHRONO_LITERALS_DURATION == 1);
+    static ETL_CONSTANT bool has_std_byteswap                 = (ETL_HAS_STD_BYTESWAP == 1);
 
     // Is...
     static ETL_CONSTANT bool is_debug_build                   = (ETL_IS_DEBUG_BUILD == 1);
