@@ -69,7 +69,7 @@ SOFTWARE.
 //*****************************************************************************
 
 // Forward declaration of string_view
-namespace etl 
+namespace etl
 {
   template <typename T, typename TTraits>
   class basic_string_view;
@@ -163,7 +163,7 @@ namespace etl
 
       static ETL_CONSTANT uint_least8_t IS_TRUNCATED    = etl::bit<0>::value;
       static ETL_CONSTANT uint_least8_t CLEAR_AFTER_USE = etl::bit<1>::value;
-      
+
       static ETL_CONSTANT size_type npos = etl::integral_limits<size_type>::max;
     };
 
@@ -736,7 +736,7 @@ namespace etl
       append_impl(begin(), str, str + n, false, false);
     }
 
-    //********************************************************************* 
+    //*********************************************************************
     /// Assigns values to the string from a view.
     //*********************************************************************
     template <typename TOtherTraits>
@@ -1355,7 +1355,7 @@ namespace etl
         return first_;
       }
 
-      etl::mem_copy(last_, end(), first_);
+      etl::mem_move(last_, end(), first_);
       size_type n_delete = etl::distance(first_, last_);
 
       current_size -= n_delete;
@@ -1545,7 +1545,7 @@ namespace etl
     //*********************************************************************
     /// Checks that the string is within this string
     //*********************************************************************
-    bool contains(const etl::ibasic_string<T>& str) const 
+    bool contains(const etl::ibasic_string<T>& str) const
     {
       return find(str) != npos;
     }
@@ -1554,7 +1554,7 @@ namespace etl
     /// Checks that the view is within this string
     //*********************************************************************
     template <typename TOtherTraits>
-    bool contains(const etl::basic_string_view<T, TOtherTraits>& view) const 
+    bool contains(const etl::basic_string_view<T, TOtherTraits>& view) const
     {
       return find(view) != npos;
     }
@@ -1562,7 +1562,7 @@ namespace etl
     //*********************************************************************
     /// Checks that text is within this string
     //*********************************************************************
-    bool contains(const_pointer s) const 
+    bool contains(const_pointer s) const
     {
       return find(s) != npos;
     }
@@ -1570,7 +1570,7 @@ namespace etl
     //*********************************************************************
     /// Checks that character is within this string
     //*********************************************************************
-    bool contains(value_type c) const 
+    bool contains(value_type c) const
     {
       return find(c) != npos;
     }
@@ -1578,7 +1578,7 @@ namespace etl
     //*********************************************************************
     /// Checks that the string is the start of this string
     //*********************************************************************
-    bool starts_with(const etl::ibasic_string<T>& str) const 
+    bool starts_with(const etl::ibasic_string<T>& str) const
     {
       return compare(0, str.size(), str) == 0;
     }
@@ -1587,7 +1587,7 @@ namespace etl
     /// Checks that the view is the start of this string
     //*********************************************************************
     template <typename TOtherTraits>
-    bool starts_with(const etl::basic_string_view<T, TOtherTraits>& view) const 
+    bool starts_with(const etl::basic_string_view<T, TOtherTraits>& view) const
     {
       return compare(0, view.size(), view) == 0;
     }
@@ -1595,7 +1595,7 @@ namespace etl
     //*********************************************************************
     /// Checks that the string is the start of this string
     //*********************************************************************
-    bool starts_with(const_pointer s) const 
+    bool starts_with(const_pointer s) const
     {
       size_t len = etl::strlen(s);
 
@@ -1605,7 +1605,7 @@ namespace etl
     //*********************************************************************
     /// Checks that the character is the start of this string
     //*********************************************************************
-    bool starts_with(value_type c) const 
+    bool starts_with(value_type c) const
     {
       return !empty() && (front() == c);
     }
@@ -1613,9 +1613,9 @@ namespace etl
     //*********************************************************************
     /// Checks that the string is the end of this string
     //*********************************************************************
-    bool ends_with(const etl::ibasic_string<T>& str) const 
+    bool ends_with(const etl::ibasic_string<T>& str) const
     {
-      if (str.size() > size()) 
+      if (str.size() > size())
       {
         return false;
       }
@@ -1627,9 +1627,9 @@ namespace etl
     /// Checks that the view is the end of this string
     //*********************************************************************
     template <typename TOtherTraits>
-    bool ends_with(const etl::basic_string_view<T, TOtherTraits>& view) const 
+    bool ends_with(const etl::basic_string_view<T, TOtherTraits>& view) const
     {
-      if (view.size() > size()) 
+      if (view.size() > size())
       {
         return false;
       }
@@ -1640,11 +1640,11 @@ namespace etl
     //*********************************************************************
     /// Checks that the string is the end of this string
     //*********************************************************************
-    bool ends_with(const_pointer s) const 
+    bool ends_with(const_pointer s) const
     {
       size_t len = etl::strlen(s);
 
-      if (len > size()) 
+      if (len > size())
       {
         return false;
       }
@@ -1655,7 +1655,7 @@ namespace etl
     //*********************************************************************
     /// Checks that the character is the end of this string
     //*********************************************************************
-    bool ends_with(value_type c) const 
+    bool ends_with(value_type c) const
     {
       return !empty() && (back() == c);
     }
@@ -2564,7 +2564,7 @@ namespace etl
     //*************************************************************************
     /// Compare helper function
     //*************************************************************************
-    static int compare(const_pointer first1, const_pointer last1, 
+    static int compare(const_pointer first1, const_pointer last1,
                        const_pointer first2, const_pointer last2)
     {
       typedef typename etl::make_unsigned<value_type>::type type;
@@ -2598,7 +2598,7 @@ namespace etl
         // First string is shorter.
         return -1;
       }
-      
+
       if (length1 > length2)
       {
         // First string is longer.
@@ -2688,7 +2688,7 @@ namespace etl
     {
       size_t count = 0;
 
-      while (count != n) 
+      while (count != n)
       {
         *to++ = *from++;
         ++count;
@@ -2702,7 +2702,7 @@ namespace etl
     //*********************************************************************
     template <typename U>
     static
-    typename etl::enable_if<sizeof(U) == sizeof(char), size_t>::type 
+    typename etl::enable_if<sizeof(U) == sizeof(char), size_t>::type
       get_string_length(const U* src)
     {
       return ::strlen(reinterpret_cast<const char*>(src));
@@ -2724,7 +2724,7 @@ namespace etl
     //*********************************************************************
     template <typename U>
     static
-    typename etl::enable_if<(sizeof(U) != sizeof(char)) && (sizeof(U) != sizeof(wchar_t)), size_t>::type 
+    typename etl::enable_if<(sizeof(U) != sizeof(char)) && (sizeof(U) != sizeof(wchar_t)), size_t>::type
       get_string_length(const U* src)
     {
       return etl::strlen(src);
@@ -2740,10 +2740,10 @@ namespace etl
       difference_type count      = etl::distance(first, last);
       difference_type free_space = etl::distance(position, p_buffer + CAPACITY);
 
-#if ETL_IS_DEBUG_BUILD     
+#if ETL_IS_DEBUG_BUILD
       ETL_ASSERT(count >= 0, ETL_ERROR(string_iterator));
 #endif
-     
+
 #if ETL_HAS_STRING_TRUNCATION_CHECKS
       set_truncated((count > free_space) || this->is_truncated() || truncated);
 
@@ -2782,7 +2782,7 @@ namespace etl
       difference_type start      = etl::distance(p_buffer, position);
       difference_type free_space = etl::distance(position, p_buffer + CAPACITY);
 
-      pointer dst    = position;     
+      pointer dst    = position;
       size_t  length = get_string_length(src);
       size_t  count  = (length < size_t(free_space)) ? length : size_t(free_space);
       etl::mem_copy(src, count, dst);
@@ -3108,7 +3108,7 @@ namespace etl
   //***************************************************************************
 #if ETL_USING_STL
   template <typename T>
-  std::basic_ostream<T, std::char_traits<T> > &operator<<(std::basic_ostream<T, std::char_traits<T> > &os, 
+  std::basic_ostream<T, std::char_traits<T> > &operator<<(std::basic_ostream<T, std::char_traits<T> > &os,
                                                           const etl::ibasic_string<T>& str)
   {
     os.write(str.data(), str.size());
