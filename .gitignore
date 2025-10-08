@@ -403,3 +403,10 @@ test/syntax_check/bgcc
 test/vs2022/Debug MSVC C++23
 test/vs2022/Debug MSVC C++23 - No STL
 .vs
+examples/UniquePtrWithPool/CMakeFiles
+examples/UniquePtrWithPool/cmake_install.cmake
+examples/UniquePtrWithPool/Makefile
+examples/UniquePtrWithPool/CMakeCache.txt
+examples/UniquePtrWithPool/UniquePtrWithPool
+test/vs2022/Debug Clang C++20 - Optimised -O2
+include/etl/header_file_list.txt
