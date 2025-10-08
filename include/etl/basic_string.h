@@ -969,7 +969,7 @@ namespace etl
         if (position != end())
         {
           // Insert in the middle.
-          etl::mem_move(insert_position, end() - 1, insert_position + 1);          
+          etl::mem_move(insert_position, end() - 1, insert_position + 1);
           *insert_position = value;
         }
 
@@ -1744,7 +1744,7 @@ namespace etl
       // Limit the lengths.
       length_   = etl::min(length_, size() - position);
       sublength = etl::min(sublength, str.size() - subposition);
-      
+
       return replace_impl(begin() + position, begin() + position + length_, str.begin() + subposition, sublength, str.is_truncated());
     }
 
@@ -2545,7 +2545,7 @@ namespace etl
       const size_type remove_index  = size_type(first_ - p_buffer);
       const size_type remove_length = size_type(last_  - first_);
       const size_type free_space    = CAPACITY - remove_index;  // Free space is the space from the remove index to the end of the buffer.
-      
+
       size_type insert_length = (s == ETL_NULLPTR) ? 0U : length;
 
       // Limit the insert length to the available free space.
@@ -2558,7 +2558,7 @@ namespace etl
       size_type tail_index  = remove_index + remove_length;
       size_type tail_length = current_size - tail_index;
       size_type tail_space  = free_space - insert_length;
-      
+
 #if ETL_HAS_STRING_TRUNCATION_CHECKS
       set_truncated((insert_length != length) || (tail_space < tail_length) || is_truncated() || other_truncated);
 #endif
@@ -2744,39 +2744,6 @@ namespace etl
       }
 
       return to;
-    }
-
-    //*********************************************************************
-    /// get_string_length, optimised for sizeof(U) == sizeof(char).
-    //*********************************************************************
-    template <typename U>
-    static
-    typename etl::enable_if<sizeof(U) == sizeof(char), size_t>::type 
-      get_string_length(const U* src)
-    {
-      return ::strlen(reinterpret_cast<const char*>(src));
-    }
-
-    //*********************************************************************
-    /// get_string_length, optimised for sizeof(U) == sizeof(wchar_t).
-    //*********************************************************************
-    template <typename U>
-    static
-    typename etl::enable_if<sizeof(U) == sizeof(wchar_t), size_t>::type
-      get_string_length(const U* src)
-    {
-      return ::wcslen(reinterpret_cast<const wchar_t*>(src));
-    }
-
-    //*********************************************************************
-    /// get_string_length, optimised for anything else.
-    //*********************************************************************
-    template <typename U>
-    static
-    typename etl::enable_if<(sizeof(U) != sizeof(char)) && (sizeof(U) != sizeof(wchar_t)), size_t>::type 
-      get_string_length(const U* src)
-    {
-      return etl::strlen(src);
     }
 
     //*********************************************************************
