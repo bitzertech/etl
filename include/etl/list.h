@@ -413,9 +413,9 @@ namespace etl
     typedef T&       reference;
     typedef const T& const_reference;
 #if ETL_USING_CPP11
-    typedef T&& rvalue_reference;
+    typedef T&&      rvalue_reference;
 #endif
-    typedef size_t size_type;
+    typedef size_t   size_type;
 
   protected:
     typedef typename etl::parameter_type<T>::type parameter_t;
@@ -835,14 +835,15 @@ namespace etl
     //*************************************************************************
     void push_front(const T& value)
     {
-#if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-#endif
+      ETL_ASSERT_CHECK_PUSH_POP_OR_RETURN(!full(), ETL_ERROR(list_full));
       data_node_t* node = allocate_data_node(value);
       if (node != nullptr)
       {
         insert_node(get_head(), *node);
       }
+
+
+      insert_node(get_head(), allocate_data_node(value));
     }
 
 #if ETL_USING_CPP11
@@ -851,9 +852,8 @@ namespace etl
     //*************************************************************************
     void push_front(rvalue_reference value)
     {
-  #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-  #endif
+      ETL_ASSERT_CHECK_PUSH_POP_OR_RETURN(!full(), ETL_ERROR(list_full));
+
       data_node_t* node = allocate_data_node(etl::move(value));
       if (node != nullptr)
       {
@@ -869,9 +869,9 @@ namespace etl
     template <typename... Args>
     reference emplace_front(Args&&... args)
     {
-  #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-  #endif
+
+      ETL_ASSERT_CHECK_PUSH_POP(!full(), ETL_ERROR(list_full));
+
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
@@ -889,9 +889,8 @@ namespace etl
     //*************************************************************************
     reference emplace_front()
     {
-#if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-#endif
+      ETL_ASSERT_CHECK_PUSH_POP(!full(), ETL_ERROR(list_full));
+
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
@@ -910,9 +909,8 @@ namespace etl
     template <typename T1>
     reference emplace_front(const T1& value1)
     {
-  #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-  #endif
+      ETL_ASSERT_CHECK_PUSH_POP(!full(), ETL_ERROR(list_full));
+
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
@@ -931,9 +929,8 @@ namespace etl
     template <typename T1, typename T2>
     reference emplace_front(const T1& value1, const T2& value2)
     {
-  #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-  #endif
+      ETL_ASSERT_CHECK_PUSH_POP(!full(), ETL_ERROR(list_full));
+
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
@@ -952,9 +949,8 @@ namespace etl
     template <typename T1, typename T2, typename T3>
     reference emplace_front(const T1& value1, const T2& value2, const T3& value3)
     {
-  #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-  #endif
+      ETL_ASSERT_CHECK_PUSH_POP(!full(), ETL_ERROR(list_full));
+
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
@@ -973,9 +969,8 @@ namespace etl
     template <typename T1, typename T2, typename T3, typename T4>
     reference emplace_front(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
     {
-  #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-  #endif
+      ETL_ASSERT_CHECK_PUSH_POP(!full(), ETL_ERROR(list_full));
+
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
@@ -994,9 +989,8 @@ namespace etl
     //*************************************************************************
     void pop_front()
     {
-#if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!empty(), ETL_ERROR(list_empty));
-#endif
+      ETL_ASSERT_CHECK_PUSH_POP_OR_RETURN(!empty(), ETL_ERROR(list_empty));
+
       node_t& node = get_head();
       remove_node(node);
     }
@@ -1006,9 +1000,8 @@ namespace etl
     //*************************************************************************
     void push_back(const T& value)
     {
-#if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-#endif
+      ETL_ASSERT_CHECK_PUSH_POP_OR_RETURN(!full(), ETL_ERROR(list_full));
+
       data_node_t* node = allocate_data_node(value);
       if (node != nullptr)
       {
@@ -1022,9 +1015,8 @@ namespace etl
     //*************************************************************************
     void push_back(rvalue_reference value)
     {
-  #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-  #endif
+      ETL_ASSERT_CHECK_PUSH_POP_OR_RETURN(!full(), ETL_ERROR(list_full));
+
       data_node_t* node = allocate_data_node(etl::move(value));
       if (node != nullptr)
       {
@@ -1040,9 +1032,8 @@ namespace etl
     template <typename... Args>
     reference emplace_back(Args&&... args)
     {
-  #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-  #endif
+      ETL_ASSERT_CHECK_PUSH_POP(!full(), ETL_ERROR(list_full));
+
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
@@ -1057,9 +1048,8 @@ namespace etl
 #else
     reference emplace_back()
     {
-#if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-#endif
+      ETL_ASSERT_CHECK_PUSH_POP(!full(), ETL_ERROR(list_full));
+
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
@@ -1075,9 +1065,8 @@ namespace etl
     template <typename T1>
     reference emplace_back(const T1& value1)
     {
-  #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-  #endif
+      ETL_ASSERT_CHECK_PUSH_POP(!full(), ETL_ERROR(list_full));
+
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
@@ -1093,9 +1082,8 @@ namespace etl
     template <typename T1, typename T2>
     reference emplace_back(const T1& value1, const T2& value2)
     {
-  #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-  #endif
+      ETL_ASSERT_CHECK_PUSH_POP(!full(), ETL_ERROR(list_full));
+
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
@@ -1111,9 +1099,8 @@ namespace etl
     template <typename T1, typename T2, typename T3>
     reference emplace_back(const T1& value1, const T2& value2, const T3& value3)
     {
-  #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-  #endif
+      ETL_ASSERT_CHECK_PUSH_POP(!full(), ETL_ERROR(list_full));
+
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
@@ -1129,9 +1116,8 @@ namespace etl
     template <typename T1, typename T2, typename T3, typename T4>
     reference emplace_back(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
     {
-  #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!full(), ETL_ERROR(list_full));
-  #endif
+      ETL_ASSERT_CHECK_PUSH_POP(!full(), ETL_ERROR(list_full));
+
       ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
       data_node_t* p_data_node = allocate_data_node();
@@ -1150,9 +1136,8 @@ namespace etl
     //*************************************************************************
     void pop_back()
     {
-#if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!empty(), ETL_ERROR(list_empty));
-#endif
+      ETL_ASSERT_CHECK_PUSH_POP_OR_RETURN(!empty(), ETL_ERROR(list_empty));
+
       node_t& node = get_tail();
       remove_node(node);
     }

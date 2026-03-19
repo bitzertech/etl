@@ -427,6 +427,15 @@ namespace
 
       CHECK_EQUAL(etldata.back(), view.back());
       CHECK_EQUAL(etldata.back(), cview.back());
+
+      // These should trigger static asserts
+      // auto empty_view = view.subspan<0, 0>();
+      // CHECK_THROW({ auto front = empty_view.front(); (void)front; }, etl::span_out_of_range);
+      // CHECK_THROW({ auto back = empty_view.back(); (void)back; }, etl::span_out_of_range);
+
+      // auto empty_cview = cview.subspan<0, 0>();
+      // CHECK_THROW({ auto front = empty_cview.front(); (void)front; }, etl::span_out_of_range);
+      // CHECK_THROW({ auto back = empty_cview.back(); (void)back; }, etl::span_out_of_range);
     }
 
     //*************************************************************************
@@ -451,8 +460,8 @@ namespace
         CHECK_EQUAL(etldata.at(i), cview.at(i));
       }
 
-      CHECK_THROW({ int d = view.at(view.size()); (void)d; }, etl::array_out_of_range);
-      CHECK_THROW({ int d = cview.at(cview.size()); (void)d; }, etl::array_out_of_range);
+      CHECK_THROW({ int d = view.at(view.size()); (void)d; }, etl::span_out_of_range);
+      CHECK_THROW({ int d = cview.at(cview.size()); (void)d; }, etl::span_out_of_range);
     }
 
     //*************************************************************************
@@ -466,6 +475,9 @@ namespace
         CHECK_EQUAL(etldata[i], view[i]);
         CHECK_EQUAL(etldata[i], cview[i]);
       }
+
+      CHECK_THROW({ int d = view[view.size()]; (void)d; }, etl::span_out_of_range);
+      CHECK_THROW({ int d = cview[cview.size()]; (void)d; }, etl::span_out_of_range);
     }
 
     //*************************************************************************
@@ -548,6 +560,10 @@ namespace
       CHECK(isEqual);
       CHECK_EQUAL(first.size(), cresult.extent);
       CHECK_EQUAL(first.size(), cresult.size());
+
+      // These should trigger static asserts
+      // CHECK_THROW({ auto result2 = view.first<11>(); (void)result2; }, etl::span_out_of_range);
+      // CHECK_THROW({ auto cresult2 = cview.first<11>(); (void)cresult2; }, etl::span_out_of_range);
     }
 
     //*************************************************************************
@@ -569,6 +585,9 @@ namespace
       isEqual = std::equal(cresult.begin(), cresult.end(), first.begin());
       CHECK(isEqual);
       CHECK_EQUAL(first.size(), cresult.size());
+
+      CHECK_THROW({ auto result2 = view.first(11); (void)result2; }, etl::span_out_of_range);
+      CHECK_THROW({ auto cresult2 = cview.first(11); (void)cresult2; }, etl::span_out_of_range);
     }
 
     //*************************************************************************
@@ -592,6 +611,10 @@ namespace
       CHECK(isEqual);
       CHECK_EQUAL(last.size(), cresult.extent);
       CHECK_EQUAL(last.size(), cresult.size());
+
+      //these should trigger static asserts
+      // CHECK_THROW({ auto result2 = view.last<11>(); (void)result2; }, etl::span_out_of_range);
+      // CHECK_THROW({ auto cresult2 = cview.last<11>(); (void)cresult2; }, etl::span_out_of_range);
     }
 
     //*************************************************************************
@@ -613,6 +636,9 @@ namespace
       isEqual = std::equal(cresult.begin(), cresult.end(), last.begin());
       CHECK(isEqual);
       CHECK_EQUAL(last.size(), cresult.size());
+
+      CHECK_THROW({ auto result2 = view.last(11); (void)result2; }, etl::span_out_of_range);
+      CHECK_THROW({ auto cresult2 = cview.last(11); (void)cresult2; }, etl::span_out_of_range);
     }
 
     //*************************************************************************
@@ -667,6 +693,21 @@ namespace
       isEqual = std::equal(sub2.begin(), sub2.end(), cspan4.begin());
       CHECK(isEqual);
       CHECK_EQUAL(etl::dynamic_extent, cspan4.extent);
+
+      //these should trigger static asserts
+      // CHECK_THROW({ auto span5 = view.subspan<11>(); (void)span5; }, etl::span_out_of_range);
+      // CHECK_THROW({ auto cspan5 = cview.subspan<11>(); (void)cspan5; }, etl::span_out_of_range);
+
+      // #define SPAN6_EXPR { auto span6 = view.subspan<2, 9>(); (void)span6; }
+      // CHECK_THROW(SPAN6_EXPR, etl::span_out_of_range);
+      // #define CSPAN6_EXPR { auto cspan6 = cview.subspan<2, 9>(); (void)cspan6; }
+      // CHECK_THROW(CSPAN6_EXPR, etl::span_out_of_range);
+
+      CHECK_THROW({ auto span7 = view.subspan(11); (void)span7; }, etl::span_out_of_range);
+      CHECK_THROW({ auto cspan7 = cview.subspan(11); (void)cspan7; }, etl::span_out_of_range);
+
+      CHECK_THROW({ auto span8 = view.subspan(2, 9); (void)span8; }, etl::span_out_of_range);
+      CHECK_THROW({ auto cspan8 = cview.subspan(2, 9); (void)cspan8; }, etl::span_out_of_range);
     }
 
     //*************************************************************************
@@ -807,12 +848,15 @@ namespace
     TEST(test_issue_486)
     {
       //std::array<char, 10> c;
+      //etl::array<char, 10> c2;
 
       // Should not compile.
       //etl::span<char, 11> value(c);
+      //etl::span<char, 11> value2(c2);
 
       // Should not compile.
       //f_issue_486(c);
+      //f_issue_486(c2);
     }
 
     //*************************************************************************
@@ -1119,12 +1163,13 @@ namespace
     TEST(test_convert_span_any_to_span_byte)
     {
       float data[2]{3.141592f, 2.71828f};
+      const float const_data[2]{3.141592f, 2.71828f};
 
 #if ETL_USING_CPP17
-      auto const const_bytes    = etl::as_bytes(etl::span{ data });
+      auto const const_bytes    = etl::as_bytes(etl::span{ const_data });
       auto const writable_bytes = etl::as_writable_bytes(etl::span{ data });
 #else
-      auto const const_bytes    = etl::as_bytes(etl::span<float, 2>(data));
+      auto const const_bytes    = etl::as_bytes(etl::span<const float, 2>(const_data));
       auto const writable_bytes = etl::as_writable_bytes(etl::span<float, 2>(data));
 #endif
 
@@ -1182,7 +1227,7 @@ namespace
       uint8_t data[] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
       etl::span<uint8_t, 5> data0 = data;
 
-      etl::span<etl::be_uint16_t> data1 = data0.reinterpret_as<etl::be_uint16_t>();
+      auto data1 = data0.reinterpret_as<etl::be_uint16_t>();
 
       CHECK_EQUAL(data1.size(), 2);
       CHECK(data1[0] == 0x102);
@@ -1196,13 +1241,13 @@ namespace
       etl::span<uint32_t, 3> data0 = data;
       CHECK_EQUAL(data0.size(), 3);
 
-      etl::span<uint8_t> data1 = data0.reinterpret_as<uint8_t>();
+      auto data1 = data0.reinterpret_as<uint8_t>();
       CHECK_EQUAL(data1.size(), 12);
 
-      etl::span<uint16_t> data2 = data1.subspan(2).reinterpret_as<uint16_t>();
+      auto data2 = data1.subspan<2>().reinterpret_as<uint16_t>();
       CHECK_EQUAL(data2.size(), 5);
 
-      CHECK_THROW(data2 = data1.subspan(1).reinterpret_as<uint16_t>(), etl::span_alignment_exception);
+      CHECK_THROW(data2 = data1.subspan<1>().reinterpret_as<uint16_t>(), etl::span_alignment_exception);
     }
 
     //*************************************************************************
@@ -1261,5 +1306,5 @@ namespace
     }
 
 #include "etl/private/diagnostic_pop.h"
-  };
+  }
 }

@@ -1008,6 +1008,9 @@ namespace
 
       CHECK_EQUAL(0x1234, test_le.value());
       CHECK_EQUAL(0x1234, test_be.value());
+
+      CHECK_EQUAL(0x1234, test_le);
+      CHECK_EQUAL(0x1234, test_be);
     }
 
     //*************************************************************************
@@ -1027,7 +1030,7 @@ namespace
       CHECK_EQUAL(0x12, bev0);
       CHECK_EQUAL(0x34, bev1);
     }
-  };
+  }
 }
 
 #include "etl/private/diagnostic_pop.h"

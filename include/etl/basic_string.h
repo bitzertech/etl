@@ -560,6 +560,7 @@ namespace etl
     //*********************************************************************
     reference operator [](size_type i)
     {
+      ETL_ASSERT_CHECK_INDEX_OPERATOR(i < size(), ETL_ERROR(string_out_of_bounds));
       return p_buffer[i];
     }
 
@@ -570,6 +571,7 @@ namespace etl
     //*********************************************************************
     const_reference operator [](size_type i) const
     {
+      ETL_ASSERT_CHECK_INDEX_OPERATOR(i < size(), ETL_ERROR(string_out_of_bounds));
       return p_buffer[i];
     }
 
@@ -603,6 +605,7 @@ namespace etl
     //*********************************************************************
     reference front()
     {
+      ETL_ASSERT_CHECK_EXTRA(size() > 0, ETL_ERROR(string_out_of_bounds));
       return p_buffer[0];
     }
 
@@ -612,6 +615,7 @@ namespace etl
     //*********************************************************************
     const_reference front() const
     {
+      ETL_ASSERT_CHECK_EXTRA(size() > 0, ETL_ERROR(string_out_of_bounds));
       return p_buffer[0];
     }
 
@@ -621,7 +625,8 @@ namespace etl
     //*********************************************************************
     reference back()
     {
-      return p_buffer[current_size - 1];
+      ETL_ASSERT_CHECK_EXTRA(size() > 0, ETL_ERROR(string_out_of_bounds));
+      return p_buffer[size() - 1];
     }
 
     //*********************************************************************
@@ -630,7 +635,8 @@ namespace etl
     //*********************************************************************
     const_reference back() const
     {
-      return p_buffer[current_size - 1];
+      ETL_ASSERT_CHECK_EXTRA(size() > 0, ETL_ERROR(string_out_of_bounds));
+      return p_buffer[size() - 1];
     }
 
     //*********************************************************************
@@ -734,17 +740,6 @@ namespace etl
     /// Assigns values to the string.
     /// Truncates if the string does not have enough free space.
     ///\param other The other string.
-    //*********************************************************************
-    template <size_t Size>
-    void assign(const value_type (&literal)[Size])
-    {
-      append_impl(begin(), literal, Size, false, false);
-    }
-
-    //*********************************************************************
-    /// Assigns values to the string.
-    /// Truncates if the string does not have enough free space.
-    ///\param other The other string.
     ///\param length The length to copy.
     //*********************************************************************
     void assign(const_pointer str, size_type n)
@@ -775,7 +770,7 @@ namespace etl
       set_truncated(n > CAPACITY);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-      ETL_ASSERT(is_truncated == false, ETL_ERROR(string_truncation));
+      ETL_ASSERT(is_truncated() == false, ETL_ERROR(string_truncation));
 #endif
 #endif
 
@@ -923,7 +918,7 @@ namespace etl
       set_truncated(n > free_space);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-      ETL_ASSERT(is_truncated == false, ETL_ERROR(string_truncation));
+      ETL_ASSERT(is_truncated() == false, ETL_ERROR(string_truncation));
 #endif
 #endif
 
@@ -943,6 +938,8 @@ namespace etl
     //*********************************************************************
     iterator insert(const_iterator position, T value)
     {
+      ETL_ASSERT_CHECK_EXTRA(cbegin() <= position && position <= cend(), ETL_ERROR(string_out_of_bounds));
+
       // Quick hack, as iterators are pointers.
       iterator insert_position = to_iterator(position);
 
@@ -969,7 +966,7 @@ namespace etl
         if (position != end())
         {
           // Insert in the middle.
-          etl::mem_move(insert_position, end() - 1, insert_position + 1);          
+          etl::mem_move(insert_position, end() - 1, insert_position + 1);
           *insert_position = value;
         }
 
@@ -995,6 +992,8 @@ namespace etl
     //*********************************************************************
     iterator insert(const_iterator position, size_type n, T value)
     {
+      ETL_ASSERT_CHECK_EXTRA(cbegin() <= position && position <= cend(), ETL_ERROR(string_out_of_bounds));
+
       iterator position_ = to_iterator(position);
 
       if (n == 0)
@@ -1016,7 +1015,7 @@ namespace etl
         ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
 #endif
-        return to_iterator(position);;
+        return to_iterator(position);
       }
 
       // Fills the string to the end?
@@ -1082,6 +1081,9 @@ namespace etl
     template <typename TIterator>
     iterator insert(const_iterator position, TIterator first, TIterator last)
     {
+      ETL_ASSERT_CHECK_EXTRA(cbegin() <= position && position <= cend(), ETL_ERROR(string_out_of_bounds));
+      ETL_ASSERT_CHECK_EXTRA(first <= last, ETL_ERROR(string_iterator));
+
       iterator position_ = to_iterator(position);
 
       if (first == last)
@@ -1318,6 +1320,8 @@ namespace etl
     //*********************************************************************
     etl::ibasic_string<T>& erase(size_type position, size_type length_ = npos)
     {
+      ETL_ASSERT_CHECK_EXTRA(position <= size(), ETL_ERROR(string_out_of_bounds));
+
       // Limit the length.
       length_ = etl::min(length_, size() - position);
 
@@ -1333,6 +1337,8 @@ namespace etl
     //*********************************************************************
     iterator erase(iterator i_element)
     {
+      ETL_ASSERT_CHECK_EXTRA(cbegin() <= i_element && i_element < cend(), ETL_ERROR(string_out_of_bounds));
+
       etl::mem_move(i_element + 1, end(), i_element);
       p_buffer[--current_size] = 0;
 
@@ -1346,6 +1352,8 @@ namespace etl
     //*********************************************************************
     iterator erase(const_iterator i_element)
     {
+      ETL_ASSERT_CHECK_EXTRA(cbegin() <= i_element && i_element < cend(), ETL_ERROR(string_out_of_bounds));
+
       iterator i_element_(to_iterator(i_element));
 
       etl::mem_move(i_element + 1, end(), i_element_);
@@ -1364,6 +1372,8 @@ namespace etl
     //*********************************************************************
     iterator erase(const_iterator first, const_iterator last)
     {
+      ETL_ASSERT_CHECK_EXTRA(cbegin() <= first && first <= last && last <= cend(), ETL_ERROR(string_out_of_bounds));
+
       iterator first_ = to_iterator(first);
       iterator last_  = to_iterator(last);
 
@@ -1744,7 +1754,7 @@ namespace etl
       // Limit the lengths.
       length_   = etl::min(length_, size() - position);
       sublength = etl::min(sublength, str.size() - subposition);
-      
+
       return replace_impl(begin() + position, begin() + position + length_, str.begin() + subposition, sublength, str.is_truncated());
     }
 
@@ -2545,7 +2555,7 @@ namespace etl
       const size_type remove_index  = size_type(first_ - p_buffer);
       const size_type remove_length = size_type(last_  - first_);
       const size_type free_space    = CAPACITY - remove_index;  // Free space is the space from the remove index to the end of the buffer.
-      
+
       size_type insert_length = (s == ETL_NULLPTR) ? 0U : length;
 
       // Limit the insert length to the available free space.
@@ -2558,7 +2568,7 @@ namespace etl
       size_type tail_index  = remove_index + remove_length;
       size_type tail_length = current_size - tail_index;
       size_type tail_space  = free_space - insert_length;
-      
+
 #if ETL_HAS_STRING_TRUNCATION_CHECKS
       set_truncated((insert_length != length) || (tail_space < tail_length) || is_truncated() || other_truncated);
 #endif
@@ -2591,7 +2601,7 @@ namespace etl
         etl::mem_copy(s, insert_length, &p_buffer[remove_index]);
 
         // Move tail left.
-        etl::mem_copy(&p_buffer[tail_index], tail_length, &p_buffer[remove_index + insert_length]);
+        etl::mem_move(&p_buffer[tail_index], tail_length, &p_buffer[remove_index + insert_length]);
       }
 
       current_size = remove_index + insert_length + tail_length;
@@ -2716,10 +2726,10 @@ namespace etl
     /// Copy characters using pointers.
     /// Returns a pointer to the character after the last copied.
     //*********************************************************************
-    template <typename TIterator1, typename TIterator2>
+    template <typename TIterator1>
     static
-    typename etl::enable_if<etl::is_pointer<TIterator1>::value && etl::is_pointer<TIterator2>::value, TIterator2>::type
-      copy_characters(TIterator1 from, size_t n, TIterator2 to)
+    typename etl::enable_if<etl::is_pointer<typename etl::remove_reference<TIterator1>::type>::value && sizeof(typename etl::remove_pointer<typename etl::remove_cvref<TIterator1>::type>::type) == sizeof(value_type), iterator>::type
+      copy_characters(TIterator1 from, size_t n, iterator to)
     {
       etl::mem_move(from, n, to);
 
@@ -2730,10 +2740,10 @@ namespace etl
     /// Copy characters using non-pointers.
     /// Returns an iterator to the character after the last copied.
     //*********************************************************************
-    template <typename TIterator1, typename TIterator2>
+    template <typename TIterator1>
     static
-    typename etl::enable_if<!etl::is_pointer<TIterator1>::value || !etl::is_pointer<TIterator2>::value, TIterator2>::type
-      copy_characters(TIterator1 from, size_t n, TIterator2 to)
+    typename etl::enable_if<!(etl::is_pointer<typename etl::remove_reference<TIterator1>::type>::value && sizeof(typename etl::remove_pointer<typename etl::remove_cvref<TIterator1>::type>::type) == sizeof(value_type)), iterator>::type
+      copy_characters(TIterator1 from, size_t n, iterator to)
     {
       size_t count = 0;
 
@@ -2747,43 +2757,11 @@ namespace etl
     }
 
     //*********************************************************************
-    /// get_string_length, optimised for sizeof(U) == sizeof(char).
-    //*********************************************************************
-    template <typename U>
-    static
-    typename etl::enable_if<sizeof(U) == sizeof(char), size_t>::type 
-      get_string_length(const U* src)
-    {
-      return ::strlen(reinterpret_cast<const char*>(src));
-    }
-
-    //*********************************************************************
-    /// get_string_length, optimised for sizeof(U) == sizeof(wchar_t).
-    //*********************************************************************
-    template <typename U>
-    static
-    typename etl::enable_if<sizeof(U) == sizeof(wchar_t), size_t>::type
-      get_string_length(const U* src)
-    {
-      return ::wcslen(reinterpret_cast<const wchar_t*>(src));
-    }
-
-    //*********************************************************************
-    /// get_string_length, optimised for anything else.
-    //*********************************************************************
-    template <typename U>
-    static
-    typename etl::enable_if<(sizeof(U) != sizeof(char)) && (sizeof(U) != sizeof(wchar_t)), size_t>::type 
-      get_string_length(const U* src)
-    {
-      return etl::strlen(src);
-    }
-
-    //*********************************************************************
-    /// Common implementation for 'assign' and 'append' for iterators.
+    /// Common implementation for 'assign' and 'append' for non-pointer iterators.
     //*********************************************************************
     template <typename TIterator>
-    void append_impl(iterator position, TIterator first, TIterator last, bool truncated, bool secure)
+    typename etl::enable_if<!etl::is_pointer<typename etl::remove_reference<TIterator>::type>::value>::type
+    append_impl(iterator position, TIterator first, TIterator last, bool truncated, bool secure)
     {
       difference_type start      = etl::distance(p_buffer, position);
       difference_type count      = etl::distance(first, last);
@@ -2797,8 +2775,10 @@ namespace etl
       set_truncated((count > free_space) || this->is_truncated() || truncated);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-      ETL_ASSERT(is_truncated == false, ETL_ERROR(string_truncation));
+      ETL_ASSERT(is_truncated() == false, ETL_ERROR(string_truncation));
 #endif
+#else
+      (void)truncated;
 #endif
 
 #if ETL_HAS_STRING_CLEAR_AFTER_USE
@@ -2806,6 +2786,8 @@ namespace etl
       {
         set_secure();
       }
+#else
+      (void)secure;
 #endif
 
       // Limit the actual distance to the capacity.
@@ -2828,23 +2810,34 @@ namespace etl
         return;
       }
 
-      difference_type start      = etl::distance(p_buffer, position);
-      difference_type free_space = etl::distance(position, p_buffer + CAPACITY);
+      append_impl(position, src, get_string_length(src), truncated, secure);
+    }
 
-      pointer dst    = position;
-      size_t  length = get_string_length(src);
-      size_t  count  = (length < size_t(free_space)) ? length : size_t(free_space);
-      etl::mem_move(src, count, dst);
+    //*********************************************************************
+    /// Core non-template implementation for 'assign' and 'append'.
+    //*********************************************************************
+    void append_impl(iterator position, const_pointer src, size_t length, bool truncated, bool secure)
+    {
+      size_t start      = static_cast<size_t>(etl::distance(p_buffer, position));
+      size_t free_space = static_cast<size_t>(etl::distance(position, p_buffer + CAPACITY));
+      size_t count      = etl::min(length, free_space);
 
-      truncated |= (src[count] != 0);
-      current_size = size_t(start) + count;
+#if ETL_IS_DEBUG_BUILD
+      ETL_ASSERT(start <= CAPACITY, ETL_ERROR(string_iterator));
+#endif
+
+      etl::mem_move(src, count, position);
+
+      current_size = start + count;
       p_buffer[current_size] = 0;
 
 #if ETL_HAS_STRING_TRUNCATION_CHECKS
-      set_truncated(truncated);
+      set_truncated((length > free_space) || truncated);
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-      ETL_ASSERT(is_truncated == false, ETL_ERROR(string_truncation));
+      ETL_ASSERT(is_truncated() == false, ETL_ERROR(string_truncation));
 #endif
+#else
+      (void)truncated;
 #endif
 
 #if ETL_HAS_STRING_CLEAR_AFTER_USE
@@ -2852,9 +2845,21 @@ namespace etl
       {
         set_secure();
       }
+#else
+      (void)secure;
 #endif
 
       cleanup();
+    }
+
+    //*********************************************************************
+    /// Common implementation for 'assign' and 'append' for pointer iterators.
+    //*********************************************************************
+    template <typename TIterator>
+    typename etl::enable_if<etl::is_pointer<typename etl::remove_reference<TIterator>::type>::value>::type
+    append_impl(iterator position, TIterator first, TIterator last, bool truncated, bool secure)
+    {
+      append_impl(position, first, size_t(etl::distance(first, last)), truncated || is_truncated(), secure);
     }
 
     //*************************************************************************

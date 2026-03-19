@@ -134,6 +134,8 @@ namespace
       {
         CHECK_EQUAL(data[i], compare_data[i]);
       }
+
+      CHECK_THROW({ int d = data[data.size()]; (void)d; }, etl::array_out_of_range);
     }
 
     //*************************************************************************
@@ -145,6 +147,8 @@ namespace
       {
         CHECK_EQUAL(data[i], compare_data[i]);
       }
+
+      CHECK_THROW({ int d = data[data.size()]; (void)d; }, etl::array_out_of_range);
     }
 
     //*************************************************************************
@@ -443,6 +447,9 @@ namespace
       CHECK_EQUAL(data[9], *result);
       isEqual = std::equal(data.begin(), data.end(), std::begin(check3));
       CHECK(isEqual);
+
+      // Insert out of range
+      CHECK_THROW({ result = data.insert_at(data.size(), 99); }, etl::array_out_of_range);
     }
 
     //*************************************************************************
@@ -493,6 +500,9 @@ namespace
       CHECK_EQUAL(data[4], *result);
       isEqual = std::equal(data.begin(), data.end(), std::begin(check5));
       CHECK(isEqual);
+
+      // Insert out of range
+      CHECK_THROW({ result = data.insert_at(data.size(), &source2[0], &source2[13]); }, etl::array_out_of_range);
     }
 
     //*************************************************************************
@@ -547,6 +557,9 @@ namespace
       CHECK_EQUAL(data[9], *result);
       isEqual = std::equal(data.begin(), data.end(), std::begin(check3b));
       CHECK(isEqual);
+
+      // Erase out of range
+      CHECK_THROW({ result = data.erase_at(data.size()); }, etl::array_out_of_range);
     }
 
     //*************************************************************************
@@ -601,6 +614,12 @@ namespace
       CHECK_EQUAL(data[5], *result);
       isEqual = std::equal(data.begin(), data.end(), std::begin(check3b));
       CHECK(isEqual);
+
+      // first is greater than last
+      CHECK_THROW({ result = data.erase_range(6, 5, 99); }, etl::array_out_of_range);
+
+      // Erase out of range
+      CHECK_THROW({ result = data.erase_range(5, data.size() + 1, 99); }, etl::array_out_of_range);
     }
 
     //*************************************************************************
@@ -613,12 +632,32 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_equal_constexpr)
+    {
+      ETL_CONSTEXPR14 Data data1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      ETL_CONSTEXPR14 Data data2 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+      ETL_CONSTEXPR14 bool result = (data1 == data2);
+      CHECK(result);
+    }
+
+    //*************************************************************************
     TEST(test_not_equal)
     {
       Data data1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
       Data data2 = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
 
       CHECK(data1 != data2);
+    }
+
+    //*************************************************************************
+    TEST(test_not_equal_constexpr)
+    {
+      ETL_CONSTEXPR14 Data data1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      ETL_CONSTEXPR14 Data data2 = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
+
+      ETL_CONSTEXPR14 bool result = (data1 != data2);
+      CHECK(result);
     }
 
     //*************************************************************************
@@ -901,5 +940,5 @@ namespace
 #endif
     }
 #endif
-  };
+  }
 }

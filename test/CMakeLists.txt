@@ -216,6 +216,7 @@ add_executable(etl_tests
 	test_list_shared_pool.cpp
 	test_macros.cpp
 	test_make_string.cpp
+	test_manchester.cpp
 	test_map.cpp
 	test_math.cpp
 	test_math_functions.cpp
@@ -458,12 +459,14 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 			PRIVATE
 			-fno-omit-frame-pointer
 			-fno-common
+			-pedantic-errors
 			-Wall
 			-Wextra
 			-Werror
 			-Wfloat-equal
 			-Wshadow
 			-Wnull-dereference
+			-Wextra-semi
 			-g
 			)
 endif ()
@@ -473,12 +476,16 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 			PRIVATE
 			-fno-omit-frame-pointer
 			-fno-common
+			-pedantic-errors
 			-Wall
 			-Wextra
 			-Werror
 			-Wfloat-equal
 			-Wshadow
 			-Wnull-dereference
+			-Wextra-semi
+			-Wextra-semi-stmt
+			-Wc++11-extra-semi
 			-g
 			)
 endif ()

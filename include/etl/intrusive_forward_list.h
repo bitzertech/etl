@@ -206,9 +206,8 @@ namespace etl
     //*************************************************************************
     void pop_front()
     {
-#if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT_OR_RETURN(!empty(), ETL_ERROR(intrusive_forward_list_empty));
-#endif
+      ETL_ASSERT_CHECK_PUSH_POP_OR_RETURN(!empty(), ETL_ERROR(intrusive_forward_list_empty));
+
       disconnect_link_after(start);
     }
 
@@ -1166,7 +1165,7 @@ namespace etl
 
         link_type* before      = &this->start;
         link_type* before_next = get_next(before);
-        link_type* terminal    = &this->terminator;;
+        link_type* terminal    = &this->terminator;
 
         while ((before->etl_next != terminal) && (other_begin != other_terminal))
         {
