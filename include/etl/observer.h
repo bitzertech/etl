@@ -51,13 +51,13 @@ SOFTWARE.
 ///\ingroup patterns
 //*****************************************************************************
 
-#include "algorithm.h"
-
 #include "platform.h"
+#include "algorithm.h"
 #include "vector.h"
 #include "exception.h"
 #include "error_handler.h"
 #include "utility.h"
+#include "type_list.h"
 
 namespace etl
 {
@@ -309,6 +309,7 @@ namespace etl
 
     using observer<T1>::notification;
     using observer<TRest...>::notification;
+    using type_list = etl::type_list<T1, TRest...>;
   };
 
   //*****************************************************************
@@ -319,6 +320,8 @@ namespace etl
   class observer<T1>
   {
   public:
+
+    using type_list = etl::type_list<T1>;
 
     virtual ~observer() = default;
 
@@ -334,10 +337,26 @@ namespace etl
   {
   public:
 
+    using type_list = etl::type_list<>;
+
     virtual ~observer() = default;
 
     virtual void notification() = 0;
   };
+
+  //***************************************************************************
+  /// Helper to turn etl::type_list<TTypes...> into etl::observer<TTypes...>
+  template <typename TList>
+  struct observer_from_type_list;
+
+  template <typename... TTypes>
+  struct observer_from_type_list<etl::type_list<TTypes...>>
+  {
+    using type = etl::observer<TTypes...>;
+  };
+
+  template <typename TTypeList>
+  using observer_from_type_list_t = typename observer_from_type_list<TTypeList>::type;
 
 #else
 

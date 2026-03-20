@@ -62,6 +62,8 @@ namespace
     CompareDataNDC shorter_data;
     CompareDataNDC different_data;
     CompareDataNDC insert_data;
+    CompareDataNDC swap_data;
+    CompareDataNDC swap_other_data;
 
     //*************************************************************************
     struct SetupFixture
@@ -72,6 +74,8 @@ namespace
         NDC n_insert[]  = { NDC("11"), NDC("12"), NDC("13") };
         NDC n_less[]    = { NDC("0"), NDC("1"), NDC("2"), NDC("3"), NDC("3"), NDC("5"), NDC("6"), NDC("7"), NDC("8"), NDC("9") };
         NDC n_greater[] = { NDC("0"), NDC("1"), NDC("2"), NDC("4"), NDC("4"), NDC("5"), NDC("6"), NDC("7"), NDC("8"), NDC("9") };
+        NDC n_swap[]    = { NDC("0"), NDC("1"), NDC("2"), NDC("4"), NDC("4"), NDC("5") };
+        NDC n_swap_other[] = { NDC("6"), NDC("7"), NDC("8"), NDC("9") };
 
         initial_data.assign(std::begin(n), std::end(n));
         insert_data.assign(std::begin(n_insert), std::end(n_insert));
@@ -79,6 +83,8 @@ namespace
         greater_data.assign(std::begin(n_greater), std::end(n_greater));
         shorter_data.assign(std::begin(n_greater), std::end(n_greater) - 1);
         different_data.assign(initial_data.rbegin(), initial_data.rend());
+        swap_data.assign(std::begin(n_swap), std::end(n_swap));
+        swap_other_data.assign(std::begin(n_swap_other), std::end(n_swap_other));
       }
     };
 
@@ -364,8 +370,8 @@ namespace
       DataDC data(10);
       const DataDC constData(10);
 
-      CHECK_EQUAL(&data[10], data.end());
-      CHECK_EQUAL(&constData[10], constData.end());
+      CHECK_EQUAL(data.begin() + data.size(), data.end());
+      CHECK_EQUAL(constData.begin() + constData.size(), constData.end());
     }
 
     //*************************************************************************
@@ -465,6 +471,8 @@ namespace
       {
         CHECK_EQUAL(data[i], compare_data[i]);
       }
+
+      CHECK_THROW(data[data.size()], etl::vector_out_of_bounds);
     }
 
     //*************************************************************************
@@ -478,6 +486,8 @@ namespace
       {
         CHECK_EQUAL(data[i], compare_data[i]);
       }
+
+      CHECK_THROW(data[data.size()], etl::vector_out_of_bounds);
     }
 
     //*************************************************************************
@@ -515,6 +525,9 @@ namespace
       DataNDC data(initial_data.begin(), initial_data.end());
 
       CHECK(data.front() == compare_data.front());
+
+      DataNDC emptyData;
+      CHECK_THROW(emptyData.front(), etl::vector_out_of_bounds);
     }
 
     //*************************************************************************
@@ -524,6 +537,9 @@ namespace
       const DataNDC data(initial_data.begin(), initial_data.end());
 
       CHECK(data.front() == compare_data.front());
+
+      const DataNDC emptyData;
+      CHECK_THROW(emptyData.front(), etl::vector_out_of_bounds);
     }
 
     //*************************************************************************
@@ -533,6 +549,9 @@ namespace
       DataNDC data(initial_data.begin(), initial_data.end());
 
       CHECK(data.back() == compare_data.back());
+
+      DataNDC emptyData;
+      CHECK_THROW(emptyData.back(), etl::vector_out_of_bounds);
     }
 
     //*************************************************************************
@@ -542,6 +561,9 @@ namespace
       const DataNDC data(initial_data.begin(), initial_data.end());
 
       CHECK(data.back() == compare_data.back());
+
+      const DataNDC emptyData;
+      CHECK_THROW(emptyData.back(), etl::vector_out_of_bounds);
     }
 
     //*************************************************************************
@@ -935,6 +957,19 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_position_value_outofbounds)
+    {
+      const size_t INITIAL_SIZE = 5;
+      const NDC INITIAL_VALUE("1");
+
+      DataNDC data;
+      data.assign(initial_data.begin(), initial_data.begin() + INITIAL_SIZE);
+      DataNDC::iterator it = data.begin();
+      --it;
+      CHECK_THROW(data.insert(it, INITIAL_VALUE), etl::vector_out_of_bounds);
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_emplace_position_value)
     {
       const size_t INITIAL_SIZE = 5;
@@ -959,6 +994,43 @@ namespace
 
         CHECK(is_equal);
       }
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_emplace_position_value_outofbounds)
+    {
+      const size_t INITIAL_SIZE = 5;
+      const std::string INITIAL_VALUE("1");
+
+      DataNDC data;
+      data.assign(initial_data.begin(), initial_data.begin() + INITIAL_SIZE);
+      DataNDC::const_iterator it = data.cend();
+      ++it;
+      CHECK_THROW(data.emplace(it, INITIAL_VALUE), etl::vector_out_of_bounds);
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_out_of_range_past_end)
+    {
+      DataNDC data;
+      DataNDC::iterator it = data.end();
+      ++it;
+
+      const std::string INITIAL_VALUE("1");
+
+      CHECK_THROW(data.emplace(it, INITIAL_VALUE), etl::vector_out_of_bounds);
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_out_of_range_before_begin)
+    {
+      DataNDC data;
+      DataNDC::iterator it = data.begin();
+      --it;
+
+      const std::string INITIAL_VALUE("1");
+
+      CHECK_THROW(data.emplace(it, INITIAL_VALUE), etl::vector_out_of_bounds);
     }
 
     //*************************************************************************
@@ -1010,6 +1082,17 @@ namespace
 
         CHECK(is_equal);
       }
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_position_n_value_outofbounds)
+    {
+      DataNDC data;
+      DataNDC::const_iterator it = data.cend();
+      ++it;
+      const NDC INITIAL_VALUE("1");
+
+      CHECK_THROW(data.insert(it, 1, INITIAL_VALUE), etl::vector_out_of_bounds);
     }
 
     //*************************************************************************
@@ -1092,6 +1175,15 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_position_range_out_of_bounds)
+    {
+      DataNDC data;
+      DataNDC data2;
+
+      CHECK_THROW(data.insert(data2.end(), insert_data.cbegin(), insert_data.cend()), etl::vector_out_of_bounds);
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_erase_single)
     {
       CompareDataNDC compare_data(initial_data.begin(), initial_data.end());
@@ -1111,6 +1203,14 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_erase_single_iterator_outofbounds)
+    {
+      DataNDC data(initial_data.begin(), initial_data.end());
+
+      CHECK_THROW(data.erase(data.end()), etl::vector_out_of_bounds);
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_erase_range)
     {
       CompareDataNDC compare_data(initial_data.begin(), initial_data.end());
@@ -1127,6 +1227,15 @@ namespace
                                 compare_data.begin());
 
       CHECK(is_equal);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_erase_range_outofbounds)
+    {
+      DataNDC data(initial_data.begin(), initial_data.end());
+      DataNDC data2(initial_data.begin(), initial_data.end());
+
+      CHECK_THROW(data.erase(data2.begin(), data2.end()), etl::vector_out_of_bounds);
     }
 
     //*************************************************************************
@@ -1321,5 +1430,80 @@ namespace
       const DataNDC initial2(initial_data.begin(), initial_data.end());
       CHECK((initial >= initial2) == (initial_data >= initial_data));
     }
-  };
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_swap_same_capacity)
+    {
+      DataNDC etl_data(swap_data.begin(), swap_data.end());
+      DataNDC etl_data2(swap_other_data.begin(), swap_other_data.end());
+
+      CHECK(std::equal(swap_data.begin(), swap_data.end(), etl_data.begin()));
+      CHECK(etl_data.size() == swap_data.size());
+      CHECK(etl_data.max_size() == SIZE);
+      CHECK(std::equal(swap_other_data.begin(), swap_other_data.end(), etl_data2.begin()));
+      CHECK(etl_data2.size() == swap_other_data.size());
+      CHECK(etl_data2.max_size() == SIZE);
+
+      etl_data.swap(etl_data2);
+
+      CHECK(std::equal(swap_data.begin(), swap_data.end(), etl_data2.begin()));
+      CHECK(etl_data2.size() == swap_data.size());
+      CHECK(etl_data2.max_size() == SIZE);
+      CHECK(std::equal(swap_other_data.begin(), swap_other_data.end(), etl_data.begin()));
+      CHECK(etl_data.size() == swap_other_data.size());
+      CHECK(etl_data.max_size() == SIZE);
+
+      etl_data.swap(etl_data2);
+
+      CHECK(std::equal(swap_data.begin(), swap_data.end(), etl_data.begin()));
+      CHECK(etl_data.size() == swap_data.size());
+      CHECK(etl_data.max_size() == SIZE);
+      CHECK(std::equal(swap_other_data.begin(), swap_other_data.end(), etl_data2.begin()));
+      CHECK(etl_data2.size() == swap_other_data.size());
+      CHECK(etl_data2.max_size() == SIZE);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_swap_different_capacity)
+    {
+      const size_t other_size = 6;
+      DataNDC etl_data(swap_data.begin(), swap_data.end());
+      etl::vector<NDC, other_size> etl_data2(swap_other_data.begin(), swap_other_data.end());
+
+      CHECK(std::equal(swap_data.begin(), swap_data.end(), etl_data.begin()));
+      CHECK(etl_data.size() == swap_data.size());
+      CHECK(etl_data.max_size() == SIZE);
+      CHECK(std::equal(swap_other_data.begin(), swap_other_data.end(), etl_data2.begin()));
+      CHECK(etl_data2.size() == swap_other_data.size());
+      CHECK(etl_data2.max_size() == other_size);
+
+      etl_data.swap(etl_data2);
+
+      CHECK(std::equal(swap_data.begin(), swap_data.end(), etl_data2.begin()));
+      CHECK(etl_data2.size() == swap_data.size());
+      CHECK(etl_data2.max_size() == other_size);
+      CHECK(std::equal(swap_other_data.begin(), swap_other_data.end(), etl_data.begin()));
+      CHECK(etl_data.size() == swap_other_data.size());
+      CHECK(etl_data.max_size() == SIZE);
+
+      etl_data.swap(etl_data2);
+
+      CHECK(std::equal(swap_data.begin(), swap_data.end(), etl_data.begin()));
+      CHECK(etl_data.size() == swap_data.size());
+      CHECK(etl_data.max_size() == SIZE);
+      CHECK(std::equal(swap_other_data.begin(), swap_other_data.end(), etl_data2.begin()));
+      CHECK(etl_data2.size() == swap_other_data.size());
+      CHECK(etl_data2.max_size() == other_size);
+    }
+
+    //*************************************************************************
+    TEST(test_swap_insufficient_capacity)
+    {
+      etl::vector<DC, 4> etl_data(4);
+      etl::vector<DC, 6> etl_data2(6);
+
+      CHECK_THROW(etl_data.swap(etl_data2), etl::vector_full);
+      CHECK_THROW(etl_data2.swap(etl_data), etl::vector_full);
+    }
+  }
 }

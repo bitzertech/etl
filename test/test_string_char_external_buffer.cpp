@@ -121,6 +121,20 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_from_array)
+    {
+      value_t buffer[SIZE + 1];
+      Text text(buffer);
+
+      CHECK_EQUAL(0U, text.size());
+      CHECK(text.empty());
+      CHECK_EQUAL(SIZE, text.capacity());
+      CHECK_EQUAL(SIZE, text.max_size());
+      CHECK(text.begin() == text.end());
+      CHECK_FALSE(text.is_truncated());
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_default_constructor_use_buffer_and_size)
     {
       size_t length = etl::strlen(p_text);
@@ -172,6 +186,114 @@ namespace
       CHECK(text.begin() != text.end());
       CHECK_FALSE(text.is_truncated());
     }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_array_buffer_text_same_buffer)
+    {
+      // Test using the same buffer for source and storage, with size deduced from array
+      Text text(array_text, array_text);
+
+      CHECK_EQUAL(etl::strlen(array_text), text.size());
+      CHECK(!text.empty());
+      CHECK_EQUAL(ETL_OR_STD17::size(array_text) - 1, text.capacity());
+      CHECK_EQUAL(ETL_OR_STD17::size(array_text) - 1, text.max_size());
+      CHECK(text.begin() != text.end());
+      CHECK_FALSE(text.is_truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_istring_with_array_buffer)
+    {
+      value_t buffer[SIZE + 1];
+      TextBuffer source_buffer{0};
+      Text source(initial_text.c_str(), source_buffer.data(), source_buffer.size());
+
+      Text text(source, buffer);
+
+      CHECK_EQUAL(initial_text.size(), text.size());
+      CHECK(!text.empty());
+      CHECK_EQUAL(SIZE, text.capacity());
+      CHECK_EQUAL(SIZE, text.max_size());
+      CHECK_FALSE(text.is_truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_text_count_with_array_buffer)
+    {
+      value_t buffer[SIZE + 1];
+
+      Text text(initial_text.c_str(), 5U, buffer);
+
+      CHECK_EQUAL(5U, text.size());
+      CHECK(!text.empty());
+      CHECK_EQUAL(SIZE, text.capacity());
+      CHECK_FALSE(text.is_truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_size_value_with_array_buffer)
+    {
+      const size_t  INITIAL_SIZE = 5UL;
+      const value_t INITIAL_VALUE = STR('A');
+      value_t       buffer[SIZE + 1];
+
+      TextSTD compare_text(INITIAL_SIZE, INITIAL_VALUE);
+      Text text(INITIAL_SIZE, INITIAL_VALUE, buffer);
+
+      CHECK_EQUAL(INITIAL_SIZE, text.size());
+      CHECK(!text.empty());
+      CHECK_EQUAL(SIZE, text.capacity());
+      CHECK_FALSE(text.is_truncated());
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_string_view_with_array_buffer)
+    {
+      value_t buffer[SIZE + 1];
+      View view(initial_text.c_str());
+
+      Text text(view, buffer);
+
+      CHECK_EQUAL(view.size(), text.size());
+      CHECK(!text.empty());
+      CHECK_EQUAL(SIZE, text.capacity());
+      CHECK_FALSE(text.is_truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_iterator_range_with_array_buffer)
+    {
+      value_t buffer[SIZE + 1];
+      TextSTD compare_text(initial_text.begin(), initial_text.end());
+
+      Text text(initial_text.begin(), initial_text.end(), buffer);
+
+      CHECK_EQUAL(initial_text.size(), text.size());
+      CHECK(!text.empty());
+      CHECK_EQUAL(SIZE, text.capacity());
+      CHECK_FALSE(text.is_truncated());
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+    }
+
+#if ETL_HAS_INITIALIZER_LIST
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_initializer_list_with_array_buffer)
+    {
+      value_t buffer[SIZE + 1];
+
+      Text text({ STR('H'), STR('e'), STR('l'), STR('l'), STR('o') }, buffer);
+
+      CHECK_EQUAL(5U, text.size());
+      CHECK(!text.empty());
+      CHECK_EQUAL(SIZE, text.capacity());
+      CHECK_FALSE(text.is_truncated());
+    }
+#endif
 
     //*************************************************************************
     TEST(test_iterator_comparison_empty)
@@ -767,8 +889,8 @@ namespace
       TextBuffer buffer2{0};
       const Text constText(initial_text.c_str(), buffer2.data(), buffer2.size());
 
-      CHECK_EQUAL(&text[initial_text.size()],      text.end());
-      CHECK_EQUAL(&constText[initial_text.size()], constText.end());
+      CHECK_EQUAL(text.begin() + text.size(),      text.end());
+      CHECK_EQUAL(constText.begin() + constText.size(), constText.end());
     }
 
     //*************************************************************************
@@ -1069,6 +1191,8 @@ namespace
       }
 
       CHECK_FALSE(text.is_truncated());
+
+      CHECK_THROW(text[text.size()], etl::string_out_of_bounds);
     }
 
     //*************************************************************************
@@ -1085,6 +1209,8 @@ namespace
       }
 
       CHECK_FALSE(text.is_truncated());
+
+      CHECK_THROW(text[text.size()], etl::string_out_of_bounds);
     }
 
     //*************************************************************************
@@ -1133,6 +1259,10 @@ namespace
 
       CHECK(text.front() == compare_text.front());
       CHECK_FALSE(text.is_truncated());
+
+      TextBuffer buffer2{0};
+      Text emptyText(buffer2.data(), buffer2.size());
+      CHECK_THROW(emptyText.front(), etl::string_out_of_bounds);
     }
 
     //*************************************************************************
@@ -1145,6 +1275,10 @@ namespace
 
       CHECK(text.front() == compare_text.front());
       CHECK_FALSE(text.is_truncated());
+
+      TextBuffer buffer2{0};
+      const Text emptyText(buffer2.data(), buffer2.size());
+      CHECK_THROW(emptyText.front(), etl::string_out_of_bounds);
     }
 
     //*************************************************************************
@@ -1157,6 +1291,10 @@ namespace
 
       CHECK(text.back() == compare_text.back());
       CHECK_FALSE(text.is_truncated());
+
+      TextBuffer buffer2{0};
+      Text emptyText(buffer2.data(), buffer2.size());
+      CHECK_THROW(emptyText.back(), etl::string_out_of_bounds);
     }
 
     //*************************************************************************
@@ -1169,6 +1307,10 @@ namespace
 
       CHECK(text.back() == compare_text.back());
       CHECK_FALSE(text.is_truncated());
+
+      TextBuffer buffer2{0};
+      const Text emptyText(buffer2.data(), buffer2.size());
+      CHECK_THROW(emptyText.back(), etl::string_out_of_bounds);
     }
 
     //*************************************************************************
@@ -1532,6 +1674,22 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_position_value_outofbounds)
+    {
+      const size_t INITIAL_SIZE = 5;
+      const value_t INITIAL_VALUE  = STR('A');
+
+      TextBuffer buffer{0};
+      Text text(buffer.data(), buffer.size());
+      text.assign(initial_text.begin(), initial_text.begin() + INITIAL_SIZE);
+
+      TextBuffer buffer2{0};
+      Text text2(buffer2.data(), buffer2.size());
+
+      CHECK_THROW(text.insert(text2.cbegin(), INITIAL_VALUE), etl::string_out_of_bounds);
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_insert_position_value_excess)
     {
       TextSTD compare_text(initial_text.begin(), initial_text.end());
@@ -1606,6 +1764,23 @@ namespace
         bool is_equal = Equal(compare_text, text);
         CHECK(is_equal);
       }
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_position_n_value_outofbounds)
+    {
+      const size_t INITIAL_SIZE = 5UL;
+      const size_t INSERT_SIZE = 3UL;
+      const value_t INITIAL_VALUE  = STR('A');
+
+      TextBuffer buffer{0};
+      Text text(buffer.data(), buffer.size());
+      text.assign(initial_text.begin(), initial_text.begin() + INITIAL_SIZE);
+
+      TextBuffer buffer2{0};
+      Text text2(buffer2.data(), buffer2.size());
+
+      CHECK_THROW(text.insert(text2.cbegin(), INSERT_SIZE, INITIAL_VALUE), etl::string_out_of_bounds);
     }
 
     //*************************************************************************
@@ -1707,6 +1882,33 @@ namespace
         bool is_equal = Equal(compare_text, text);
         CHECK(is_equal);
       }
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_position_range_outofbounds)
+    {
+      const size_t INITIAL_SIZE = 5UL;
+
+      TextBuffer buffer{0};
+      Text text(buffer.data(), buffer.size());
+      text.assign(initial_text.begin(), initial_text.begin() + INITIAL_SIZE);
+
+      TextBuffer buffer2{0};
+      Text text2(buffer2.data(), buffer2.size());
+
+      CHECK_THROW(text.insert(text2.cbegin(), insert_text.cbegin(), insert_text.cend()), etl::string_out_of_bounds);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_position_range_swapped_iterators)
+    {
+      const size_t INITIAL_SIZE = 5UL;
+
+      TextBuffer buffer{0};
+      Text text(buffer.data(), buffer.size());
+      text.assign(initial_text.begin(), initial_text.begin() + INITIAL_SIZE);
+
+      CHECK_THROW(text.insert(text.cbegin(), insert_text.cend(), insert_text.cbegin()), etl::string_iterator);
     }
 
     //*************************************************************************
@@ -3443,6 +3645,25 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_erase_single_outofbounds)
+    {
+      TextBuffer buffer{0};
+      Text text(initial_text.c_str(), buffer.data(), buffer.size());
+
+      CHECK_THROW(text.erase(text.end()), etl::string_out_of_bounds);
+      CHECK_THROW(text.erase(text.cend()), etl::string_out_of_bounds);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_erase_single_position_outofbounds)
+    {
+      TextBuffer buffer{0};
+      Text text(initial_text.c_str(), buffer.data(), buffer.size());
+
+      CHECK_THROW(text.erase(text.size() + 1), etl::string_out_of_bounds);
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_erase_range)
     {
       TextSTD compare_text(initial_text.c_str());
@@ -3457,6 +3678,17 @@ namespace
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
       CHECK_FALSE(text.is_truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_erase_range_outofbounds)
+    {
+      TextBuffer buffer{0};
+      Text text(initial_text.c_str(), buffer.data(), buffer.size());
+      TextBuffer buffer2{0};
+      Text text2(initial_text.c_str(), buffer2.data(), buffer2.size());
+
+      CHECK_THROW(text.erase(text2.begin(), text2.end()), etl::string_out_of_bounds);
     }
 
     //*************************************************************************
@@ -5302,7 +5534,7 @@ namespace
       TextBuffer buffer{0};
       Text text(STR("ABCDEFHIJKL"), buffer.data(), buffer.size());
       size_t hash = etl::hash<Text>()(text);
-      size_t compare_hash = etl::private_hash::generic_hash<size_t>(reinterpret_cast<const uint8_t*>(&text[0]), reinterpret_cast<const uint8_t*>(&text[text.size()]));
+      size_t compare_hash = etl::private_hash::generic_hash<size_t>(reinterpret_cast<const uint8_t*>(text.data()), reinterpret_cast<const uint8_t*>(text.data_end()));
       CHECK_EQUAL(compare_hash, hash);
 
       // Test with interface string type.
@@ -5589,7 +5821,7 @@ namespace
 
       for (size_t i = text.size(); i < text.max_size(); ++i)
       {
-        CHECK_EQUAL(0, text[i]);
+        CHECK_EQUAL(0, text.data()[i]);
       }
     }
 
@@ -5609,7 +5841,7 @@ namespace
 
       for (size_t i = text.size(); i < text.max_size(); ++i)
       {
-        CHECK_EQUAL(0, text[i]);
+        CHECK_EQUAL(0, text.data()[i]);
       }
     }
 
@@ -5677,5 +5909,5 @@ namespace
       CHECK(text1 == sstream_view);
     }
 #endif
-  };
+  }
 }
