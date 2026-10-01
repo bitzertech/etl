@@ -28,25 +28,34 @@ SOFTWARE.
 
 #include "unit_test_framework.h"
 
-#include <string>
-#include <ostream>
+#include <array>
 #include <cstdint>
-#include <vector>
+#include <ostream>
+#include <string>
+#include <type_traits>
+#include <utility>
 
+// GCC can emit false positive -Wmaybe-uninitialized warnings inside the test data
+// types when optional's storage is inspected through inlined, never-taken branches.
+// The diagnostic is raised late (after inlining), so the suppression has to cover the
+// whole translation unit. It is popped at the end of the file.
+#include "etl/private/diagnostic_uninitialized_push.h"
+
+#include "data.h"
+#include "etl/algorithm.h"
 #include "etl/optional.h"
 #include "etl/vector.h"
-#include "data.h"
 
 typedef TestDataNDC<std::string> Data;
 typedef TestDataM<uint32_t>      DataM;
 
-std::ostream& operator << (std::ostream& os, const Data& data)
+std::ostream& operator<<(std::ostream& os, const Data& data)
 {
   os << data.value;
   return os;
 }
 
-std::ostream& operator << (std::ostream& os, const etl::optional<Data>& data)
+std::ostream& operator<<(std::ostream& os, const etl::optional<Data>& data)
 {
   os << data.value();
   return os;
@@ -58,16 +67,22 @@ namespace
   //*************************************************************************
   struct NonTrivial
   {
-    constexpr NonTrivial() : a(0) {}
+    constexpr NonTrivial()
+      : a(0)
+    {
+    }
 
-    constexpr NonTrivial(int a_) : a(a_) {}
+    constexpr NonTrivial(int a_)
+      : a(a_)
+    {
+    }
 
-    constexpr friend bool operator <(const NonTrivial& lhs, const NonTrivial& rhs)
+    constexpr friend bool operator<(const NonTrivial& lhs, const NonTrivial& rhs)
     {
       return lhs.a < rhs.a;
     }
 
-    constexpr friend bool operator ==(const NonTrivial& lhs, const NonTrivial& rhs)
+    constexpr friend bool operator==(const NonTrivial& lhs, const NonTrivial& rhs)
     {
       return lhs.a == rhs.a;
     }
@@ -75,6 +90,29 @@ namespace
     int a;
   };
 #include "etl/private/diagnostic_pop.h"
+
+  struct TestIL
+  {
+    constexpr TestIL()
+      : a(0)
+      , b(0)
+      , c(0)
+    {
+    }
+
+    ETL_CONSTEXPR20 TestIL(std::initializer_list<int> il, int a_, int b_, int c_)
+      : a(a_)
+      , b(b_)
+      , c(c_)
+    {
+      etl::copy_n(il.begin(), std::min(il.size(), arr.size()), arr.begin());
+    }
+
+    std::array<int, 3> arr{};
+    int                a;
+    int                b;
+    int                c;
+  };
 
   SUITE(test_optional)
   {
@@ -84,61 +122,62 @@ namespace
       etl::optional<Data> data1;
       etl::optional<Data> data2;
 
-      CHECK(!bool(data1));
-      CHECK(!bool(data2));
+      CHECK(!static_cast<bool>(data1));
+      CHECK(!static_cast<bool>(data2));
       CHECK(!data1.has_value());
       CHECK(!data2.has_value());
 
       data1 = Data("Hello");
-      CHECK(bool(data1));
+      CHECK(static_cast<bool>(data1));
       CHECK(data1.has_value());
       CHECK_EQUAL(Data("Hello"), data1);
 
       data1 = data2;
-      CHECK(!bool(data1));
-      CHECK(!bool(data2));
+      CHECK(!static_cast<bool>(data1));
+      CHECK(!static_cast<bool>(data2));
       CHECK(!data1.has_value());
       CHECK(!data2.has_value());
 
       data1 = Data("World");
       data2 = data1;
-      CHECK(bool(data1));
-      CHECK(bool(data2));
+      CHECK(static_cast<bool>(data1));
+      CHECK(static_cast<bool>(data2));
       CHECK(data1.has_value());
       CHECK(data2.has_value());
 
-      etl::optional<Data> data3(data1);
-      CHECK(bool(data3));
+      const etl::optional<Data> data3(data1);
+      CHECK(static_cast<bool>(data3));
       CHECK(data3.has_value());
       CHECK_EQUAL(data1, data3);
 
       etl::optional<Data> data4;
       data4 = Data("Hello");
       data4 = etl::nullopt;
-      CHECK(!bool(data4));
+      CHECK(!static_cast<bool>(data4));
       CHECK(!data4.has_value());
     }
 
 #if ETL_USING_CPP14
     //*************************************************************************
-    TEST(test_emplace_construction_cpp14)
+    TEST(test_in_place_construction_cpp14)
     {
       constexpr etl::optional<int> opt(etl::in_place_t{}, 1);
 
       CHECK_TRUE(opt.has_value());
-      CHECK(bool(opt));
+      CHECK(static_cast<bool>(opt));
       CHECK_EQUAL(1, opt.value());
     }
 #endif
 
 #if ETL_USING_CPP20 && ETL_USING_STL
     //*************************************************************************
-    TEST(test_emplace_construction_cpp20)
+    TEST(test_in_place_construction_cpp20)
     {
       struct TestData
       {
         constexpr TestData(int a_, int b_)
-          : a(a_), b(b_)
+          : a(a_)
+          , b(b_)
         {
         }
 
@@ -149,7 +188,7 @@ namespace
       constexpr etl::optional<TestData> opt(etl::in_place_t{}, 1, 2);
 
       CHECK_TRUE(opt.has_value());
-      CHECK(bool(opt));
+      CHECK(static_cast<bool>(opt));
       CHECK_EQUAL(1, opt.value().a);
       CHECK_EQUAL(2, opt.value().b);
     }
@@ -158,34 +197,14 @@ namespace
     //*************************************************************************
     TEST(test_construct_from_initializer_list_and_arguments)
     {
-      struct S
-      {
-        S()
-          : vi()
-          , a(0)
-          , b(0)
-        {
-        }
+      etl::optional<TestIL> opt(etl::in_place_t{}, {10, 11, 12}, 1, 2, 3);
 
-        S(std::initializer_list<int> il, int a_, int b_)
-          : vi(il)
-          , a(a_)
-          , b(b_)
-        {
-        }
-
-        std::vector<int> vi;
-        int a;
-        int b;
-      };
-
-      etl::optional<S> opt(etl::in_place_t{}, { 10, 11, 12 }, 1, 2);
-
-      CHECK_EQUAL(10, opt.value().vi[0]);
-      CHECK_EQUAL(11, opt.value().vi[1]);
-      CHECK_EQUAL(12, opt.value().vi[2]);
+      CHECK_EQUAL(10, opt.value().arr[0]);
+      CHECK_EQUAL(11, opt.value().arr[1]);
+      CHECK_EQUAL(12, opt.value().arr[2]);
       CHECK_EQUAL(1, opt.value().a);
       CHECK_EQUAL(2, opt.value().b);
+      CHECK_EQUAL(3, opt.value().c);
     }
 
     //*************************************************************************
@@ -193,10 +212,10 @@ namespace
     {
       Data data("Hello");
 
-      etl::optional<Data> opt{ data };
+      const etl::optional<Data> opt{data};
 
       CHECK(opt.has_value());
-      CHECK(bool(opt));
+      CHECK(static_cast<bool>(opt));
       CHECK_EQUAL(data, opt);
     }
 
@@ -242,28 +261,125 @@ namespace
     //*************************************************************************
     TEST(test_emplace_return)
     {
-      etl::optional<DataM> data;
+      // not fundamental
+      {
+        etl::optional<DataM> data;
 
-      DataM* datam = &data.emplace(1U);
-      CHECK_EQUAL(datam, &data.value());
-      CHECK(datam != nullptr);
+        DataM* datam_ptr = &data.emplace(1U);
+        CHECK_EQUAL(datam_ptr, &data.value());
+        CHECK(datam_ptr != nullptr);
+      }
+
+      // fundamental
+      {
+        etl::optional<int> data;
+
+        int* data_ptr = &data.emplace(1);
+        CHECK_EQUAL(data_ptr, &data.value());
+        CHECK(data_ptr != nullptr);
+      }
     }
 
     //*************************************************************************
-    TEST(test_moveable)
+#if !defined(ETL_FORCE_TEST_CPP03_IMPLEMENTATION)
+    TEST(test_emplace_initializer_list)
+    {
+      etl::optional<TestIL> data;
+
+      data.emplace({1, 2}, 10, 20, 30);
+      CHECK_TRUE(data.has_value());
+      CHECK_EQUAL(data->arr[0], 1);
+      CHECK_EQUAL(data->arr[1], 2);
+      CHECK_EQUAL(data->a, 10);
+      CHECK_EQUAL(data->b, 20);
+      CHECK_EQUAL(data->c, 30);
+    }
+#endif
+
+    //*************************************************************************
+    TEST(test_moveable_not_fundamental)
     {
 #include "etl/private/diagnostic_pessimizing_move_push.h"
+
+      // Construct by moving value.
       etl::optional<DataM> data(std::move(DataM(1)));
+      CHECK(data.has_value());
+      CHECK(data->valid);
       CHECK_EQUAL(1U, data.value().value);
-      CHECK(bool(data));
+      CHECK(static_cast<bool>(data));
 
-      data = std::move(etl::optional<DataM>(std::move(DataM(2))));
-      CHECK_EQUAL(2U, data.value().value);
-      CHECK(bool(data));
+      // Assign by moving optional.
+      {
+        etl::optional<DataM> temp(DataM(2));
+        data = std::move(temp);
+        CHECK(temp.has_value() && !temp->valid); // NOLINT "Note that a moved-from optional still contains a value (although invalid one)."
+        CHECK(data.has_value());
+        CHECK(data->valid);
+        CHECK(static_cast<bool>(data));
+        CHECK_EQUAL(2U, data.value().value);
+      }
 
-      etl::optional<DataM> data2(etl::move(data));
-      CHECK_EQUAL(2U, data2.value().value);
-      CHECK(bool(data2));
+      // Construct by moving optional.
+      {
+        etl::optional<DataM> data2(etl::move(data));
+        CHECK(data.has_value() && !data->valid); // NOLINT "Note that a moved-from optional still contains a value (although invalid one)."
+        CHECK(data2.has_value());
+        CHECK(data2->valid);
+        CHECK(static_cast<bool>(data2));
+        CHECK_EQUAL(2U, data2.value().value);
+      }
+
+      // Try to move construct/assign from valueless.
+      {
+        etl::optional<DataM> temp;
+        etl::optional<DataM> data2(etl::move(temp));
+        CHECK(!data2.has_value());
+
+        data2 = etl::move(etl::optional<DataM>());
+        CHECK(!data2.has_value());
+      }
+#include "etl/private/diagnostic_pop.h"
+    }
+
+    //*************************************************************************
+    TEST(test_moveable_fundamental)
+    {
+#include "etl/private/diagnostic_pessimizing_move_push.h"
+
+      // Construct by moving value.
+      etl::optional<std::uint8_t> data(1U);
+      CHECK(data.has_value());
+      CHECK_EQUAL(1U, data.value());
+      CHECK(static_cast<bool>(data));
+
+      // Assign by moving optional.
+      {
+        etl::optional<std::uint8_t> temp(2U);
+        data = std::move(temp);
+        CHECK(temp.has_value()); // NOLINT "Note that a moved-from optional still contains a value."
+        CHECK(data.has_value());
+        CHECK(static_cast<bool>(data));
+        CHECK_EQUAL(2U, data.value());
+      }
+
+      // Construct by moving optional.
+      {
+        etl::optional<std::uint8_t> data2(etl::move(data));
+        CHECK(data.has_value()); // NOLINT "Note that a moved-from optional still contains a value."
+        CHECK(data2.has_value());
+        CHECK(static_cast<bool>(data2));
+        CHECK_EQUAL(2U, data2.value());
+      }
+
+      // Try to move construct/assign from valueless.
+      {
+        etl::optional<std::uint8_t> temp;
+        etl::optional<std::uint8_t> data2(etl::move(temp));
+        CHECK(!data2.has_value());
+
+        data2 = etl::move(etl::optional<std::uint8_t>());
+        CHECK(!data2.has_value());
+      }
 #include "etl/private/diagnostic_pop.h"
     }
 
@@ -273,7 +389,7 @@ namespace
       etl::optional<int> data(etl::nullopt);
       data = 1;
       data = etl::nullopt;
-      CHECK(!bool(data));
+      CHECK(!static_cast<bool>(data));
     }
 
     //*************************************************************************
@@ -282,7 +398,7 @@ namespace
       etl::optional<Data> data(etl::nullopt);
       data = Data("Hello");
       data = etl::nullopt;
-      CHECK(!bool(data));
+      CHECK(!static_cast<bool>(data));
     }
 
     //*************************************************************************
@@ -293,7 +409,7 @@ namespace
       Data result = data.value_or(Data("Default"));
       CHECK_EQUAL(Data("Default"), result);
 
-      data = Data("Value");
+      data   = Data("Value");
       result = data.value_or(Data("Default"));
       CHECK_EQUAL(Data("Value"), result);
     }
@@ -301,22 +417,22 @@ namespace
     //*************************************************************************
     TEST(test_value_or_const)
     {
-      using FundamentalType = int;
+      using FundamentalType    = int;
       using NonFundamentalType = std::string;
 
-      const FundamentalType constFT{ 5 };
-      int resultFT = etl::optional<FundamentalType>{}.value_or(constFT);
+      const FundamentalType constFT{5};
+      int                   resultFT = etl::optional<FundamentalType>{}.value_or(constFT);
       CHECK_EQUAL(5, resultFT);
 
-      const NonFundamentalType constNFT{ "Default" };
-      NonFundamentalType resultNFT = etl::optional<NonFundamentalType>{}.value_or(constNFT);
+      const NonFundamentalType constNFT{"Default"};
+      const NonFundamentalType resultNFT = etl::optional<NonFundamentalType>{}.value_or(constNFT);
       CHECK_EQUAL("Default", resultNFT);
     }
 
     //*************************************************************************
     struct github_bug_720_bug_helper
     {
-      int value{ 5 };
+      int value{5};
 
       etl::optional<int> get_valid() const
       {
@@ -329,14 +445,14 @@ namespace
       }
     };
 
-    TEST(test_chained_value_or_github_bug_720 )
+    TEST(test_chained_value_or_github_bug_720)
     {
-      github_bug_720_bug_helper helper {};
+      const github_bug_720_bug_helper helper{};
 
-      int value1 = helper.get_valid().value_or(1);
+      const int value1 = helper.get_valid().value_or(1);
       CHECK_EQUAL(5, value1);
 
-      int value2 = helper.get_invalid().value_or(1);
+      const int value2 = helper.get_invalid().value_or(1);
       CHECK_EQUAL(1, value2);
     }
 
@@ -515,7 +631,6 @@ namespace
       CHECK(Data("Data1") < data2);
     }
 #include "etl/private/diagnostic_pop.h"
-
 
 #if ETL_USING_CPP20 && ETL_USING_STL
     //*************************************************************************
@@ -776,11 +891,11 @@ namespace
 
       container.resize(5, Data("1"));
 
-      CHECK(bool(container[0]));
-      CHECK(bool(container[1]));
-      CHECK(bool(container[2]));
-      CHECK(bool(container[3]));
-      CHECK(bool(container[4]));
+      CHECK(static_cast<bool>(container[0]));
+      CHECK(static_cast<bool>(container[1]));
+      CHECK(static_cast<bool>(container[2]));
+      CHECK(static_cast<bool>(container[3]));
+      CHECK(static_cast<bool>(container[4]));
     }
 
     //*************************************************************************
@@ -789,10 +904,10 @@ namespace
       // The indexed access doesn't work in Linux for some reason!!!
 #ifndef ETL_PLATFORM_LINUX
       etl::optional<etl::vector<Data, 10>> container;
-      CHECK(!bool(container));//
+      CHECK(!static_cast<bool>(container)); //
 
       container = etl::vector<Data, 10>();
-      CHECK(bool(container));
+      CHECK(static_cast<bool>(container));
 
       container.value().resize(5, Data("1"));
       CHECK_EQUAL(5U, container.value().size());
@@ -816,51 +931,61 @@ namespace
     //*************************************************************************
     TEST(test_swap)
     {
-      etl::optional<Data> original1(Data("1"));
-      etl::optional<Data> original2(Data("2"));
+      const etl::optional<Data> original1(Data("1"));
+      const etl::optional<Data> original2(Data("2"));
 
       etl::optional<Data> data1;
       etl::optional<Data> data2;
 
       // Both invalid.
       swap(data1, data2);
-      CHECK(!bool(data1));
-      CHECK(!bool(data2));
+      CHECK(!static_cast<bool>(data1));
+      CHECK(!static_cast<bool>(data2));
 
-      // Data1 valid;
+      // data1 is valid
       data1 = original1;
       data2 = etl::nullopt;
       swap(data1, data2);
-      CHECK(!bool(data1));
-      CHECK(bool(data2));
+      CHECK(!static_cast<bool>(data1));
+      CHECK(static_cast<bool>(data2));
       CHECK_EQUAL(data2, original1);
 
-      // Data2 valid;
+      // data2 is valid
       data1 = etl::nullopt;
       data2 = original2;
       swap(data1, data2);
-      CHECK(bool(data1));
-      CHECK(!bool(data2));
+      CHECK(static_cast<bool>(data1));
+      CHECK(!static_cast<bool>(data2));
       CHECK_EQUAL(data1, original2);
 
-      // Both valid;
+      // both are valid
       data1 = original1;
       data2 = original2;
       swap(data1, data2);
-      CHECK(bool(data1));
-      CHECK(bool(data2));
+      CHECK(static_cast<bool>(data1));
+      CHECK(static_cast<bool>(data2));
       CHECK_EQUAL(data1, original2);
       CHECK_EQUAL(data2, original1);
+    }
+
+    //*************************************************************************
+    TEST(test_swap_moveable)
+    {
+      etl::optional<DataM> data1(1U);
+      etl::optional<DataM> data2(2U);
+      swap(data1, data2);
+      CHECK_EQUAL(2U, data1.value().value);
+      CHECK_EQUAL(1U, data2.value().value);
     }
 
     //*************************************************************************
     TEST(test_reset)
     {
       etl::optional<Data> data(Data("1"));
-      CHECK(bool(data));
+      CHECK(static_cast<bool>(data));
 
       data.reset();
-      CHECK(!bool(data));
+      CHECK(!static_cast<bool>(data));
     }
 
     //*************************************************************************
@@ -868,7 +993,7 @@ namespace
     {
       etl::optional<std::uint8_t> result = 8;
       result.reset();
-      
+
       return result;
     }
 
@@ -901,9 +1026,10 @@ namespace
 
     TEST(test_optional_pod_emplace_bug_712)
     {
-      etl::optional<MyPODObject> optionalObject; // The Test: Does this compile for an object with a deleted default constructor?
+      const etl::optional<MyPODObject> optionalObject; // The Test: Does this compile for an object with a
+                                                       // deleted default constructor?
 
-      // Make sure it isn't optimised away.
+      // Make sure it isn't optimized away.
       CHECK_FALSE(optionalObject.has_value());
     }
 
@@ -911,12 +1037,12 @@ namespace
     TEST(test_optional_pod_assign_bug_714)
     {
       etl::optional<int> opt = 42;
-      opt = etl::nullopt;
+      opt                    = etl::nullopt;
 
       CHECK_EQUAL(false, opt.has_value());
     }
 
-    //*************************************************************************   
+    //*************************************************************************
     TEST(test_dereference_operator_bug_730)
     {
       etl::optional<int> opt = 42;
@@ -932,7 +1058,7 @@ namespace
       CHECK_EQUAL(42, *opt);
     }
 
-    //*************************************************************************   
+    //*************************************************************************
     TEST(test_arrow_operator_bug_730)
     {
       struct Object
@@ -940,12 +1066,12 @@ namespace
         int value;
       };
 
-      etl::optional<Object> opt = Object{ 42 };
+      etl::optional<Object> opt = Object{42};
 
       CHECK_EQUAL(42, opt->value);
     }
 
-    //*************************************************************************   
+    //*************************************************************************
     TEST(test_const_arrow_operator_bug_730)
     {
       struct Object
@@ -953,7 +1079,7 @@ namespace
         int value;
       };
 
-      const etl::optional<Object> opt = Object{ 42 };
+      const etl::optional<Object> opt = Object{42};
 
       CHECK_EQUAL(42, opt->value);
     }
@@ -982,7 +1108,7 @@ namespace
         int v;
       };
 
-      constexpr NonPod data(42);
+      constexpr NonPod                data(42);
       constexpr etl::optional<NonPod> opt = data;
 
       CHECK_EQUAL(42, (*opt).v);
@@ -993,7 +1119,7 @@ namespace
     TEST(test_optional_issue_819)
     {
       // The code below should compile without error.
-      class optional_type 
+      class optional_type
       {
       public:
 
@@ -1007,7 +1133,7 @@ namespace
     //*************************************************************************
     using ItemType = etl::array<uint8_t, 2>;
 
-    etl::optional<const ItemType> create_optional_issue_1171() 
+    etl::optional<const ItemType> create_optional_issue_1171()
     {
       ItemType t;
       t[0] = 1;
@@ -1018,21 +1144,21 @@ namespace
 
     TEST(test_optional_issue_1171)
     {
-      etl::optional<const ItemType> opt1 = create_optional_issue_1171(); 
+      etl::optional<const ItemType> opt1 = create_optional_issue_1171();
       CHECK_TRUE(opt1.has_value());
       CHECK_EQUAL(1, (*opt1)[0]);
       CHECK_EQUAL(20, (*opt1)[1]);
 
-      etl::optional<const ItemType> opt2(create_optional_issue_1171());     
+      etl::optional<const ItemType> opt2(create_optional_issue_1171());
       CHECK_TRUE(opt2.has_value());
       CHECK_EQUAL(1, (*opt2)[0]);
       CHECK_EQUAL(20, (*opt2)[1]);
 
-      etl::optional<const ItemType> opt3;
+      etl::optional<etl::optional<const ItemType>> opt3;
       opt3.emplace(create_optional_issue_1171());
       CHECK_TRUE(opt3.has_value());
-      CHECK_EQUAL(1, (*opt3)[0]);
-      CHECK_EQUAL(20, (*opt3)[1]);
+      CHECK_EQUAL(1, (**opt3)[0]);
+      CHECK_EQUAL(20, (**opt3)[1]);
     }
 
     //*************************************************************************
@@ -1072,10 +1198,10 @@ namespace
 
     TEST(range_based_for_loop_with_value)
     {
-      etl::optional<int> opt = 4;
+      const etl::optional<int> opt = 4;
 
       int sum = 0;
-      for (int value : opt)
+      for (const int value : opt)
       {
         sum += value;
       }
@@ -1085,10 +1211,10 @@ namespace
 
     TEST(range_based_for_loop_empty)
     {
-      etl::optional<int> opt;
+      const etl::optional<int> opt;
 
       int sum = 0;
-      for (int value : opt)
+      for (const int value : opt)
       {
         sum += value;
       }
@@ -1098,8 +1224,8 @@ namespace
 
     TEST(test_range_based_for_loop_non_trivial)
     {
-      etl::optional<Data> opt = Data("TEST");
-      int count= 0;
+      const etl::optional<Data> opt   = Data("TEST");
+      int                       count = 0;
 
       for (const Data& value : opt)
       {
@@ -1118,5 +1244,716 @@ namespace
 
       CHECK_EQUAL(42, *opt);
     }
+
+    //*************************************************************************
+    // GitHub issue #146: etl::optional doesn't compile with deleted copy
+    // constructor
+    //*************************************************************************
+#if ETL_USING_CPP11
+    struct Issue146_NonCopyable
+    {
+      Issue146_NonCopyable(int some)
+        : _some(some)
+      {
+      }
+      Issue146_NonCopyable(const Issue146_NonCopyable&)            = delete;
+      Issue146_NonCopyable(Issue146_NonCopyable&&)                 = delete;
+      Issue146_NonCopyable& operator=(const Issue146_NonCopyable&) = delete;
+
+      int _some;
+    };
+
+    struct Issue146_Container
+    {
+      Issue146_Container(int a_val)
+        : a(a_val)
+      {
+      }
+      Issue146_Container()
+        : a(etl::nullopt)
+      {
+      }
+
+      etl::optional<Issue146_NonCopyable> a;
+    };
+
+    TEST(test_optional_issue_146_deleted_copy_ctor)
+    {
+      // etl::optional<T> should compile when T has deleted copy/move
+      // constructors, as long as T is constructible from the given arguments.
+      const Issue146_Container with_value(42);
+      const Issue146_Container without_value;
+
+      CHECK_TRUE(with_value.a.has_value());
+      CHECK_EQUAL(42, with_value.a->_some);
+
+      CHECK_FALSE(without_value.a.has_value());
+
+      // in_place construction should also work
+      const etl::optional<Issue146_NonCopyable> opt(etl::in_place_t{}, 99);
+      CHECK_TRUE(opt.has_value());
+      CHECK_EQUAL(99, opt->_some);
+    }
+#endif
+
+    TEST(test_make_optional_1_lvalue)
+    {
+      const std::string         test_value("TEST");
+      Data                      test_data(test_value);
+      const etl::optional<Data> opt = etl::make_optional(test_data);
+      CHECK_TRUE(opt.has_value());
+      CHECK_EQUAL(test_value, opt.value().value);
+    }
+
+    TEST(test_make_optional_1_const_value)
+    {
+      const std::string         test_value("TEST");
+      const Data                test_data(test_value);
+      const etl::optional<Data> opt = etl::make_optional(test_data);
+      CHECK_TRUE(opt.has_value());
+      CHECK_EQUAL(test_data.value, opt.value().value);
+    }
+
+#if ETL_USING_CPP11
+    TEST(test_make_optional_1_rvalue)
+    {
+      constexpr uint32_t         test_value = 42;
+      DataM                      test_data(test_value);
+      const etl::optional<DataM> opt = etl::make_optional(std::move(test_data));
+      CHECK_TRUE(opt.has_value());
+      CHECK_FALSE(test_data.valid);
+      CHECK_EQUAL(test_value, opt.value().value);
+    }
+#endif
+
+#if ETL_USING_CPP14
+    TEST(test_make_optional_1_constexpr)
+    {
+      constexpr etl::optional<int> opt = etl::make_optional(42);
+      CHECK_TRUE(opt.has_value());
+      CHECK_EQUAL(42, opt.value());
+    }
+#endif
+
+    TEST(test_make_optional_2_lvalue)
+    {
+      std::string test_value("TEST");
+      const auto  opt = etl::make_optional<const Data>(test_value);
+      CHECK_TRUE(opt.has_value());
+      CHECK_EQUAL(test_value, opt.value().value);
+    }
+
+    TEST(test_make_optional_2_rvalue)
+    {
+      const etl::optional<DataM> opt = etl::make_optional<DataM>(42u);
+      CHECK_TRUE(opt.has_value());
+      CHECK_EQUAL(42, opt.value().value);
+    }
+
+#if ETL_USING_CPP14
+    TEST(test_make_optional_2_constexpr)
+    {
+      constexpr etl::optional<uint32_t> opt = etl::make_optional<uint32_t>(42);
+      CHECK_TRUE(opt.has_value());
+      CHECK_EQUAL(42, opt.value());
+    }
+#endif
+
+    TEST(test_make_optional_3)
+    {
+      int        test_value1(1);
+      const int  test_value2(2);
+      const auto opt = etl::make_optional<const TestIL>({10, 11, 12}, test_value1, test_value2, 3);
+      CHECK_TRUE(opt.has_value());
+      CHECK_EQUAL(10, opt->arr[0]);
+      CHECK_EQUAL(11, opt->arr[1]);
+      CHECK_EQUAL(12, opt->arr[2]);
+      CHECK_EQUAL(test_value1, opt->a);
+      CHECK_EQUAL(test_value2, opt->b);
+      CHECK_EQUAL(3, opt->c);
+    }
+
+#if ETL_USING_CPP20 && ETL_USING_STL
+    TEST(test_make_optional_3_constexpr)
+    {
+      constexpr etl::optional<TestIL> opt = etl::make_optional<TestIL>({1, 2}, 10, 20, 30);
+      CHECK_TRUE(opt.has_value());
+      CHECK_EQUAL(1, opt->arr[0]);
+      CHECK_EQUAL(2, opt->arr[1]);
+      CHECK_EQUAL(0, opt->arr[2]);
+      CHECK_EQUAL(10, opt->a);
+      CHECK_EQUAL(20, opt->b);
+      CHECK_EQUAL(30, opt->c);
+    }
+#endif
+
+    //*************************************************************************
+    // Tests for noexcept properties of etl::optional
+    // The noexcept specs only take effect when ETL_USING_EXCEPTIONS is enabled,
+    // because ETL_NOEXCEPT_IF expands to nothing otherwise.
+    // The etl::is_nothrow_* traits only work with STL or builtins.
+    //*************************************************************************
+#if ETL_USING_CPP11 && ETL_USING_EXCEPTIONS && (defined(ETL_USE_TYPE_TRAITS_BUILTINS) || (ETL_USING_STL && !defined(ETL_USER_DEFINED_TYPE_TRAITS)))
+    struct NothrowAtAll
+    {
+      NothrowAtAll() noexcept {}
+      NothrowAtAll(const NothrowAtAll&) noexcept {}
+      NothrowAtAll(NothrowAtAll&&) noexcept {}
+      NothrowAtAll(std::initializer_list<int>) noexcept {}
+      NothrowAtAll& operator=(const NothrowAtAll&) noexcept
+      {
+        return *this;
+      }
+      NothrowAtAll& operator=(NothrowAtAll&&) noexcept
+      {
+        return *this;
+      }
+    };
+
+    struct ThrowingCopy
+    {
+      ThrowingCopy() noexcept {}
+      ThrowingCopy(const ThrowingCopy&) {} // may throw
+      ThrowingCopy(ThrowingCopy&&) noexcept {}
+      ThrowingCopy& operator=(const ThrowingCopy&) // may throw
+      {
+        return *this;
+      }
+      ThrowingCopy& operator=(ThrowingCopy&&) noexcept
+      {
+        return *this;
+      }
+    };
+
+    struct ThrowingMove
+    {
+      ThrowingMove() noexcept {}
+      ThrowingMove(const ThrowingMove&) noexcept {}
+      ThrowingMove(ThrowingMove&&) {} // may throw
+      ThrowingMove& operator=(const ThrowingMove&) noexcept
+      {
+        return *this;
+      }
+      ThrowingMove& operator=(ThrowingMove&&) // may throw
+      {
+        return *this;
+      }
+    };
+
+    struct ThrowingAll
+    {
+      ThrowingAll() {}                           // may throw
+      ThrowingAll(const ThrowingAll&) {}         // may throw
+      ThrowingAll(ThrowingAll&&) {}              // may throw
+      ThrowingAll(std::initializer_list<int>) {} // may throw
+      ThrowingAll& operator=(const ThrowingAll&) // may throw
+      {
+        return *this;
+      }
+      ThrowingAll& operator=(ThrowingAll&&) // may throw
+      {
+        return *this;
+      }
+    };
+
+    TEST(test_optional_nothrow_copy_constructible)
+    {
+      // When T is nothrow copy constructible, optional<T> should be too
+      static_assert(etl::is_nothrow_copy_constructible<etl::optional<int>>::value, "optional<int> should be nothrow copy constructible");
+      static_assert(etl::is_nothrow_copy_constructible<etl::optional<NothrowAtAll>>::value,
+                    "optional<NothrowAtAll> should be nothrow copy constructible");
+
+      // When T is NOT nothrow copy constructible, optional<T> should not be either
+      static_assert(!etl::is_nothrow_copy_constructible<etl::optional<ThrowingCopy>>::value,
+                    "optional<ThrowingCopy> should NOT be nothrow copy constructible");
+      static_assert(!etl::is_nothrow_copy_constructible<etl::optional<ThrowingAll>>::value,
+                    "optional<ThrowingAll> should NOT be nothrow copy constructible");
+
+      // ThrowingMove has nothrow copy but throwing move
+      static_assert(etl::is_nothrow_copy_constructible<etl::optional<ThrowingMove>>::value,
+                    "optional<ThrowingMove> should be nothrow copy constructible");
+
+      CHECK(true); // Placeholder for the static_asserts above
+    }
+
+    TEST(test_optional_nothrow_move_constructible)
+    {
+      // When T is nothrow move constructible, optional<T> (and swap) should be too
+      static_assert(etl::is_nothrow_move_constructible<etl::optional<int>>::value, "optional<int> should be nothrow move constructible");
+      static_assert(etl::is_nothrow_move_constructible<etl::optional<NothrowAtAll>>::value,
+                    "optional<NothrowAtAll> should be nothrow move constructible");
+      static_assert(noexcept(swap(std::declval<etl::optional<int>&>(), std::declval<etl::optional<int>&>())), "swap<int>() should be nothrow");
+      static_assert(noexcept(swap(std::declval<etl::optional<NothrowAtAll>&>(), std::declval<etl::optional<NothrowAtAll>&>())),
+                    "swap<NothrowAtAll>() should be nothrow");
+
+      // When T is NOT nothrow move constructible, optional<T> (and swap) should not be either
+      static_assert(!etl::is_nothrow_move_constructible<etl::optional<ThrowingMove>>::value,
+                    "optional<ThrowingMove> should NOT be nothrow move constructible");
+      static_assert(!etl::is_nothrow_move_constructible<etl::optional<ThrowingAll>>::value,
+                    "optional<ThrowingAll> should NOT be nothrow move constructible");
+      static_assert(!noexcept(swap(std::declval<etl::optional<ThrowingMove>&>(), std::declval<etl::optional<ThrowingMove>&>())),
+                    "swap<ThrowingMove>() should NOT be nothrow");
+      static_assert(!noexcept(swap(std::declval<etl::optional<ThrowingAll>&>(), std::declval<etl::optional<ThrowingAll>&>())),
+                    "swap<ThrowingAll>() should NOT be nothrow");
+
+      // ThrowingCopy has nothrow move but throwing copy
+      static_assert(etl::is_nothrow_move_constructible<etl::optional<ThrowingCopy>>::value,
+                    "optional<ThrowingCopy> should be nothrow move constructible");
+      static_assert(noexcept(swap(std::declval<etl::optional<ThrowingCopy>&>(), std::declval<etl::optional<ThrowingCopy>&>())),
+                    "swap<ThrowingCopy>() should be nothrow");
+
+      CHECK(true); // Placeholder for the static_asserts above
+    }
+
+    TEST(test_optional_nothrow_default_constructible)
+    {
+      // Default construction of optional should always be noexcept
+      static_assert(etl::is_nothrow_default_constructible<etl::optional<int>>::value, "optional<int> should be nothrow default constructible");
+      static_assert(etl::is_nothrow_default_constructible<etl::optional<NothrowAtAll>>::value,
+                    "optional<NothrowAtAll> should be nothrow default constructible");
+      static_assert(etl::is_nothrow_default_constructible<etl::optional<ThrowingCopy>>::value,
+                    "optional<ThrowingCopy> should be nothrow default constructible");
+      static_assert(etl::is_nothrow_default_constructible<etl::optional<ThrowingAll>>::value,
+                    "optional<ThrowingAll> should be nothrow default constructible");
+
+      CHECK(true);
+    }
+
+    TEST(test_optional_nothrow_constructible_from_value)
+    {
+      // optional<T>(U&&) should be noexcept iff T is nothrow constructible from U&&
+      static_assert(etl::is_nothrow_constructible<etl::optional<int>, int>::value, "optional<int> should be nothrow constructible from int");
+      static_assert(etl::is_nothrow_constructible<etl::optional<int>, int&&>::value, "optional<int> should be nothrow constructible from int&&");
+
+      CHECK(true);
+    }
+
+    TEST(test_optional_nothrow_copy_assignable)
+    {
+      // Copy assignment should propagate noexcept from T
+      static_assert(etl::is_nothrow_copy_assignable<etl::optional<int>>::value, "optional<int> should be nothrow copy assignable");
+      static_assert(etl::is_nothrow_copy_assignable<etl::optional<NothrowAtAll>>::value, "optional<NothrowAtAll> should be nothrow copy assignable");
+
+      // ThrowingCopy has a throwing copy constructor, so copy assignment should not be noexcept
+      static_assert(!etl::is_nothrow_copy_assignable<etl::optional<ThrowingCopy>>::value,
+                    "optional<ThrowingCopy> should NOT be nothrow copy assignable");
+
+      CHECK(true);
+    }
+
+    TEST(test_optional_nothrow_move_assignable)
+    {
+      // Move assignment should propagate noexcept from T
+      static_assert(etl::is_nothrow_move_assignable<etl::optional<int>>::value, "optional<int> should be nothrow move assignable");
+      static_assert(etl::is_nothrow_move_assignable<etl::optional<NothrowAtAll>>::value, "optional<NothrowAtAll> should be nothrow move assignable");
+
+      // ThrowingMove has a throwing move constructor, so move assignment should not be noexcept
+      static_assert(!etl::is_nothrow_move_assignable<etl::optional<ThrowingMove>>::value,
+                    "optional<ThrowingMove> should NOT be nothrow move assignable");
+
+      CHECK(true);
+    }
+
+    TEST(test_make_optional_nothrow)
+    {
+      // make_optional #1
+      {
+        NothrowAtAll nothrowAtAll{};
+        static_assert(noexcept(etl::make_optional(nothrowAtAll)), "make_optional(NothrowAtAll&) should be nothrow");
+        static_assert(noexcept(etl::make_optional(std::move(nothrowAtAll))), "make_optional(NothrowAtAll&&) should be nothrow");
+        ThrowingAll throwingAll{};
+        static_assert(!noexcept(etl::make_optional(throwingAll)), "make_optional(ThrowingAll&) should NOT be nothrow");
+        static_assert(!noexcept(etl::make_optional(std::move(throwingAll))), "make_optional(ThrowingAll&&) should NOT be nothrow");
+      }
+
+      // make_optional #2
+      {
+        static_assert(noexcept(etl::make_optional<NothrowAtAll>()), "make_optional<NothrowAtAll>() should be nothrow");
+        static_assert(noexcept(etl::make_optional<const NothrowAtAll>()), "make_optional<const NothrowAtAll>() should be nothrow");
+        static_assert(!noexcept(etl::make_optional<ThrowingAll>()), "make_optional<ThrowingAll>() should NOT be nothrow");
+        static_assert(!noexcept(etl::make_optional<const ThrowingAll>()), "make_optional<const ThrowingAll>() should NOT be nothrow");
+      }
+
+      // make_optional #3
+      {
+        static_assert(noexcept(etl::make_optional<NothrowAtAll>({1, 2, 3})), "make_optional<NothrowAtAll>({1,2,3}) should be nothrow");
+        static_assert(noexcept(etl::make_optional<const NothrowAtAll>({1, 2, 3})), "make_optional<const NothrowAtAll>({1,2,3}) should be nothrow");
+        static_assert(!noexcept(etl::make_optional<ThrowingAll>({1, 2, 3})), "make_optional<ThrowingAll>({1,2,3}) should NOT be nothrow");
+        static_assert(!noexcept(etl::make_optional<const ThrowingAll>({1, 2, 3})), "make_optional<const ThrowingAll>({1,2,3}) should NOT be nothrow");
+      }
+    }
+
+    TEST(test_emplace_nothrow)
+    {
+      // emplace #1
+      {
+        etl::optional<int> fundamental{};
+        static_assert(noexcept(fundamental.emplace()), "optional<int>::emplace() should always be nothrow");
+
+        etl::optional<NothrowAtAll> nothrowAtAll{};
+        static_assert(noexcept(nothrowAtAll.emplace()), "optional<NothrowAtAll>::emplace() should be nothrow");
+
+        etl::optional<ThrowingAll> throwingAll{};
+        static_assert(!noexcept(throwingAll.emplace()), "optional<ThrowingAll>::emplace() should NOT be nothrow");
+      }
+
+      // emplace #2 (initializer_list)
+  #if !defined(ETL_FORCE_TEST_CPP03_IMPLEMENTATION)
+      {
+        etl::optional<NothrowAtAll> nothrowAtAll{};
+        static_assert(noexcept(nothrowAtAll.emplace({1, 2, 3})), "optional<NothrowAtAll>::emplace({1, 2, 3}) should be nothrow");
+
+        etl::optional<ThrowingAll> throwingAll{};
+        static_assert(!noexcept(throwingAll.emplace({1, 2, 3})), "optional<ThrowingAll>::emplace({1, 2, 3}) should NOT be nothrow");
+      }
+  #endif
+    }
+#endif
+
+#if ETL_USING_CPP11
+    //*************************************************************************
+    TEST(test_transform)
+    {
+      etl::optional<int> engaged(42);
+      etl::optional<int> empty;
+
+      etl::optional<int> doubled = engaged.transform([](int i) { return i * 2; });
+      CHECK_TRUE(doubled.has_value());
+      CHECK_EQUAL(84, doubled.value());
+
+      etl::optional<int> from_empty = empty.transform([](int i) { return i * 2; });
+      CHECK_FALSE(from_empty.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_transform_const)
+    {
+      const etl::optional<int> engaged(42);
+      const etl::optional<int> empty;
+
+      etl::optional<int> doubled = engaged.transform([](int i) { return i * 2; });
+      CHECK_TRUE(doubled.has_value());
+      CHECK_EQUAL(84, doubled.value());
+
+      etl::optional<int> from_empty = empty.transform([](int i) { return i * 2; });
+      CHECK_FALSE(from_empty.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_transform_change_type)
+    {
+      etl::optional<int> engaged(42);
+      etl::optional<int> empty;
+
+      etl::optional<std::string> text = engaged.transform([](int) { return std::string("forty two"); });
+      CHECK_TRUE(text.has_value());
+      CHECK_EQUAL("forty two", text.value());
+
+      etl::optional<std::string> text_from_empty = empty.transform([](int) { return std::string("forty two"); });
+      CHECK_FALSE(text_from_empty.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_transform_non_pod)
+    {
+      etl::optional<Data> engaged(Data("transform"));
+      etl::optional<Data> empty;
+
+      etl::optional<size_t> length = engaged.transform([](const Data& d) { return d.value.size(); });
+      CHECK_TRUE(length.has_value());
+      CHECK_EQUAL(9U, length.value());
+
+      etl::optional<size_t> length_from_empty = empty.transform([](const Data& d) { return d.value.size(); });
+      CHECK_FALSE(length_from_empty.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_transform_move)
+    {
+      etl::optional<DataM> engaged(DataM(42U));
+
+      etl::optional<DataM> moved = etl::move(engaged).transform([](DataM&& d) { return DataM(etl::move(d)); });
+      CHECK_TRUE(moved.has_value());
+      CHECK_TRUE(moved.value().valid);
+      CHECK_EQUAL(42U, moved.value().value);
+      CHECK_FALSE(engaged.value().valid);
+
+      etl::optional<DataM> empty;
+      etl::optional<DataM> from_empty = etl::move(empty).transform([](DataM&& d) { return DataM(etl::move(d)); });
+      CHECK_FALSE(from_empty.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_and_then)
+    {
+      etl::optional<int> engaged(42);
+      etl::optional<int> empty;
+
+      etl::optional<int> incremented = engaged.and_then([](int i) { return etl::optional<int>(i + 1); });
+      CHECK_TRUE(incremented.has_value());
+      CHECK_EQUAL(43, incremented.value());
+
+      etl::optional<int> from_empty = empty.and_then([](int i) { return etl::optional<int>(i + 1); });
+      CHECK_FALSE(from_empty.has_value());
+
+      etl::optional<int> rejected = engaged.and_then([](int) { return etl::optional<int>(); });
+      CHECK_FALSE(rejected.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_and_then_const)
+    {
+      const etl::optional<int> engaged(42);
+      const etl::optional<int> empty;
+
+      etl::optional<int> incremented = engaged.and_then([](int i) { return etl::optional<int>(i + 1); });
+      CHECK_TRUE(incremented.has_value());
+      CHECK_EQUAL(43, incremented.value());
+
+      etl::optional<int> from_empty = empty.and_then([](int i) { return etl::optional<int>(i + 1); });
+      CHECK_FALSE(from_empty.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_and_then_change_type)
+    {
+      etl::optional<int> engaged(42);
+      etl::optional<int> empty;
+
+      etl::optional<std::string> text = engaged.and_then([](int) { return etl::optional<std::string>("forty two"); });
+      CHECK_TRUE(text.has_value());
+      CHECK_EQUAL("forty two", text.value());
+
+      etl::optional<std::string> text_from_empty = empty.and_then([](int) { return etl::optional<std::string>("forty two"); });
+      CHECK_FALSE(text_from_empty.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_and_then_move)
+    {
+      etl::optional<DataM> engaged(DataM(42U));
+
+      etl::optional<uint32_t> value = etl::move(engaged).and_then([](DataM&& d) { return etl::optional<uint32_t>(d.value); });
+      CHECK_TRUE(value.has_value());
+      CHECK_EQUAL(42U, value.value());
+
+      etl::optional<DataM>    empty;
+      etl::optional<uint32_t> from_empty = etl::move(empty).and_then([](DataM&& d) { return etl::optional<uint32_t>(d.value); });
+      CHECK_FALSE(from_empty.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_or_else)
+    {
+      etl::optional<int> engaged(42);
+      etl::optional<int> empty;
+      bool               called = false;
+
+      etl::optional<int> from_engaged = engaged.or_else(
+        [&called]()
+        {
+          called = true;
+          return etl::optional<int>(99);
+        });
+      CHECK_TRUE(from_engaged.has_value());
+      CHECK_EQUAL(42, from_engaged.value());
+      CHECK_FALSE(called);
+
+      etl::optional<int> from_empty = empty.or_else(
+        [&called]()
+        {
+          called = true;
+          return etl::optional<int>(99);
+        });
+      CHECK_TRUE(from_empty.has_value());
+      CHECK_EQUAL(99, from_empty.value());
+      CHECK_TRUE(called);
+
+      etl::optional<int> still_empty = empty.or_else([]() { return etl::optional<int>(); });
+      CHECK_FALSE(still_empty.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_or_else_const)
+    {
+      const etl::optional<int> engaged(42);
+      const etl::optional<int> empty;
+
+      etl::optional<int> from_engaged = engaged.or_else([]() { return etl::optional<int>(99); });
+      CHECK_TRUE(from_engaged.has_value());
+      CHECK_EQUAL(42, from_engaged.value());
+
+      etl::optional<int> from_empty = empty.or_else([]() { return etl::optional<int>(99); });
+      CHECK_TRUE(from_empty.has_value());
+      CHECK_EQUAL(99, from_empty.value());
+    }
+
+    //*************************************************************************
+    TEST(test_or_else_move)
+    {
+      etl::optional<DataM> engaged(DataM(42U));
+
+      etl::optional<DataM> from_engaged = etl::move(engaged).or_else([]() { return etl::optional<DataM>(DataM(99U)); });
+      CHECK_TRUE(from_engaged.has_value());
+      CHECK_EQUAL(42U, from_engaged.value().value);
+
+      etl::optional<DataM> empty;
+      etl::optional<DataM> from_empty = etl::move(empty).or_else([]() { return etl::optional<DataM>(DataM(99U)); });
+      CHECK_TRUE(from_empty.has_value());
+      CHECK_EQUAL(99U, from_empty.value().value);
+    }
+
+    //*************************************************************************
+    TEST(test_monadic_chaining)
+    {
+      etl::optional<int> engaged(8);
+      etl::optional<int> empty;
+
+      etl::optional<int> result = engaged.transform([](int i) { return i * 2; })
+                                    .and_then([](int i) { return etl::optional<int>(i + 1); })
+                                    .or_else([]() { return etl::optional<int>(0); });
+      CHECK_TRUE(result.has_value());
+      CHECK_EQUAL(17, result.value());
+
+      etl::optional<int> result_from_empty = empty.transform([](int i) { return i * 2; })
+                                               .and_then([](int i) { return etl::optional<int>(i + 1); })
+                                               .or_else([]() { return etl::optional<int>(123); });
+      CHECK_TRUE(result_from_empty.has_value());
+      CHECK_EQUAL(123, result_from_empty.value());
+    }
+
+    //*************************************************************************
+    TEST(test_is_optional)
+    {
+      CHECK_TRUE((etl::is_optional<etl::optional<int>>::value));
+      CHECK_TRUE((etl::is_optional<const etl::optional<int>>::value));
+      CHECK_TRUE((etl::is_optional<volatile etl::optional<int>>::value));
+      CHECK_TRUE((etl::is_optional<const volatile etl::optional<int>>::value));
+      CHECK_TRUE((etl::is_optional<etl::optional<Data>>::value));
+
+      CHECK_FALSE((etl::is_optional<int>::value));
+      CHECK_FALSE((etl::is_optional<Data>::value));
+      CHECK_FALSE((etl::is_optional<etl::optional<int>*>::value));
+      CHECK_FALSE((etl::is_optional<etl::optional<int>&>::value));
+
+  #if ETL_USING_CPP17
+      CHECK_TRUE((etl::is_optional_v<etl::optional<int>>));
+      CHECK_TRUE((etl::is_optional_v<const etl::optional<int>>));
+      CHECK_FALSE((etl::is_optional_v<int>));
+  #endif
+    }
+
+    //*************************************************************************
+    TEST(test_transform_const_rvalue)
+    {
+      const etl::optional<int> engaged(42);
+      const etl::optional<int> empty;
+
+      etl::optional<int> doubled = etl::move(engaged).transform([](const int&& i) { return i * 2; });
+      CHECK_TRUE(doubled.has_value());
+      CHECK_EQUAL(84, doubled.value());
+      CHECK_TRUE(engaged.has_value());
+      CHECK_EQUAL(42, engaged.value());
+
+      etl::optional<int> from_empty = etl::move(empty).transform([](const int&& i) { return i * 2; });
+      CHECK_FALSE(from_empty.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_and_then_const_rvalue)
+    {
+      const etl::optional<int> engaged(42);
+      const etl::optional<int> empty;
+
+      etl::optional<int> incremented = etl::move(engaged).and_then([](const int&& i) { return etl::optional<int>(i + 1); });
+      CHECK_TRUE(incremented.has_value());
+      CHECK_EQUAL(43, incremented.value());
+
+      etl::optional<int> from_empty = etl::move(empty).and_then([](const int&& i) { return etl::optional<int>(i + 1); });
+      CHECK_FALSE(from_empty.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_or_else_const_rvalue)
+    {
+      const etl::optional<int> engaged(42);
+      const etl::optional<int> empty;
+
+      etl::optional<int> from_engaged = etl::move(engaged).or_else([]() { return etl::optional<int>(99); });
+      CHECK_TRUE(from_engaged.has_value());
+      CHECK_EQUAL(42, from_engaged.value());
+
+      etl::optional<int> from_empty = etl::move(empty).or_else([]() { return etl::optional<int>(99); });
+      CHECK_TRUE(from_empty.has_value());
+      CHECK_EQUAL(99, from_empty.value());
+    }
+
+    //*************************************************************************
+    /// Unlike std::optional, a callable returning a reference is accepted.
+    /// The reference is stripped from the result type and the value is copied.
+    //*************************************************************************
+    TEST(test_transform_callable_returning_reference)
+    {
+      etl::optional<int> engaged(42);
+
+      auto result = engaged.transform([](int& i) -> int& { return i; });
+
+      CHECK_TRUE((etl::is_same<etl::optional<int>, decltype(result)>::value));
+      CHECK_TRUE(result.has_value());
+      CHECK_EQUAL(42, result.value());
+
+      // The result is a copy, not an alias of the source.
+      result.value() = 1;
+      CHECK_EQUAL(42, engaged.value());
+    }
+
+    //*************************************************************************
+    TEST(test_and_then_callable_returning_reference)
+    {
+      etl::optional<int> engaged(42);
+      etl::optional<int> empty;
+
+      auto f = [](int i) -> etl::optional<int>&
+      {
+        static etl::optional<int> shared;
+        shared = i + 1;
+        return shared;
+      };
+
+      auto result = engaged.and_then(f);
+
+      CHECK_TRUE((etl::is_same<etl::optional<int>, decltype(result)>::value));
+      CHECK_TRUE(result.has_value());
+      CHECK_EQUAL(43, result.value());
+
+      auto from_empty = empty.and_then(f);
+      CHECK_FALSE(from_empty.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_or_else_callable_returning_reference)
+    {
+      etl::optional<int> engaged(42);
+      etl::optional<int> empty;
+
+      auto f = []() -> etl::optional<int>&
+      {
+        static etl::optional<int> shared(99);
+        return shared;
+      };
+
+      auto from_engaged = engaged.or_else(f);
+
+      CHECK_TRUE((etl::is_same<etl::optional<int>, decltype(from_engaged)>::value));
+      CHECK_TRUE(from_engaged.has_value());
+      CHECK_EQUAL(42, from_engaged.value());
+
+      auto from_empty = empty.or_else(f);
+      CHECK_TRUE(from_empty.has_value());
+      CHECK_EQUAL(99, from_empty.value());
+    }
+#endif
   }
-}
+} // namespace
+
+#include "etl/private/diagnostic_pop.h"

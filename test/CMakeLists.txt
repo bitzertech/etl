@@ -14,6 +14,7 @@ add_executable(etl_tests
 	main.cpp
 	murmurhash3.cpp
 	test_algorithm.cpp
+	test_algorithm_ranges.cpp
 	test_alignment.cpp
 	test_array.cpp
 	test_array_view.cpp
@@ -83,9 +84,11 @@ add_executable(etl_tests
 	test_circular_buffer.cpp
 	test_circular_buffer_external_buffer.cpp
 	test_circular_iterator.cpp
-	test_closure.cpp
-	test_closure_constexpr.cpp
+	test_closure_with_default_delegate.cpp
+	test_closure_with_default_delegate_constexpr.cpp
+	test_closure_with_inplace_function.cpp
 	test_compare.cpp
+	test_concepts.cpp
 	test_constant.cpp
 	test_const_map.cpp
 	test_const_map_constexpr.cpp
@@ -160,6 +163,7 @@ add_executable(etl_tests
 	test_crc8_opensafety.cpp
 	test_crc8_rohc.cpp
 	test_crc8_wcdma.cpp
+	test_clamped_value.cpp
 	test_cyclic_value.cpp
 	test_debounce.cpp
 	test_delegate.cpp
@@ -172,6 +176,7 @@ add_executable(etl_tests
 	test_endian.cpp
 	test_enum_type.cpp
 	test_error_handler.cpp
+	test_etl_assert.cpp
 	test_etl_traits.cpp
 	test_exception.cpp
 	test_expected.cpp
@@ -183,6 +188,7 @@ add_executable(etl_tests
 	test_flat_multiset.cpp
 	test_flat_set.cpp
 	test_fnv_1.cpp
+	test_format.cpp
 	test_format_spec.cpp
 	test_forward_list.cpp
 	test_forward_list_shared_pool.cpp
@@ -194,19 +200,24 @@ add_executable(etl_tests
 	test_hash.cpp
 	test_hfsm.cpp
 	test_hfsm_recurse_to_inner_state_on_start.cpp
+	test_hfsm_transition_on_enter.cpp
 	test_histogram.cpp
 	test_index_of_type.cpp
 	test_indirect_vector.cpp
 	test_indirect_vector_external_buffer.cpp
+	test_inplace_function.cpp
 	test_instance_count.cpp
 	test_integral_limits.cpp
+	test_intrusive_avl_tree.cpp
 	test_intrusive_forward_list.cpp
 	test_intrusive_links.cpp
 	test_intrusive_list.cpp
 	test_intrusive_queue.cpp
 	test_intrusive_stack.cpp
 	test_invert.cpp
+	test_invoke.cpp
 	test_io_port.cpp
+	test_is_invocable.cpp
 	test_iterator.cpp
 	test_jenkins.cpp
 	test_largest.cpp
@@ -259,6 +270,7 @@ add_executable(etl_tests
 	test_pool.cpp
 	test_pool_external_buffer.cpp
 	test_priority_queue.cpp
+	test_print.cpp
 	test_pseudo_moving_average.cpp
 	test_quantize.cpp
 	test_queue.cpp
@@ -274,6 +286,7 @@ add_executable(etl_tests
 	test_queue_spsc_locked.cpp
 	test_queue_spsc_locked_small.cpp
 	test_random.cpp
+	test_ranges.cpp
 	test_ratio.cpp
 	test_reference_flat_map.cpp
 	test_reference_flat_multimap.cpp
@@ -286,6 +299,7 @@ add_executable(etl_tests
 	test_scaled_rounding.cpp
 	test_set.cpp
 	test_shared_message.cpp
+	test_signal.cpp
 	test_singleton.cpp
 	test_singleton_base.cpp
 	test_smallest.cpp
@@ -362,6 +376,10 @@ add_executable(etl_tests
 	test_vector_non_trivial.cpp
 	test_vector_pointer.cpp
 	test_vector_pointer_external_buffer.cpp
+	test_vector_function_pointer.cpp
+	test_vector_function_pointer_external_buffer.cpp
+	test_vector_member_function_pointer.cpp
+	test_vector_member_function_pointer_external_buffer.cpp
 	test_visitor.cpp
 	test_xor_checksum.cpp
 	test_xor_rotate_checksum.cpp
@@ -370,6 +388,11 @@ add_executable(etl_tests
 target_compile_definitions(etl_tests PRIVATE -DETL_DEBUG)
 
 option(ETL_NO_STL "No STL" OFF)
+
+set(EXTRA_COMPILE_OPTIONS "" CACHE STRING "Additional compiler options")
+set(EXTRA_LINK_OPTIONS "" CACHE STRING "Additional linker options")
+set(EXTRA_LINK_LIBS "" CACHE STRING "Additional libraries to link")
+set(EXTRA_TESTING_FLAGS "" CACHE STRING "Additional testing flags for ctest")
 
 if (ETL_CXX_STANDARD MATCHES "98")
 	message(STATUS "Compiling for C++98")
@@ -390,10 +413,26 @@ elseif (ETL_CXX_STANDARD MATCHES "20")
 	message(STATUS "Compiling for C++20")
 	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 20)
 elseif (ETL_CXX_STANDARD MATCHES "23")
-	message(STATUS "Compiling for C++23")
-	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 23)
+	if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
+		message(STATUS "Compiling for C++23")
+		set_property(TARGET etl_tests PROPERTY CXX_STANDARD 23)
+	else()
+		message(STATUS "CMake version ${CMAKE_VERSION} does not support C++23, falling back to C++20")
+		set_property(TARGET etl_tests PROPERTY CXX_STANDARD 20)
+	endif()
+elseif (ETL_CXX_STANDARD MATCHES "26")
+	if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.25")
+		message(STATUS "Compiling for C++26")
+		set_property(TARGET etl_tests PROPERTY CXX_STANDARD 26)
+	elseif (CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
+		message(STATUS "CMake version ${CMAKE_VERSION} does not support C++26, falling back to C++23")
+		set_property(TARGET etl_tests PROPERTY CXX_STANDARD 23)
+	else()
+		message(FATAL_ERROR "CMake version ${CMAKE_VERSION} is too old to support C++23 or C++26. Please upgrade to CMake 3.20 or later.")
+	endif()
 else()
-	message(STATUS "Unsupported C++ standard")
+	message(STATUS "Compiling for C++17")
+	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 17)
 endif()
 
 if (NO_STL OR ETL_NO_STL)
@@ -459,6 +498,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 			PRIVATE
 			-fno-omit-frame-pointer
 			-fno-common
+#			-fmax-errors=10
 			-pedantic-errors
 			-Wall
 			-Wextra
@@ -466,9 +506,12 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 			-Wfloat-equal
 			-Wshadow
 			-Wnull-dereference
+			-Wsign-conversion
 			-Wextra-semi
 			-g
+			${EXTRA_COMPILE_OPTIONS}
 			)
+	target_link_options(etl_tests PRIVATE ${EXTRA_LINK_OPTIONS})
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -476,6 +519,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 			PRIVATE
 			-fno-omit-frame-pointer
 			-fno-common
+#			-ferror-limit=10
 			-pedantic-errors
 			-Wall
 			-Wextra
@@ -483,11 +527,14 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 			-Wfloat-equal
 			-Wshadow
 			-Wnull-dereference
+			-Wsign-conversion
 			-Wextra-semi
 			-Wextra-semi-stmt
 			-Wc++11-extra-semi
 			-g
+			${EXTRA_COMPILE_OPTIONS}
 			)
+	target_link_options(etl_tests PRIVATE ${EXTRA_LINK_OPTIONS})
 endif ()
 
 if ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
@@ -503,7 +550,7 @@ if ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR (CMAKE_CXX_COMPILER_ID MATCHES "Cla
 			target_link_options(etl_tests
 				PRIVATE
 				-fsanitize=address,undefined,bounds
-				)	
+				)
 		endif()
 	endif ()
 endif ()
@@ -513,13 +560,13 @@ target_include_directories(etl_tests
 		${PROJECT_SOURCE_DIR}/../include)
 
 add_subdirectory(UnitTest++)
-target_link_libraries(etl_tests PRIVATE UnitTestpp)
+target_link_libraries(etl_tests PRIVATE UnitTestpp ${EXTRA_LINK_LIBS})
 
+enable_testing()
 # Enable the 'make test' CMake target using the executable defined above
-add_test(etl_unit_tests etl_tests)
+add_test(NAME etl_unit_tests COMMAND etl_tests ${EXTRA_TESTING_FLAGS})
 
 # Since ctest will only show you the results of the single executable
 # define a target that will output all of the failing or passing tests
 # as they appear from UnitTest++
 add_custom_target(test_verbose COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
-

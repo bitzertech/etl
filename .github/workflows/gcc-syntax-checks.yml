@@ -2,9 +2,37 @@ name: gcc syntax checks
 on:
   push:
     branches: [ master, development, pull-request/* ]
+    paths:
+      - '.github/workflows/**'
+      - 'include/**'
+      - 'test/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'BUILD.bazel'
+      - 'MODULE.bazel*'
+      - 'meson.build'
+      - 'meson_options.txt'
+      - 'subprojects/**'
+      - '.devcontainer/**'
   pull_request:
     branches: [ master, development, pull-request/* ]
     types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/**'
+      - 'include/**'
+      - 'test/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'BUILD.bazel'
+      - 'MODULE.bazel*'
+      - 'meson.build'
+      - 'meson_options.txt'
+      - 'subprojects/**'
+      - '.devcontainer/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-gcc-cpp03-linux-STL:
@@ -15,7 +43,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -23,17 +51,17 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=03 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp03-linux-No-STL:
-    name: Syntax Check - GCC C++03 Linux No STL 
+    name: Syntax Check - GCC C++03 Linux No STL
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -41,7 +69,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=03 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp11-linux-STL:
     name: Syntax Check - GCC C++11 Linux STL
@@ -51,7 +79,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -59,7 +87,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=11 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp11-linux-No-STL:
     name: Syntax Check - GCC C++11 Linux No STL 
@@ -69,7 +97,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -77,7 +105,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=11 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp11-linux-STL-Force-CPP03:
     name: Syntax Check - GCC C++11 Linux STL Force C++03
@@ -87,7 +115,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -95,7 +123,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=ON -DETL_CXX_STANDARD=11 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp11-linux-No-STL-Force-CPP03:
     name: Syntax Check - GCC C++11 Linux No STL Force C++03
@@ -105,7 +133,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -113,7 +141,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=ON -DETL_CXX_STANDARD=11 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp14-linux-STL:
     name: Syntax Check - GCC C++14 Linux STL
@@ -123,7 +151,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -131,7 +159,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=14 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp14-linux-No-STL:
     name: Syntax Check - GCC C++14 Linux No STL 
@@ -141,7 +169,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -149,7 +177,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=14 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp14-linux-STL-Force-CPP03:
     name: Syntax Check - GCC C++14 Linux STL Force C++03
@@ -159,7 +187,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -167,7 +195,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=ON -DETL_CXX_STANDARD=14 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp14-linux-No-STL-Force-CPP03:
     name: Syntax Check - GCC C++14 Linux No STL Force C++03
@@ -177,7 +205,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -185,7 +213,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=ON -DETL_CXX_STANDARD=14 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp17-linux-STL:
     name: Syntax Check - GCC C++17 Linux STL
@@ -195,7 +223,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -203,7 +231,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=17 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp17-linux-No-STL:
     name: Syntax Check - GCC C++17 Linux No STL 
@@ -213,7 +241,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -221,7 +249,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=17 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp17-linux-STL-Force-CPP03:
     name: Syntax Check - GCC C++17 Linux STL Force C++03
@@ -231,7 +259,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -239,7 +267,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=ON -DETL_CXX_STANDARD=17 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp17-linux-No-STL-Force-CPP03:
     name: Syntax Check - GCC C++17 Linux No STL Force C++03
@@ -249,7 +277,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -257,7 +285,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=ON -DETL_CXX_STANDARD=17 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp20-linux-STL:
     name: Syntax Check - GCC C++20 Linux STL
@@ -267,7 +295,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -275,7 +303,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=20 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp20-linux-No-STL:
     name: Syntax Check - GCC C++20 Linux No STL 
@@ -285,7 +313,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -293,7 +321,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=20 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp20-linux-STL-Force-CPP03:
     name: Syntax Check - GCC C++20 Linux STL Force C++03
@@ -303,7 +331,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -311,7 +339,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=ON -DETL_CXX_STANDARD=20 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp20-linux-No-STL-Force-CPP03:
     name: Syntax Check - GCC C++20 Linux No STL Force C++03
@@ -321,7 +349,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -329,7 +357,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=ON -DETL_CXX_STANDARD=20 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp23-linux-STL:
     name: Syntax Check - GCC C++23 Linux STL
@@ -339,7 +367,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -347,7 +375,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=23 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp23-linux-No-STL:
     name: Syntax Check - GCC C++23 Linux No STL 
@@ -357,7 +385,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -365,7 +393,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=23 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp23-linux-STL-Force-CPP03:
     name: Syntax Check - GCC C++23 Linux STL Force C++03
@@ -375,7 +403,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -383,7 +411,7 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=ON -DETL_CXX_STANDARD=23 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
 
   build-gcc-cpp23-linux-No-STL-Force-CPP03:
     name: Syntax Check - GCC C++23 Linux No STL Force C++03
@@ -393,7 +421,7 @@ jobs:
         os: [ubuntu-22.04]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.3
 
     - name: Build
       run: |
@@ -401,4 +429,84 @@ jobs:
         export CXX=g++
         cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=ON -DETL_CXX_STANDARD=23 ./test/syntax_check
         gcc --version
-        make -j $(getconf _NPROCESSORS_ONLN)
+        make -j "$(getconf _NPROCESSORS_ONLN)"
+
+  build-gcc-cpp26-linux-STL:
+    name: Syntax Check - GCC C++26 Linux STL
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v6.0.3
+
+    - name: Build Docker image
+      run: docker build -t etl-ubuntu-2604 -f .devcontainer/ubuntu-26.04/Dockerfile .
+
+    - name: Build
+      run: |
+        docker run --rm --user root -v ${{ github.workspace }}:/workspaces/etl etl-ubuntu-2604 bash -c "\
+          cd /workspaces/etl && \
+          export CC=gcc && \
+          export CXX=g++ && \
+          cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=26 ./test/syntax_check && \
+          gcc --version && \
+          make -j \$(getconf _NPROCESSORS_ONLN)"
+
+  build-gcc-cpp26-linux-No-STL:
+    name: Syntax Check - GCC C++26 Linux No STL
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v6.0.3
+
+    - name: Build Docker image
+      run: docker build -t etl-ubuntu-2604 -f .devcontainer/ubuntu-26.04/Dockerfile .
+
+    - name: Build
+      run: |
+        docker run --rm --user root -v ${{ github.workspace }}:/workspaces/etl etl-ubuntu-2604 bash -c "\
+          cd /workspaces/etl && \
+          export CC=gcc && \
+          export CXX=g++ && \
+          cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=OFF -DETL_CXX_STANDARD=26 ./test/syntax_check && \
+          gcc --version && \
+          make -j \$(getconf _NPROCESSORS_ONLN)"
+
+  build-gcc-cpp26-linux-STL-Force-CPP03:
+    name: Syntax Check - GCC C++26 Linux STL Force C++03
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v6.0.3
+
+    - name: Build Docker image
+      run: docker build -t etl-ubuntu-2604 -f .devcontainer/ubuntu-26.04/Dockerfile .
+
+    - name: Build
+      run: |
+        docker run --rm --user root -v ${{ github.workspace }}:/workspaces/etl etl-ubuntu-2604 bash -c "\
+          cd /workspaces/etl && \
+          export CC=gcc && \
+          export CXX=g++ && \
+          cmake -DNO_STL=OFF -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=ON -DETL_CXX_STANDARD=26 ./test/syntax_check && \
+          gcc --version && \
+          make -j \$(getconf _NPROCESSORS_ONLN)"
+
+  build-gcc-cpp26-linux-No-STL-Force-CPP03:
+    name: Syntax Check - GCC C++26 Linux No STL Force C++03
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v6.0.3
+
+    - name: Build Docker image
+      run: docker build -t etl-ubuntu-2604 -f .devcontainer/ubuntu-26.04/Dockerfile .
+
+    - name: Build
+      run: |
+        docker run --rm --user root -v ${{ github.workspace }}:/workspaces/etl etl-ubuntu-2604 bash -c "\
+          cd /workspaces/etl && \
+          export CC=gcc && \
+          export CXX=g++ && \
+          cmake -DNO_STL=ON -DETL_USE_TYPE_TRAITS_BUILTINS=OFF -DETL_USER_DEFINED_TYPE_TRAITS=OFF -DETL_FORCE_TEST_CPP03_IMPLEMENTATION=ON -DETL_CXX_STANDARD=26 ./test/syntax_check && \
+          gcc --version && \
+          make -j \$(getconf _NPROCESSORS_ONLN)"

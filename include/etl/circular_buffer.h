@@ -32,15 +32,15 @@ SOFTWARE.
 #define ETL_CIRCULAR_BUFFER_INCLUDED
 
 #include "platform.h"
-#include "vector.h"
-#include "exception.h"
 #include "error_handler.h"
+#include "exception.h"
+#include "initializer_list.h"
+#include "iterator.h"
 #include "memory.h"
 #include "memory_model.h"
-#include "type_traits.h"
-#include "iterator.h"
 #include "static_assert.h"
-#include "initializer_list.h"
+#include "type_traits.h"
+#include "vector.h"
 
 namespace etl
 {
@@ -170,7 +170,7 @@ namespace etl
     size_type buffer_size;
     size_type in;            ///< Index to the next write.
     size_type out;           ///< Index to the next read.
-    ETL_DECLARE_DEBUG_COUNT;  ///< Internal debugging.
+    ETL_DECLARE_DEBUG_COUNT; ///< Internal debugging.
   };
 
   //***************************************************************************
@@ -181,14 +181,14 @@ namespace etl
   {
   public:
 
-    typedef T           value_type;
-    typedef T&          reference;
-    typedef const T&    const_reference;
+    typedef T        value_type;
+    typedef T&       reference;
+    typedef const T& const_reference;
 #if ETL_USING_CPP11
-    typedef T&&         rvalue_reference;
+    typedef T&& rvalue_reference;
 #endif
-    typedef T*          pointer;
-    typedef const T*    const_pointer;
+    typedef T*       pointer;
+    typedef const T* const_pointer;
 
     typedef typename etl::iterator_traits<pointer>::difference_type difference_type;
 
@@ -222,7 +222,7 @@ namespace etl
       //*************************************************************************
       /// Assignment operator.
       //*************************************************************************
-      iterator& operator =(const iterator& other)
+      iterator& operator=(const iterator& other)
       {
         picb    = other.picb;
         current = other.current;
@@ -233,7 +233,7 @@ namespace etl
       //*************************************************************************
       /// * operator
       //*************************************************************************
-      reference operator *() const
+      reference operator*() const
       {
         return picb->pbuffer[current];
       }
@@ -241,7 +241,7 @@ namespace etl
       //*************************************************************************
       /// -> operator
       //*************************************************************************
-      pointer operator ->() const
+      pointer operator->() const
       {
         return &picb->pbuffer[current];
       }
@@ -249,7 +249,7 @@ namespace etl
       //*************************************************************************
       /// [] operator
       //*************************************************************************
-      reference operator [](size_t index)
+      reference operator[](size_t index)
       {
         return picb->pbuffer[(current + index) % picb->buffer_size];
       }
@@ -257,7 +257,7 @@ namespace etl
       //*************************************************************************
       /// [] operator
       //*************************************************************************
-      const_reference operator [](size_t index) const
+      const_reference operator[](size_t index) const
       {
         return picb->pbuffer[(current + index) % picb->buffer_size];
       }
@@ -265,7 +265,7 @@ namespace etl
       //*************************************************************************
       /// Pre-increment.
       //*************************************************************************
-      iterator& operator ++()
+      iterator& operator++()
       {
         ++current;
 
@@ -281,7 +281,7 @@ namespace etl
       //*************************************************************************
       /// Post increment.
       //*************************************************************************
-      iterator operator ++(int)
+      iterator operator++(int)
       {
         iterator original(*this);
 
@@ -293,7 +293,7 @@ namespace etl
       //*************************************************************************
       /// Pre-decrement.
       //*************************************************************************
-      iterator& operator --()
+      iterator& operator--()
       {
         // Are we at the end of the buffer?
         if (current == 0U)
@@ -311,7 +311,7 @@ namespace etl
       //*************************************************************************
       /// Post increment.
       //*************************************************************************
-      iterator operator --(int)
+      iterator operator--(int)
       {
         iterator original(*this);
 
@@ -323,9 +323,9 @@ namespace etl
       //*************************************************************************
       /// Add offset.
       //*************************************************************************
-      iterator& operator +=(int n)
+      iterator& operator+=(int n)
       {
-        current += size_type(picb->buffer_size + n);
+        current += size_type(static_cast<int>(picb->buffer_size) + n);
         current %= picb->buffer_size;
 
         return (*this);
@@ -334,7 +334,7 @@ namespace etl
       //*************************************************************************
       /// Subtract offset.
       //*************************************************************************
-      iterator& operator -=(int n)
+      iterator& operator-=(int n)
       {
         return (this->operator+=(-n));
       }
@@ -342,7 +342,7 @@ namespace etl
       //*************************************************************************
       /// Add offset.
       //*************************************************************************
-      friend iterator operator +(const iterator& lhs, int n)
+      friend iterator operator+(const iterator& lhs, int n)
       {
         iterator temp = lhs;
 
@@ -354,7 +354,7 @@ namespace etl
       //*************************************************************************
       /// Add offset.
       //*************************************************************************
-      friend iterator operator +(int n, const iterator& rhs)
+      friend iterator operator+(int n, const iterator& rhs)
       {
         iterator temp = rhs;
 
@@ -366,7 +366,7 @@ namespace etl
       //*************************************************************************
       /// Subtract offset.
       //*************************************************************************
-      friend iterator operator -(const iterator& lhs, int n)
+      friend iterator operator-(const iterator& lhs, int n)
       {
         iterator temp = lhs;
 
@@ -378,7 +378,7 @@ namespace etl
       //*************************************************************************
       /// Equality operator
       //*************************************************************************
-      friend bool operator == (const iterator& lhs, const iterator& rhs)
+      friend bool operator==(const iterator& lhs, const iterator& rhs)
       {
         return (lhs.current == rhs.current);
       }
@@ -386,18 +386,18 @@ namespace etl
       //*************************************************************************
       /// Inequality operator
       //*************************************************************************
-      friend bool operator != (const iterator& lhs, const iterator& rhs)
+      friend bool operator!=(const iterator& lhs, const iterator& rhs)
       {
         return !(lhs == rhs);
       }
 
       //***************************************************
-      friend bool operator < (const iterator& lhs, const iterator& rhs)
+      friend bool operator<(const iterator& lhs, const iterator& rhs)
       {
-        const difference_type lhs_index = lhs.get_index();
-        const difference_type rhs_index = rhs.get_index();
+        const difference_type lhs_index       = lhs.get_index();
+        const difference_type rhs_index       = rhs.get_index();
         const difference_type reference_index = lhs.container().begin().get_index();
-        const size_t buffer_size = lhs.container().max_size() + 1UL;
+        const difference_type buffer_size     = static_cast<difference_type>(lhs.container().max_size() + 1UL);
 
         const difference_type lhs_distance = (lhs_index < reference_index) ? buffer_size + lhs_index - reference_index : lhs_index - reference_index;
         const difference_type rhs_distance = (rhs_index < reference_index) ? buffer_size + rhs_index - reference_index : rhs_index - reference_index;
@@ -406,19 +406,19 @@ namespace etl
       }
 
       //***************************************************
-      friend bool operator <= (const iterator& lhs, const iterator& rhs)
+      friend bool operator<=(const iterator& lhs, const iterator& rhs)
       {
         return !(lhs > rhs);
       }
 
       //***************************************************
-      friend bool operator > (const iterator& lhs, const iterator& rhs)
+      friend bool operator>(const iterator& lhs, const iterator& rhs)
       {
         return (rhs < lhs);
       }
 
       //***************************************************
-      friend bool operator >= (const iterator& lhs, const iterator& rhs)
+      friend bool operator>=(const iterator& lhs, const iterator& rhs)
       {
         return !(lhs < rhs);
       }
@@ -426,7 +426,7 @@ namespace etl
       //***************************************************
       difference_type get_index() const
       {
-        return current;
+        return static_cast<difference_type>(current);
       }
 
       //***************************************************
@@ -468,7 +468,7 @@ namespace etl
     private:
 
       const icircular_buffer<T>* picb;
-      size_type current;
+      size_type                  current;
     };
 
     //*************************************************************************
@@ -510,7 +510,7 @@ namespace etl
       //*************************************************************************
       /// Assignment operator.
       //*************************************************************************
-      const_iterator& operator =(const typename icircular_buffer::iterator& other)
+      const_iterator& operator=(const typename icircular_buffer::iterator& other)
       {
         picb    = other.picb;
         current = other.current;
@@ -521,7 +521,7 @@ namespace etl
       //*************************************************************************
       /// Assignment operator.
       //*************************************************************************
-      const_iterator& operator =(const const_iterator& other)
+      const_iterator& operator=(const const_iterator& other)
       {
         picb    = other.picb;
         current = other.current;
@@ -532,7 +532,7 @@ namespace etl
       //*************************************************************************
       /// * operator
       //*************************************************************************
-      const_reference operator *() const
+      const_reference operator*() const
       {
         return picb->pbuffer[current];
       }
@@ -540,7 +540,7 @@ namespace etl
       //*************************************************************************
       /// -> operator
       //*************************************************************************
-      const_pointer operator ->() const
+      const_pointer operator->() const
       {
         return &(picb->pbuffer[current]);
       }
@@ -548,7 +548,7 @@ namespace etl
       //*************************************************************************
       /// [] operator
       //*************************************************************************
-      const_reference operator [](size_t index) const
+      const_reference operator[](size_t index) const
       {
         return picb->pbuffer[(current + index) % picb->buffer_size];
       }
@@ -556,7 +556,7 @@ namespace etl
       //*************************************************************************
       /// Pre-increment.
       //*************************************************************************
-      const_iterator& operator ++()
+      const_iterator& operator++()
       {
         ++current;
 
@@ -572,7 +572,7 @@ namespace etl
       //*************************************************************************
       /// Post increment.
       //*************************************************************************
-      const_iterator operator ++(int)
+      const_iterator operator++(int)
       {
         const_iterator original(*this);
 
@@ -584,7 +584,7 @@ namespace etl
       //*************************************************************************
       /// Pre-decrement.
       //*************************************************************************
-      const_iterator& operator --()
+      const_iterator& operator--()
       {
         // Are we at the end of the buffer?
         if (current == 0U)
@@ -602,7 +602,7 @@ namespace etl
       //*************************************************************************
       /// Post increment.
       //*************************************************************************
-      const_iterator operator --(int)
+      const_iterator operator--(int)
       {
         const_iterator original(*this);
 
@@ -614,9 +614,9 @@ namespace etl
       //*************************************************************************
       /// Add offset.
       //*************************************************************************
-      const_iterator& operator +=(int n)
+      const_iterator& operator+=(int n)
       {
-        current += size_type(picb->buffer_size + n);
+        current += size_type(static_cast<int>(picb->buffer_size) + n);
         current %= picb->buffer_size;
 
         return (*this);
@@ -625,7 +625,7 @@ namespace etl
       //*************************************************************************
       /// Subtract offset.
       //*************************************************************************
-      const_iterator& operator -=(int n)
+      const_iterator& operator-=(int n)
       {
         return (this->operator+=(-n));
       }
@@ -633,7 +633,7 @@ namespace etl
       //*************************************************************************
       /// Add offset.
       //*************************************************************************
-      friend const_iterator operator +(const const_iterator& lhs, int n)
+      friend const_iterator operator+(const const_iterator& lhs, int n)
       {
         const_iterator temp = lhs;
 
@@ -645,7 +645,7 @@ namespace etl
       //*************************************************************************
       /// Subtract offset.
       //*************************************************************************
-      friend const_iterator operator -(const const_iterator& lhs, int n)
+      friend const_iterator operator-(const const_iterator& lhs, int n)
       {
         const_iterator temp = lhs;
 
@@ -657,7 +657,7 @@ namespace etl
       //*************************************************************************
       /// Equality operator
       //*************************************************************************
-      friend bool operator == (const const_iterator& lhs, const const_iterator& rhs)
+      friend bool operator==(const const_iterator& lhs, const const_iterator& rhs)
       {
         return (lhs.current == rhs.current);
       }
@@ -665,18 +665,18 @@ namespace etl
       //*************************************************************************
       /// Inequality operator
       //*************************************************************************
-      friend bool operator != (const const_iterator& lhs, const const_iterator& rhs)
+      friend bool operator!=(const const_iterator& lhs, const const_iterator& rhs)
       {
         return !(lhs == rhs);
       }
 
       //***************************************************
-      friend bool operator < (const const_iterator& lhs, const const_iterator& rhs)
+      friend bool operator<(const const_iterator& lhs, const const_iterator& rhs)
       {
-        const difference_type lhs_index = lhs.get_index();
-        const difference_type rhs_index = rhs.get_index();
+        const difference_type lhs_index       = lhs.get_index();
+        const difference_type rhs_index       = rhs.get_index();
         const difference_type reference_index = lhs.container().begin().get_index();
-        const size_t buffer_size = lhs.container().max_size() + 1UL;
+        const difference_type buffer_size     = static_cast<difference_type>(lhs.container().max_size() + 1UL);
 
         const difference_type lhs_distance = (lhs_index < reference_index) ? buffer_size + lhs_index - reference_index : lhs_index - reference_index;
         const difference_type rhs_distance = (rhs_index < reference_index) ? buffer_size + rhs_index - reference_index : rhs_index - reference_index;
@@ -685,19 +685,19 @@ namespace etl
       }
 
       //***************************************************
-      friend bool operator <= (const const_iterator& lhs, const const_iterator& rhs)
+      friend bool operator<=(const const_iterator& lhs, const const_iterator& rhs)
       {
         return !(lhs > rhs);
       }
 
       //***************************************************
-      friend bool operator > (const const_iterator& lhs, const const_iterator& rhs)
+      friend bool operator>(const const_iterator& lhs, const const_iterator& rhs)
       {
         return (rhs < lhs);
       }
 
       //***************************************************
-      friend bool operator >= (const const_iterator& lhs, const const_iterator& rhs)
+      friend bool operator>=(const const_iterator& lhs, const const_iterator& rhs)
       {
         return !(lhs < rhs);
       }
@@ -705,7 +705,7 @@ namespace etl
       //***************************************************
       difference_type get_index() const
       {
-        return current;
+        return static_cast<difference_type>(current);
       }
 
       //***************************************************
@@ -734,7 +734,7 @@ namespace etl
     private:
 
       const icircular_buffer<T>* picb;
-      size_type current;
+      size_type                  current;
     };
 
     friend class iterator;
@@ -886,7 +886,7 @@ namespace etl
     //*************************************************************************
     /// Get a reference to the item.
     //*************************************************************************
-    reference operator [](size_t index)
+    reference operator[](size_t index)
     {
       return pbuffer[(out + index) % buffer_size];
     }
@@ -895,9 +895,56 @@ namespace etl
     /// Get a const reference to the item at the back of the buffer.
     /// Asserts an error if the buffer is empty.
     //*************************************************************************
-    const_reference operator [](size_t index) const
+    const_reference operator[](size_t index) const
     {
       return pbuffer[(out + index) % buffer_size];
+    }
+
+    //*************************************************************************
+    /// Assigns an iterator range to the circular buffer.
+    //*************************************************************************
+    void assign(iterator first, const iterator& last)
+    {
+      assign_range(first, last);
+    }
+
+    //*************************************************************************
+    /// Assigns a const iterator range to the circular buffer.
+    //*************************************************************************
+    void assign(const_iterator first, const const_iterator& last)
+    {
+      assign_range(first, last);
+    }
+
+    //*************************************************************************
+    /// Assigns a range to the circular buffer.
+    //*************************************************************************
+    template <typename TIterator>
+    typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type assign(TIterator first, const TIterator& last)
+    {
+      clear();
+      push(first, last);
+    }
+
+    //*************************************************************************
+    /// Assigns 'n' copies of a value to the circular buffer.
+    //*************************************************************************
+    void assign(size_type n, const_reference value)
+    {
+      if (n == 0U)
+      {
+        clear();
+        return;
+      }
+
+      const T value_copy(value);
+
+      clear();
+
+      while (n-- != 0U)
+      {
+        push(value_copy);
+      }
     }
 
     //*************************************************************************
@@ -988,7 +1035,7 @@ namespace etl
     //*************************************************************************
     void clear()
     {
-      if ETL_IF_CONSTEXPR(etl::is_trivially_destructible<T>::value)
+      if ETL_IF_CONSTEXPR (etl::is_trivially_destructible<T>::value)
       {
         in  = 0U;
         out = 0U;
@@ -1021,7 +1068,7 @@ namespace etl
     //*************************************************************************
     /// - operator for iterator
     //*************************************************************************
-    friend difference_type operator -(const iterator& lhs, const iterator& rhs)
+    friend difference_type operator-(const iterator& lhs, const iterator& rhs)
     {
       return distance(rhs, lhs);
     }
@@ -1029,12 +1076,49 @@ namespace etl
     //*************************************************************************
     /// - operator for const_iterator
     //*************************************************************************
-    friend difference_type operator -(const const_iterator& lhs, const const_iterator& rhs)
+    friend difference_type operator-(const const_iterator& lhs, const const_iterator& rhs)
     {
       return distance(rhs, lhs);
     }
 
   protected:
+
+    //*************************************************************************
+    /// Assigns a circular buffer iterator range.
+    //*************************************************************************
+    template <typename TIterator>
+    void assign_range(TIterator first, const TIterator& last)
+    {
+      const bool is_self_range = (&first.container() == this) && (&last.container() == this);
+
+      if (!is_self_range)
+      {
+        clear();
+        push(first, last);
+      }
+      else
+      {
+        const size_type first_index = static_cast<size_type>(first.get_index());
+        const size_type last_index  = static_cast<size_type>(last.get_index());
+
+        while (out != first_index)
+        {
+          pop();
+        }
+
+        while (in != last_index)
+        {
+          if (in == 0U)
+          {
+            in = buffer_size;
+          }
+
+          --in;
+          pbuffer[in].~T();
+          ETL_DECREMENT_DEBUG_COUNT;
+        }
+      }
+    }
 
     //*************************************************************************
     /// Protected constructor.
@@ -1058,14 +1142,15 @@ namespace etl
     }
 
     //*************************************************************************
-    /// Measures the distance from the _begin iterator to the specified iterator.
+    /// Measures the distance from the _begin iterator to the specified
+    /// iterator.
     //*************************************************************************
     template <typename TIterator>
     static difference_type distance(const TIterator& other)
     {
       const difference_type index           = other.get_index();
       const difference_type reference_index = static_cast<difference_type>(other.container().out);
-      const size_t buffer_size              = other.container().buffer_size;
+      const difference_type buffer_size     = static_cast<difference_type>(other.container().buffer_size);
 
       if (index < reference_index)
       {
@@ -1093,15 +1178,15 @@ namespace etl
     /// Destructor.
     //*************************************************************************
 #if defined(ETL_POLYMORPHIC_CIRCULAR_BUFFER) || defined(ETL_POLYMORPHIC_CONTAINERS)
+
   public:
-    virtual ~icircular_buffer()
-    {
-    }
+
+    virtual ~icircular_buffer() {}
 #else
+
   protected:
-    ~icircular_buffer()
-    {
-    }
+
+    ~icircular_buffer() {}
 #endif
   };
 
@@ -1124,6 +1209,24 @@ namespace etl
     circular_buffer()
       : icircular_buffer<T>(reinterpret_cast<T*>(buffer.raw), MAX_SIZE)
     {
+    }
+
+    //*************************************************************************
+    /// Constructor, with size.
+    //*************************************************************************
+    explicit circular_buffer(size_t initial_size)
+      : icircular_buffer<T>(reinterpret_cast<T*>(buffer.raw), MAX_SIZE)
+    {
+      this->assign(initial_size, T());
+    }
+
+    //*************************************************************************
+    /// Constructor, from initial size and value.
+    //*************************************************************************
+    circular_buffer(size_t initial_size, typename etl::icircular_buffer<T>::const_reference value)
+      : icircular_buffer<T>(reinterpret_cast<T*>(buffer.raw), MAX_SIZE)
+    {
+      this->assign(initial_size, value);
     }
 
     //*************************************************************************
@@ -1167,7 +1270,7 @@ namespace etl
     //*************************************************************************
     /// Assignment operator
     //*************************************************************************
-    circular_buffer& operator =(const circular_buffer& other)
+    circular_buffer& operator=(const circular_buffer& other)
     {
       if (this != &other)
       {
@@ -1199,13 +1302,13 @@ namespace etl
     //*************************************************************************
     /// Move Assignment operator
     //*************************************************************************
-    circular_buffer& operator =(circular_buffer&& other)
+    circular_buffer& operator=(circular_buffer&& other)
     {
       if (this != &other)
       {
         this->clear();
 
-        for (typename etl::icircular_buffer<T>::const_iterator itr = other.begin(); itr != other.end(); ++itr)
+        for (typename etl::icircular_buffer<T>::iterator itr = other.begin(); itr != other.end(); ++itr)
         {
           this->push(etl::move(*itr));
         }
@@ -1228,9 +1331,9 @@ namespace etl
     /// Fix the internal pointers after a low level memory copy.
     //*************************************************************************
 #ifdef ETL_ICIRCULAR_BUFFER_REPAIR_ENABLE
-      virtual void repair() ETL_OVERRIDE
+    virtual void repair() ETL_OVERRIDE
 #else
-      void repair()
+    void repair()
 #endif
     {
       ETL_ASSERT(etl::is_trivially_copyable<T>::value, ETL_ERROR(etl::circular_buffer_incompatible_type));
@@ -1274,11 +1377,30 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Constructor, with size.
+    //*************************************************************************
+    explicit circular_buffer_ext(size_t initial_size, void* buffer, size_t max_size)
+      : icircular_buffer<T>(reinterpret_cast<T*>(buffer), max_size)
+    {
+      this->assign(initial_size, T());
+    }
+
+    //*************************************************************************
+    /// Constructor, from initial size and value.
+    //*************************************************************************
+    circular_buffer_ext(size_t initial_size, typename etl::icircular_buffer<T>::const_reference value, void* buffer, size_t max_size)
+      : icircular_buffer<T>(reinterpret_cast<T*>(buffer), max_size)
+    {
+      this->assign(initial_size, value);
+    }
+
+    //*************************************************************************
     /// Constructor.
     /// Constructs a buffer from an iterator range.
     //*************************************************************************
     template <typename TIterator>
-    circular_buffer_ext(TIterator first, const TIterator& last, void* buffer, size_t max_size, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
+    circular_buffer_ext(TIterator first, const TIterator& last, void* buffer, size_t max_size,
+                        typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : icircular_buffer<T>(reinterpret_cast<T*>(buffer), max_size)
     {
       while (first != last)
@@ -1319,9 +1441,8 @@ namespace etl
     //*************************************************************************
     /// Assignment operator
     //*************************************************************************
-    circular_buffer_ext& operator =(const circular_buffer_ext& other)
+    circular_buffer_ext& operator=(const circular_buffer_ext& other)
     {
-
       if (this != &other)
       {
         this->clear();
@@ -1352,7 +1473,7 @@ namespace etl
     //*************************************************************************
     /// Move Assignment operator
     //*************************************************************************
-    circular_buffer_ext& operator =(circular_buffer_ext&& other)
+    circular_buffer_ext& operator=(circular_buffer_ext&& other)
     {
       if (this != &other)
       {
@@ -1398,9 +1519,9 @@ namespace etl
       swap(this->pbuffer, other.pbuffer);
       swap(this->buffer_size, other.buffer_size);
 
-#if defined(ETL_DEBUG_COUNT)
+  #if defined(ETL_DEBUG_COUNT)
       this->etl_debug_count.swap(other.etl_debug_count);
-#endif
+  #endif
     }
 #endif
 
@@ -1445,8 +1566,7 @@ namespace etl
   //*************************************************************************
 #if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST
   template <typename T, typename... Ts>
-  circular_buffer(T, Ts...)
-    ->circular_buffer<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), T>, 1U + sizeof...(Ts)>;
+  circular_buffer(T, Ts...) -> circular_buffer<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), T>, 1U + sizeof...(Ts)>;
 #endif
 
   //*************************************************************************
@@ -1473,7 +1593,7 @@ namespace etl
   /// Equality operator
   //*************************************************************************
   template <typename T>
-  bool operator ==(const icircular_buffer<T>& lhs, const icircular_buffer<T>& rhs)
+  bool operator==(const icircular_buffer<T>& lhs, const icircular_buffer<T>& rhs)
   {
     return (lhs.size() == rhs.size()) && etl::equal(lhs.begin(), lhs.end(), rhs.begin());
   }
@@ -1482,10 +1602,10 @@ namespace etl
   /// Inequality operator
   //*************************************************************************
   template <typename T>
-  bool operator !=(const icircular_buffer<T>& lhs, const icircular_buffer<T>& rhs)
+  bool operator!=(const icircular_buffer<T>& lhs, const icircular_buffer<T>& rhs)
   {
     return !(lhs == rhs);
   }
-}
+} // namespace etl
 
 #endif

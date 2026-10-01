@@ -32,14 +32,13 @@ SOFTWARE.
 #define ETL_REFERENCE_FLAT_MULTIMAP_INCLUDED
 
 #include "platform.h"
-#include "exception.h"
-#include "error_handler.h"
 #include "debug_count.h"
-#include "vector.h"
+#include "error_handler.h"
+#include "exception.h"
 #include "iterator.h"
 #include "nth_type.h"
 #include "type_traits.h"
-#include "type_traits.h"
+#include "vector.h"
 
 #include "private/comparator_is_transparent.h"
 
@@ -77,7 +76,8 @@ namespace etl
 
   //***************************************************************************
   /// The base class for specifically sized reference_flat_multimaps.
-  /// Can be used as a reference type for all reference_flat_multimaps containing a specific type.
+  /// Can be used as a reference type for all reference_flat_multimaps
+  /// containing a specific type.
   ///\ingroup reference_flat_multimap
   //***************************************************************************
   template <typename TKey, typename TMapped, typename TKeyCompare = etl::less<TKey> >
@@ -110,9 +110,7 @@ namespace etl
       friend class ireference_flat_multimap;
       friend class const_iterator;
 
-      iterator()
-      {
-      }
+      iterator() {}
 
       iterator(typename lookup_t::iterator ilookup_)
         : ilookup(ilookup_)
@@ -124,59 +122,59 @@ namespace etl
       {
       }
 
-      iterator& operator =(const iterator& other)
+      iterator& operator=(const iterator& other)
       {
         ilookup = other.ilookup;
         return *this;
       }
 
-      iterator& operator ++()
+      iterator& operator++()
       {
         ++ilookup;
         return *this;
       }
 
-      iterator operator ++(int)
+      iterator operator++(int)
       {
         iterator temp(*this);
         ++ilookup;
         return temp;
       }
 
-      iterator& operator --()
+      iterator& operator--()
       {
         --ilookup;
         return *this;
       }
 
-      iterator operator --(int)
+      iterator operator--(int)
       {
         iterator temp(*this);
         --ilookup;
         return temp;
       }
 
-      reference operator *() const
+      reference operator*() const
       {
         return *(*ilookup);
       }
 
-      pointer operator &() const
+      pointer operator&() const
       {
         return etl::addressof(*(*ilookup));
       }
 
-      pointer operator ->() const
+      pointer operator->() const
       {
         return etl::addressof(*(*ilookup));
       }
 
-      friend bool operator == (const iterator& lhs, const iterator& rhs)
+      friend bool operator==(const iterator& lhs, const iterator& rhs)
       {
         return lhs.ilookup == rhs.ilookup;
       }
 
-      friend bool operator != (const iterator& lhs, const iterator& rhs)
+      friend bool operator!=(const iterator& lhs, const iterator& rhs)
       {
         return !(lhs == rhs);
       }
@@ -193,9 +191,7 @@ namespace etl
 
       friend class ireference_flat_multimap;
 
-      const_iterator()
-      {
-      }
+      const_iterator() {}
 
       const_iterator(typename lookup_t::const_iterator ilookup_)
         : ilookup(ilookup_)
@@ -212,65 +208,65 @@ namespace etl
       {
       }
 
-      const_iterator& operator =(const iterator& other)
+      const_iterator& operator=(const iterator& other)
       {
         ilookup = other.ilookup;
         return *this;
       }
 
-      const_iterator& operator =(const const_iterator& other)
+      const_iterator& operator=(const const_iterator& other)
       {
         ilookup = other.ilookup;
         return *this;
       }
 
-      const_iterator& operator ++()
+      const_iterator& operator++()
       {
         ++ilookup;
         return *this;
       }
 
-      const_iterator operator ++(int)
+      const_iterator operator++(int)
       {
         const_iterator temp(*this);
         ++ilookup;
         return temp;
       }
 
-      const_iterator& operator --()
+      const_iterator& operator--()
       {
         --ilookup;
         return *this;
       }
 
-      const_iterator operator --(int)
+      const_iterator operator--(int)
       {
         const_iterator temp(*this);
         --ilookup;
         return temp;
       }
 
-      const_reference operator *() const
+      const_reference operator*() const
       {
         return *(*ilookup);
       }
 
-      const_pointer operator &() const
+      const_pointer operator&() const
       {
         return etl::addressof(*(*ilookup));
       }
 
-      const_pointer operator ->() const
+      const_pointer operator->() const
       {
         return etl::addressof(*(*ilookup));
       }
 
-      friend bool operator == (const const_iterator& lhs, const const_iterator& rhs)
+      friend bool operator==(const const_iterator& lhs, const const_iterator& rhs)
       {
         return lhs.ilookup == rhs.ilookup;
       }
 
-      friend bool operator != (const const_iterator& lhs, const const_iterator& rhs)
+      friend bool operator!=(const const_iterator& lhs, const const_iterator& rhs)
       {
         return !(lhs == rhs);
       }
@@ -280,8 +276,8 @@ namespace etl
       typename lookup_t::const_iterator ilookup;
     };
 
-    typedef ETL_OR_STD::reverse_iterator<iterator>       reverse_iterator;
-    typedef ETL_OR_STD::reverse_iterator<const_iterator> const_reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<iterator>                   reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<const_iterator>             const_reverse_iterator;
     typedef typename etl::iterator_traits<iterator>::difference_type difference_type;
 
   protected:
@@ -297,27 +293,49 @@ namespace etl
     {
     public:
 
-      bool operator ()(const value_type& element, key_type key) const
+      bool operator()(const value_type& element, key_type key) const
       {
         return comp(element.first, key);
       }
 
-      bool operator ()(key_type key, const value_type& element) const
+      bool operator()(key_type key, const value_type& element) const
       {
         return comp(key, element.first);
+      }
+
+      bool operator()(const value_type* element, key_type key) const
+      {
+        return comp(element->first, key);
+      }
+
+      bool operator()(key_type key, const value_type* element) const
+      {
+        return comp(key, element->first);
       }
 
 #if ETL_USING_CPP11
       template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
-      bool operator ()(const value_type& element, const K& key) const
+      bool operator()(const value_type& element, const K& key) const
       {
         return comp(element.first, key);
       }
 
       template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
-      bool operator ()(const K& key, const value_type& element) const
+      bool operator()(const K& key, const value_type& element) const
       {
         return comp(key, element.first);
+      }
+
+      template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+      bool operator()(const value_type* element, const K& key) const
+      {
+        return comp(element->first, key);
+      }
+
+      template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+      bool operator()(const K& key, const value_type* element) const
+      {
+        return comp(key, element->first);
       }
 #endif
 
@@ -336,7 +354,8 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a const_iterator to the beginning of the reference_flat_multimap.
+    /// Returns a const_iterator to the beginning of the
+    /// reference_flat_multimap.
     ///\return A const iterator to the beginning of the reference_flat_multimap.
     //*********************************************************************
     const_iterator begin() const
@@ -363,7 +382,8 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a const_iterator to the beginning of the reference_flat_multimap.
+    /// Returns a const_iterator to the beginning of the
+    /// reference_flat_multimap.
     ///\return A const iterator to the beginning of the reference_flat_multimap.
     //*********************************************************************
     const_iterator cbegin() const
@@ -381,7 +401,8 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns an reverse iterator to the reverse beginning of the reference_flat_multimap.
+    /// Returns an reverse iterator to the reverse beginning of the
+    /// reference_flat_multimap.
     ///\return Iterator to the reverse beginning of the reference_flat_multimap.
     //*********************************************************************
     reverse_iterator rbegin()
@@ -390,8 +411,10 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a const reverse iterator to the reverse beginning of the reference_flat_multimap.
-    ///\return Const iterator to the reverse beginning of the reference_flat_multimap.
+    /// Returns a const reverse iterator to the reverse beginning of the
+    /// reference_flat_multimap.
+    ///\return Const iterator to the reverse beginning of the
+    /// reference_flat_multimap.
     //*********************************************************************
     const_reverse_iterator rbegin() const
     {
@@ -399,7 +422,8 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a reverse iterator to the end + 1 of the reference_flat_multimap.
+    /// Returns a reverse iterator to the end + 1 of the
+    /// reference_flat_multimap.
     ///\return Reverse iterator to the end + 1 of the reference_flat_multimap.
     //*********************************************************************
     reverse_iterator rend()
@@ -408,8 +432,10 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a const reverse iterator to the end + 1 of the reference_flat_multimap.
-    ///\return Const reverse iterator to the end + 1 of the reference_flat_multimap.
+    /// Returns a const reverse iterator to the end + 1 of the
+    /// reference_flat_multimap.
+    ///\return Const reverse iterator to the end + 1 of the
+    /// reference_flat_multimap.
     //*********************************************************************
     const_reverse_iterator rend() const
     {
@@ -417,8 +443,10 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a const reverse iterator to the reverse beginning of the reference_flat_multimap.
-    ///\return Const reverse iterator to the reverse beginning of the reference_flat_multimap.
+    /// Returns a const reverse iterator to the reverse beginning of the
+    /// reference_flat_multimap.
+    ///\return Const reverse iterator to the reverse beginning of the
+    /// reference_flat_multimap.
     //*********************************************************************
     const_reverse_iterator crbegin() const
     {
@@ -426,8 +454,10 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a const reverse iterator to the end + 1 of the reference_flat_multimap.
-    ///\return Const reverse iterator to the end + 1 of the reference_flat_multimap.
+    /// Returns a const reverse iterator to the end + 1 of the
+    /// reference_flat_multimap.
+    ///\return Const reverse iterator to the end + 1 of the
+    /// reference_flat_multimap.
     //*********************************************************************
     const_reverse_iterator crend() const
     {
@@ -436,8 +466,10 @@ namespace etl
 
     //*********************************************************************
     /// Assigns values to the reference_flat_multimap.
-    /// If asserts or exceptions are enabled, emits reference_flat_multimap_full if the reference_flat_multimap does not have enough free space.
-    /// If asserts or exceptions are enabled, emits reference_flat_multimap_iterator if the iterators are reversed.
+    /// If asserts or exceptions are enabled, emits reference_flat_multimap_full
+    /// if the reference_flat_multimap does not have enough free space. If
+    /// asserts or exceptions are enabled, emits
+    /// reference_flat_multimap_iterator if the iterators are reversed.
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*********************************************************************
@@ -460,7 +492,8 @@ namespace etl
 
     //*********************************************************************
     /// Inserts a value to the reference_flat_multimap.
-    /// If asserts or exceptions are enabled, emits reference_flat_multimap_full if the reference_flat_multimap is already full.
+    /// If asserts or exceptions are enabled, emits reference_flat_multimap_full
+    /// if the reference_flat_multimap is already full.
     ///\param value    The value to insert.
     //*********************************************************************
     ETL_OR_STD::pair<iterator, bool> insert(value_type& value)
@@ -475,8 +508,21 @@ namespace etl
     }
 
     //*********************************************************************
+    /// Emplaces a value to the reference_flat_multimap.
+    /// As the reference_flat_multimap stores references to externally owned
+    /// objects, the value is not constructed in place but inserted by
+    /// reference.
+    ///\param value    The value to emplace.
+    //*********************************************************************
+    ETL_OR_STD::pair<iterator, bool> emplace(value_type& value)
+    {
+      return insert(value);
+    }
+
+    //*********************************************************************
     /// Inserts a value to the flat_multi.
-    /// If asserts or exceptions are enabled, emits flat_map_full if the flat_map is already full.
+    /// If asserts or exceptions are enabled, emits flat_map_full if the
+    /// flat_map is already full.
     ///\param position The position to insert at.
     ///\param value    The value to insert.
     //*********************************************************************
@@ -487,7 +533,8 @@ namespace etl
 
     //*********************************************************************
     /// Inserts a range of values to the reference_flat_multimap.
-    /// If asserts or exceptions are enabled, emits reference_flat_multimap_full if the reference_flat_multimap does not have enough free space.
+    /// If asserts or exceptions are enabled, emits reference_flat_multimap_full
+    /// if the reference_flat_multimap does not have enough free space.
     ///\param position The position to insert at.
     ///\param first    The first element to add.
     ///\param last     The last + 1 element to add.
@@ -517,7 +564,7 @@ namespace etl
       }
       else
       {
-        size_t d = etl::distance(range.first, range.second);
+        size_t d = static_cast<size_t>(etl::distance(range.first, range.second));
         erase(range.first, range.second);
         return d;
       }
@@ -536,7 +583,7 @@ namespace etl
       }
       else
       {
-        size_t d = etl::distance(range.first, range.second);
+        size_t d = static_cast<size_t>(etl::distance(range.first, range.second));
         erase(range.first, range.second);
         return d;
       }
@@ -563,8 +610,8 @@ namespace etl
 
     //*********************************************************************
     /// Erases a range of elements.
-    /// The range includes all the elements between first and last, including the
-    /// element pointed by first, but not the one pointed by last.
+    /// The range includes all the elements between first and last, including
+    /// the element pointed by first, but not the one pointed by last.
     ///\param first Iterator to the first element.
     ///\param last  Iterator to the last element.
     //*********************************************************************
@@ -684,7 +731,7 @@ namespace etl
     {
       ETL_OR_STD::pair<const_iterator, const_iterator> range = equal_range(key);
 
-      return etl::distance(range.first, range.second);
+      return static_cast<size_t>(etl::distance(range.first, range.second));
     }
 
 #if ETL_USING_CPP11
@@ -694,7 +741,7 @@ namespace etl
     {
       ETL_OR_STD::pair<const_iterator, const_iterator> range = equal_range(key);
 
-      return etl::distance(range.first, range.second);
+      return static_cast<size_t>(etl::distance(range.first, range.second));
     }
 #endif
 
@@ -705,7 +752,7 @@ namespace etl
     //*********************************************************************
     iterator lower_bound(key_parameter_t key)
     {
-      return etl::lower_bound(begin(), end(), key, compare);
+      return iterator(etl::lower_bound(lookup.begin(), lookup.end(), key, compare));
     }
 
 #if ETL_USING_CPP11
@@ -713,7 +760,7 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     iterator lower_bound(const K& key)
     {
-      return etl::lower_bound(begin(), end(), key, compare);
+      return iterator(etl::lower_bound(lookup.begin(), lookup.end(), key, compare));
     }
 #endif
 
@@ -724,7 +771,7 @@ namespace etl
     //*********************************************************************
     const_iterator lower_bound(key_parameter_t key) const
     {
-      return etl::lower_bound(cbegin(), cend(), key, compare);
+      return const_iterator(etl::lower_bound(lookup.cbegin(), lookup.cend(), key, compare));
     }
 
 #if ETL_USING_CPP11
@@ -732,7 +779,7 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     const_iterator lower_bound(const K& key) const
     {
-      return etl::lower_bound(cbegin(), cend(), key, compare);
+      return const_iterator(etl::lower_bound(lookup.cbegin(), lookup.cend(), key, compare));
     }
 #endif
 
@@ -743,7 +790,7 @@ namespace etl
     //*********************************************************************
     iterator upper_bound(key_parameter_t key)
     {
-      return etl::upper_bound(begin(), end(), key, compare);
+      return iterator(etl::upper_bound(lookup.begin(), lookup.end(), key, compare));
     }
 
 #if ETL_USING_CPP11
@@ -751,7 +798,7 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     iterator upper_bound(const K& key)
     {
-      return etl::upper_bound(begin(), end(), key, compare);
+      return iterator(etl::upper_bound(lookup.begin(), lookup.end(), key, compare));
     }
 #endif
 
@@ -762,7 +809,7 @@ namespace etl
     //*********************************************************************
     const_iterator upper_bound(key_parameter_t key) const
     {
-      return etl::upper_bound(begin(), end(), key, compare);
+      return const_iterator(etl::upper_bound(lookup.cbegin(), lookup.cend(), key, compare));
     }
 
 #if ETL_USING_CPP11
@@ -770,7 +817,7 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     const_iterator upper_bound(const K& key) const
     {
-      return etl::upper_bound(begin(), end(), key, compare);
+      return const_iterator(etl::upper_bound(lookup.cbegin(), lookup.cend(), key, compare));
     }
 #endif
 
@@ -781,9 +828,10 @@ namespace etl
     //*********************************************************************
     ETL_OR_STD::pair<iterator, iterator> equal_range(key_parameter_t key)
     {
-      iterator i_lower = etl::lower_bound(begin(), end(), key, compare);
+      typename lookup_t::iterator i_lower = etl::lower_bound(lookup.begin(), lookup.end(), key, compare);
+      typename lookup_t::iterator i_upper = etl::upper_bound(i_lower, lookup.end(), key, compare);
 
-      return ETL_OR_STD::make_pair(i_lower, etl::upper_bound(i_lower, end(), key, compare));
+      return ETL_OR_STD::make_pair(iterator(i_lower), iterator(i_upper));
     }
 
 #if ETL_USING_CPP11
@@ -791,9 +839,10 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     ETL_OR_STD::pair<iterator, iterator> equal_range(const K& key)
     {
-      iterator i_lower = etl::lower_bound(begin(), end(), key, compare);
+      typename lookup_t::iterator i_lower = etl::lower_bound(lookup.begin(), lookup.end(), key, compare);
+      typename lookup_t::iterator i_upper = etl::upper_bound(i_lower, lookup.end(), key, compare);
 
-      return ETL_OR_STD::make_pair(i_lower, etl::upper_bound(i_lower, end(), key, compare));
+      return ETL_OR_STD::make_pair(iterator(i_lower), iterator(i_upper));
     }
 #endif
 
@@ -804,9 +853,10 @@ namespace etl
     //*********************************************************************
     ETL_OR_STD::pair<const_iterator, const_iterator> equal_range(key_parameter_t key) const
     {
-      const_iterator i_lower = etl::lower_bound(cbegin(), cend(), key, compare);
+      typename lookup_t::const_iterator i_lower = etl::lower_bound(lookup.cbegin(), lookup.cend(), key, compare);
+      typename lookup_t::const_iterator i_upper = etl::upper_bound(i_lower, lookup.cend(), key, compare);
 
-      return ETL_OR_STD::make_pair(i_lower, etl::upper_bound(i_lower, cend(), key, compare));
+      return ETL_OR_STD::make_pair(const_iterator(i_lower), const_iterator(i_upper));
     }
 
 #if ETL_USING_CPP11
@@ -814,9 +864,10 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     ETL_OR_STD::pair<const_iterator, const_iterator> equal_range(const K& key) const
     {
-      const_iterator i_lower = etl::lower_bound(cbegin(), cend(), key, compare);
+      typename lookup_t::const_iterator i_lower = etl::lower_bound(lookup.cbegin(), lookup.cend(), key, compare);
+      typename lookup_t::const_iterator i_upper = etl::upper_bound(i_lower, lookup.cend(), key, compare);
 
-      return ETL_OR_STD::make_pair(i_lower, etl::upper_bound(i_lower, cend(), key, compare));
+      return ETL_OR_STD::make_pair(const_iterator(i_lower), const_iterator(i_upper));
     }
 #endif
 
@@ -914,14 +965,14 @@ namespace etl
       {
         // At the end.
         lookup.push_back(&value);
-        result.first = --end();
+        result.first  = --end();
         result.second = true;
       }
       else
       {
         // Not at the end.
         lookup.insert(i_element.ilookup, &value);
-        result.first = i_element;
+        result.first  = i_element;
         result.second = true;
       }
 
@@ -932,9 +983,9 @@ namespace etl
 
     // Disable copy construction and assignment.
     ireference_flat_multimap(const ireference_flat_multimap&);
-    ireference_flat_multimap& operator = (const ireference_flat_multimap&);
+    ireference_flat_multimap& operator=(const ireference_flat_multimap&);
 
-    lookup_t&  lookup;
+    lookup_t& lookup;
 
     Compare compare;
 
@@ -942,15 +993,15 @@ namespace etl
     /// Destructor.
     //*************************************************************************
 #if defined(ETL_POLYMORPHIC_REFERENCE_FLAT_MULTIMAP) || defined(ETL_POLYMORPHIC_CONTAINERS)
+
   public:
-    virtual ~ireference_flat_multimap()
-    {
-    }
+
+    virtual ~ireference_flat_multimap() {}
 #else
+
   protected:
-    ~ireference_flat_multimap()
-    {
-    }
+
+    ~ireference_flat_multimap() {}
 #endif
   };
 
@@ -962,7 +1013,8 @@ namespace etl
   ///\ingroup reference_flat_multimap
   //***************************************************************************
   template <typename TKey, typename TMapped, typename TKeyCompare>
-  bool operator ==(const etl::ireference_flat_multimap<TKey, TMapped, TKeyCompare>& lhs, const etl::ireference_flat_multimap<TKey, TMapped, TKeyCompare>& rhs)
+  bool operator==(const etl::ireference_flat_multimap<TKey, TMapped, TKeyCompare>& lhs,
+                  const etl::ireference_flat_multimap<TKey, TMapped, TKeyCompare>& rhs)
   {
     return (lhs.size() == rhs.size()) && etl::equal(lhs.begin(), lhs.end(), rhs.begin());
   }
@@ -975,7 +1027,8 @@ namespace etl
   ///\ingroup reference_flat_multimap
   //***************************************************************************
   template <typename TKey, typename TMapped, typename TKeyCompare>
-  bool operator !=(const etl::ireference_flat_multimap<TKey, TMapped, TKeyCompare>& lhs, const etl::ireference_flat_multimap<TKey, TMapped, TKeyCompare>& rhs)
+  bool operator!=(const etl::ireference_flat_multimap<TKey, TMapped, TKeyCompare>& lhs,
+                  const etl::ireference_flat_multimap<TKey, TMapped, TKeyCompare>& rhs)
   {
     return !(lhs == rhs);
   }
@@ -1049,9 +1102,8 @@ namespace etl
   //*************************************************************************
 #if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST
   template <typename... TPairs>
-  reference_flat_multimap(TPairs...) -> reference_flat_multimap<typename etl::nth_type_t<0, TPairs...>::first_type,
-                                                                typename etl::nth_type_t<0, TPairs...>::second_type,
-                                                                sizeof...(TPairs)>;
+  reference_flat_multimap(TPairs...) -> reference_flat_multimap< typename etl::nth_type_t<0, TPairs...>::first_type,
+                                                                 typename etl::nth_type_t<0, TPairs...>::second_type, sizeof...(TPairs)>;
 #endif
 
   //*************************************************************************
@@ -1061,9 +1113,9 @@ namespace etl
   template <typename TKey, typename TMapped, typename TKeyCompare = etl::less<TKey>, typename... TPairs>
   constexpr auto make_reference_flat_multimap(TPairs&&... pairs) -> etl::reference_flat_multimap<TKey, TMapped, sizeof...(TPairs), TKeyCompare>
   {
-    return { etl::forward<TPairs>(pairs)... };
+    return {etl::forward<TPairs>(pairs)...};
   }
 #endif
-}
+} // namespace etl
 
 #endif

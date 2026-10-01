@@ -2,9 +2,37 @@ name: msvc
 on:
   push:
     branches: [ master, development, pull-request/* ]
+    paths:
+      - '.github/workflows/**'
+      - 'include/**'
+      - 'test/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'BUILD.bazel'
+      - 'MODULE.bazel*'
+      - 'meson.build'
+      - 'meson_options.txt'
+      - 'subprojects/**'
+      - '.devcontainer/**'
   pull_request:
     branches: [ master, development, pull-request/* ]
     types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/**'
+      - 'include/**'
+      - 'test/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'BUILD.bazel'
+      - 'MODULE.bazel*'
+      - 'meson.build'
+      - 'meson_options.txt'
+      - 'subprojects/**'
+      - '.devcontainer/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-windows-msvc-stl:
@@ -13,7 +41,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6.0.3
       with:
         submodules: recursive
 
@@ -27,14 +55,14 @@ jobs:
         MSBuild.exe .\etl.sln
         
     - name: Run tests
-      run: test/Debug/etl_tests.exe
+      run: test/Debug/etl_tests.exe -v
 
   build-windows-msvc-no-stl:
     name: Windows - No STL
     runs-on: [windows-2022]
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6.0.3
       with:
         submodules: recursive
 
@@ -48,7 +76,7 @@ jobs:
         MSBuild.exe .\etl.sln
         
     - name: Run tests
-      run: test/Debug/etl_tests.exe
+      run: test/Debug/etl_tests.exe -v
 
   build-windows-msvc-stl-force-cpp03:
     name: Windows - STL - Force C++03
@@ -56,7 +84,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6.0.3
       with:
         submodules: recursive
 
@@ -70,7 +98,7 @@ jobs:
         MSBuild.exe .\etl.sln
 
     - name: Run tests
-      run: test/Debug/etl_tests.exe
+      run: test/Debug/etl_tests.exe -v
         
   build-windows-msvc-no-stl-force-cpp03:
     name: Windows - No STL - Force C++03
@@ -78,7 +106,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6.0.3
       with:
         submodules: recursive
 
@@ -92,5 +120,4 @@ jobs:
         MSBuild.exe .\etl.sln
 
     - name: Run tests
-      run: test/Debug/etl_tests.exe
-
+      run: test/Debug/etl_tests.exe -v

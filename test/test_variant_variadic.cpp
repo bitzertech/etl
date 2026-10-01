@@ -28,49 +28,49 @@ SOFTWARE.
 
 #include "unit_test_framework.h"
 
-#include "etl/private/variant_variadic.h"
-#include "etl/visitor.h"
 #include "etl/overload.h"
+#include "etl/visitor.h"
+#include "etl/private/variant_variadic.h"
 
-#if ETL_USING_CPP14
+#if ETL_USING_CPP11
 
-#include <array>
-#include <vector>
-#include <algorithm>
-#include <string>
-#include <type_traits>
+  #include <algorithm>
+  #include <array>
+  #include <string>
+  #include <type_traits>
+  #include <vector>
 
-#if ETL_USING_CPP17
-  #include <variant>
-#endif
+  #if ETL_USING_CPP17
+    #include <variant>
+  #endif
 
-#if ETL_USING_CPP20
-  #include <compare>
+  #if ETL_USING_CPP20
+    #include <compare>
 
-  std::ostream& operator <<(std::ostream& os, const std::strong_ordering& ordering)
+std::ostream& operator<<(std::ostream& os, const std::strong_ordering& ordering)
+{
+  if (ordering == std::strong_ordering::equal)
   {
-    if (ordering == std::strong_ordering::equal)
-    {
-      os << "std::strong_ordering::equal";
-    }
-    else if (ordering == std::strong_ordering::equivalent)
-    {
-      os << "std::strong_ordering::equivalent";
-    }
-    else if (ordering == std::strong_ordering::greater)
-    {
-      os << "std::strong_ordering::greater";
-    }
-    else if (ordering == std::strong_ordering::less)
-    {
-      os << "std::strong_ordering::less";
-    }
-
-    return os;
+    os << "std::strong_ordering::equal";
   }
-#endif
+  else if (ordering == std::strong_ordering::equivalent)
+  {
+    os << "std::strong_ordering::equivalent";
+  }
+  else if (ordering == std::strong_ordering::greater)
+  {
+    os << "std::strong_ordering::greater";
+  }
+  else if (ordering == std::strong_ordering::less)
+  {
+    os << "std::strong_ordering::less";
+  }
 
-#include "etl/private/diagnostic_useless_cast_push.h"
+  return os;
+}
+  #endif
+
+  #include "etl/private/diagnostic_useless_cast_push.h"
 
 namespace
 {
@@ -83,33 +83,33 @@ namespace
       : a(a_)
     {
       copied = false;
-      moved = false;
+      moved  = false;
     }
 
     D1(const D1& other) noexcept
       : a(other.a)
     {
       copied = true;
-      moved = false;
+      moved  = false;
     }
 
     D1(D1&& other) noexcept
       : a(std::move(other.a))
     {
       copied = false;
-      moved = true;
+      moved  = true;
     }
 
     std::string a;
-    bool copied;
-    bool moved;
+    bool        copied;
+    bool        moved;
   };
 
   struct D2
   {
     D2(const std::string& a_, const std::string& b_)
-      : a(a_),
-      b(b_)
+      : a(a_)
+      , b(b_)
     {
     }
 
@@ -120,9 +120,9 @@ namespace
   struct D3
   {
     D3(const std::string& a_, const std::string& b_, const std::string& c_)
-      : a(a_),
-      b(b_),
-      c(c_)
+      : a(a_)
+      , b(b_)
+      , c(c_)
     {
     }
 
@@ -134,10 +134,10 @@ namespace
   struct D4
   {
     D4(const std::string& a_, const std::string& b_, const std::string& c_, const std::string& d_)
-      : a(a_),
-      b(b_),
-      c(c_),
-      d(d_)
+      : a(a_)
+      , b(b_)
+      , c(c_)
+      , d(d_)
     {
     }
 
@@ -147,48 +147,48 @@ namespace
     std::string d;
   };
 
-  bool operator == (const D1& lhs, const D1& rhs)
+  bool operator==(const D1& lhs, const D1& rhs)
   {
     return (lhs.a == rhs.a);
   }
 
-  bool operator == (const D2& lhs, const D2& rhs)
+  bool operator==(const D2& lhs, const D2& rhs)
   {
     return (lhs.a == rhs.a) && (lhs.b == rhs.b);
   }
 
-  bool operator == (const D3& lhs, const D3& rhs)
+  bool operator==(const D3& lhs, const D3& rhs)
   {
     return (lhs.a == rhs.a) && (lhs.b == rhs.b) && (lhs.c == rhs.c);
   }
 
-  bool operator == (const D4& lhs, const D4& rhs)
+  bool operator==(const D4& lhs, const D4& rhs)
   {
     return (lhs.a == rhs.a) && (lhs.b == rhs.b) && (lhs.c == rhs.c) && (lhs.d == rhs.d);
   }
 
-  std::ostream& operator <<(std::ostream& os, const D1& d1)
+  std::ostream& operator<<(std::ostream& os, const D1& d1)
   {
     os << d1.a;
 
     return os;
   }
 
-  std::ostream& operator <<(std::ostream& os, const D2& d2)
+  std::ostream& operator<<(std::ostream& os, const D2& d2)
   {
     os << d2.a << " " << d2.b;
 
     return os;
   }
 
-  std::ostream& operator <<(std::ostream& os, const D3& d3)
+  std::ostream& operator<<(std::ostream& os, const D3& d3)
   {
     os << d3.a << " " << d3.b << " " << d3.c;
 
     return os;
   }
 
-  std::ostream& operator <<(std::ostream& os, const D4& d4)
+  std::ostream& operator<<(std::ostream& os, const D4& d4)
   {
     os << d4.a << " " << d4.b << " " << d4.c << " " << d4.d;
 
@@ -210,15 +210,15 @@ namespace
     Copyable(const Copyable&) noexcept
     {
       moved_from = false;
-      moved_to = false;
-      copied_to = true;
+      moved_to   = false;
+      copied_to  = true;
     }
 
-    Copyable& operator =(const Copyable&) noexcept
+    Copyable& operator=(const Copyable&) noexcept
     {
       moved_from = false;
-      moved_to = false;
-      copied_to = true;
+      moved_to   = false;
+      copied_to  = true;
 
       return *this;
     }
@@ -240,28 +240,28 @@ namespace
 
     Moveable(Moveable&& other) noexcept
     {
-      moved_from = false;
-      moved_to = true;
-      copied_to = false;
+      moved_from       = false;
+      moved_to         = true;
+      copied_to        = false;
       other.moved_from = true;
-      other.moved_to = false;
-      other.copied_to = false;
+      other.moved_to   = false;
+      other.copied_to  = false;
     }
 
-    Moveable& operator =(Moveable&& rhs) noexcept
+    Moveable& operator=(Moveable&& rhs) noexcept
     {
-      moved_from = false;
-      moved_to = true;
-      copied_to = false;
+      moved_from     = false;
+      moved_to       = true;
+      copied_to      = false;
       rhs.moved_from = true;
-      rhs.moved_to = false;
-      rhs.copied_to = false;
+      rhs.moved_to   = false;
+      rhs.copied_to  = false;
 
       return *this;
     }
 
-    Moveable(const Moveable& other) = delete;
-    Moveable& operator =(const Moveable& rhs) = delete;
+    Moveable(const Moveable& other)          = delete;
+    Moveable& operator=(const Moveable& rhs) = delete;
 
     bool moved_from;
     bool moved_to;
@@ -280,22 +280,22 @@ namespace
 
     MoveableCopyable(MoveableCopyable&& other) noexcept
     {
-      moved_from = false;
-      moved_to = true;
-      copied_to = false;
+      moved_from       = false;
+      moved_to         = true;
+      copied_to        = false;
       other.moved_from = true;
-      other.moved_to = false;
-      other.copied_to = false;
+      other.moved_to   = false;
+      other.copied_to  = false;
     }
 
-    MoveableCopyable& operator =(MoveableCopyable&& rhs) noexcept
+    MoveableCopyable& operator=(MoveableCopyable&& rhs) noexcept
     {
-      moved_from = false;
-      moved_to = true;
-      copied_to = false;
+      moved_from     = false;
+      moved_to       = true;
+      copied_to      = false;
       rhs.moved_from = true;
-      rhs.moved_to = false;
-      rhs.copied_to = false;
+      rhs.moved_to   = false;
+      rhs.copied_to  = false;
 
       return *this;
     }
@@ -303,15 +303,15 @@ namespace
     MoveableCopyable(const MoveableCopyable&)
     {
       moved_from = false;
-      moved_to = false;
-      copied_to = true;
+      moved_to   = false;
+      copied_to  = true;
     }
 
-    MoveableCopyable& operator =(const MoveableCopyable&)
+    MoveableCopyable& operator=(const MoveableCopyable&)
     {
-      moved_to = false;
+      moved_to   = false;
       moved_from = false;
-      copied_to = true;
+      copied_to  = true;
 
       return *this;
     }
@@ -320,14 +320,237 @@ namespace
     bool moved_to;
     bool copied_to;
   };
-}
 
-// Moved from the top of the file otherwise clang has issues with
-// operator<< for std::strong_ordering.
-//#include "unit_test_framework.h"
+  //*********************************************
+  // Copy constructible, but copy assignment is deleted.
+  struct CopyConstructibleNonCopyAssignable
+  {
+    CopyConstructibleNonCopyAssignable()                                                     = default;
+    CopyConstructibleNonCopyAssignable(const CopyConstructibleNonCopyAssignable&)            = default;
+    CopyConstructibleNonCopyAssignable& operator=(const CopyConstructibleNonCopyAssignable&) = delete;
+  };
 
-// Definitions for when the STL and compiler built-ins are not available.
-#if ETL_NOT_USING_STL && !defined(ETL_USE_TYPE_TRAITS_BUILTINS)
+  //*********************************************
+  // Move constructible, but move assignment is deleted.
+  struct MoveConstructibleNonMoveAssignable
+  {
+    MoveConstructibleNonMoveAssignable()                                                     = default;
+    MoveConstructibleNonMoveAssignable(MoveConstructibleNonMoveAssignable&&)                 = default;
+    MoveConstructibleNonMoveAssignable& operator=(MoveConstructibleNonMoveAssignable&&)      = delete;
+    MoveConstructibleNonMoveAssignable(const MoveConstructibleNonMoveAssignable&)            = delete;
+    MoveConstructibleNonMoveAssignable& operator=(const MoveConstructibleNonMoveAssignable&) = delete;
+  };
+
+  //*********************************************
+  // Trivially destructible, but non-copyable and non-movable.
+  // Exercises the trivially-destructible (variadic_union) emplace path.
+  struct TrivialNonMovable
+  {
+    TrivialNonMovable(int a_, int b_)
+      : a(a_)
+      , b(b_)
+    {
+    }
+
+    TrivialNonMovable(const TrivialNonMovable&)            = delete;
+    TrivialNonMovable(TrivialNonMovable&&)                 = delete;
+    TrivialNonMovable& operator=(const TrivialNonMovable&) = delete;
+    TrivialNonMovable& operator=(TrivialNonMovable&&)      = delete;
+
+    int a;
+    int b;
+  };
+
+  //*********************************************
+  // Non-trivially destructible, non-copyable and non-movable.
+  // Exercises the non-trivially-destructible (uninitialized_buffer) emplace path,
+  // including the initializer_list overload.
+  struct NonTrivialNonMovable
+  {
+    NonTrivialNonMovable(int a_, int b_)
+      : a(a_)
+      , b(b_)
+      , sum_of_list(0)
+    {
+    }
+
+    NonTrivialNonMovable(std::initializer_list<int> il, int b_)
+      : a(0)
+      , b(b_)
+      , sum_of_list(0)
+    {
+      for (int value : il)
+      {
+        sum_of_list += value;
+      }
+    }
+
+    ~NonTrivialNonMovable() // Makes it non-trivially destructible.
+    {
+    }
+
+    NonTrivialNonMovable(const NonTrivialNonMovable&)            = delete;
+    NonTrivialNonMovable(NonTrivialNonMovable&&)                 = delete;
+    NonTrivialNonMovable& operator=(const NonTrivialNonMovable&) = delete;
+    NonTrivialNonMovable& operator=(NonTrivialNonMovable&&)      = delete;
+
+    int a;
+    int b;
+    int sum_of_list;
+  };
+
+  // Trivially destructible but not assignable (deleted copy and move
+  // assignment). Constructing an alternative of this type exercises the
+  // trivially-destructible-suite path, which must begin the alternative's
+  // lifetime with placement new rather than assigning into the union member.
+  struct NonAssignable
+  {
+    explicit NonAssignable(int value_)
+      : value(value_)
+    {
+    }
+
+    NonAssignable(const NonAssignable&)            = default;
+    NonAssignable(NonAssignable&&)                 = default;
+    NonAssignable& operator=(const NonAssignable&) = delete;
+    NonAssignable& operator=(NonAssignable&&)      = delete;
+
+    int value;
+  };
+
+  //*********************************************
+  // Trivially destructible type that overloads operator& (here by deleting it).
+  // Constructing an alternative of this type must obtain the placement-new
+  // target with etl::addressof, not the built-in unary operator&: taking the
+  // address with & would be ill-formed (deleted) or, for an operator& that
+  // returns something other than the object's address, would construct into the
+  // wrong storage.
+  struct NonAddressable
+  {
+    explicit NonAddressable(int value_)
+      : value(value_)
+    {
+    }
+
+    NonAddressable(const NonAddressable&) = default;
+    NonAddressable(NonAddressable&&)      = default;
+
+    NonAddressable*       operator&()       = delete;
+    const NonAddressable* operator&() const = delete;
+
+    int value;
+  };
+
+  //*********************************************
+  // Non-trivially destructible type whose copy/move ASSIGNMENT has a
+  // distinguishable effect from copy/move CONSTRUCTION. Used to verify that
+  // same-type variant assignment dispatches through the alternative's own
+  // assignment operator (no destroy + reconstruct). Exercises the
+  // uninitialized_buffer (non-trivial) path.
+  struct AssignTracker
+  {
+    AssignTracker(int value_)
+      : value(value_)
+      , constructed(true)
+      , copy_assigned(false)
+      , move_assigned(false)
+    {
+    }
+
+    AssignTracker(const AssignTracker& other)
+      : value(other.value)
+      , constructed(true)
+      , copy_assigned(false)
+      , move_assigned(false)
+    {
+    }
+
+    AssignTracker(AssignTracker&& other)
+      : value(other.value)
+      , constructed(true)
+      , copy_assigned(false)
+      , move_assigned(false)
+    {
+    }
+
+    ~AssignTracker() {}
+
+    AssignTracker& operator=(const AssignTracker& rhs)
+    {
+      value         = rhs.value;
+      copy_assigned = true;
+      move_assigned = false;
+      return *this;
+    }
+
+    AssignTracker& operator=(AssignTracker&& rhs)
+    {
+      value         = rhs.value;
+      copy_assigned = false;
+      move_assigned = true;
+      return *this;
+    }
+
+    int  value;
+    bool constructed;
+    bool copy_assigned;
+    bool move_assigned;
+  };
+
+  //*********************************************
+  // Trivially destructible variant of AssignTracker (no user destructor) that
+  // exercises the trivially-destructible (variadic_union) path.
+  struct TrivialAssignTracker
+  {
+    TrivialAssignTracker(int value_)
+      : value(value_)
+      , copy_assigned(false)
+      , move_assigned(false)
+    {
+    }
+
+    TrivialAssignTracker(const TrivialAssignTracker& other)
+      : value(other.value)
+      , copy_assigned(false)
+      , move_assigned(false)
+    {
+    }
+
+    TrivialAssignTracker(TrivialAssignTracker&& other)
+      : value(other.value)
+      , copy_assigned(false)
+      , move_assigned(false)
+    {
+    }
+
+    TrivialAssignTracker& operator=(const TrivialAssignTracker& rhs)
+    {
+      value         = rhs.value;
+      copy_assigned = true;
+      move_assigned = false;
+      return *this;
+    }
+
+    TrivialAssignTracker& operator=(TrivialAssignTracker&& rhs)
+    {
+      value         = rhs.value;
+      copy_assigned = false;
+      move_assigned = true;
+      return *this;
+    }
+
+    int  value;
+    bool copy_assigned;
+    bool move_assigned;
+  };
+} // namespace
+
+  // Moved from the top of the file otherwise clang has issues with
+  // operator<< for std::strong_ordering.
+  // #include "unit_test_framework.h"
+
+  // Definitions for when the STL and compiler built-ins are not available.
+  #if ETL_NOT_USING_STL && !defined(ETL_USE_TYPE_TRAITS_BUILTINS)
 
 using etl::is_copy_constructible;
 using etl::is_move_constructible;
@@ -419,7 +642,69 @@ template <>
 struct etl::is_move_constructible<MoveableCopyable> : public etl::true_type
 {
 };
-#endif
+
+//*************************
+template <>
+struct etl::is_copy_constructible<TrivialNonMovable> : public etl::false_type
+{
+};
+
+template <>
+struct etl::is_copy_constructible<NonAssignable> : public etl::true_type
+{
+};
+
+template <>
+struct etl::is_move_constructible<TrivialNonMovable> : public etl::false_type
+{
+};
+
+template <>
+struct etl::is_move_constructible<NonAssignable> : public etl::true_type
+{
+};
+
+//*************************
+template <>
+struct etl::is_copy_constructible<NonTrivialNonMovable> : public etl::false_type
+{
+};
+
+template <>
+struct etl::is_copy_constructible<NonAddressable> : public etl::true_type
+{
+};
+
+template <>
+struct etl::is_move_constructible<NonTrivialNonMovable> : public etl::false_type
+{
+};
+
+template <>
+struct etl::is_move_constructible<NonAddressable> : public etl::true_type
+{
+};
+
+template <>
+struct etl::is_copy_constructible<AssignTracker> : public etl::true_type
+{
+};
+
+template <>
+struct etl::is_move_constructible<AssignTracker> : public etl::true_type
+{
+};
+
+template <>
+struct etl::is_copy_constructible<TrivialAssignTracker> : public etl::true_type
+{
+};
+
+template <>
+struct etl::is_move_constructible<TrivialAssignTracker> : public etl::true_type
+{
+};
+  #endif
 
 namespace
 {
@@ -525,21 +810,21 @@ namespace
     TEST(test_constructor_value)
     {
       // Char.
-      char c = 'a';
+      char               c = 'a';
       test_variant_etl_3 variant_char_etl(c);
       CHECK(c == 'a');
       CHECK(etl::holds_alternative<char>(variant_char_etl));
       CHECK_EQUAL(c, etl::get<char>(variant_char_etl));
 
       // Int.
-      int i = 1;
+      int                i = 1;
       test_variant_etl_3 variant_int_etl(i);
       CHECK(i == 1);
       CHECK(etl::holds_alternative<int>(variant_int_etl));
       CHECK_EQUAL(i, etl::get<int>(variant_int_etl));
 
       // String.
-      std::string text("Some Text");
+      std::string        text("Some Text");
       test_variant_etl_3 variant_text_etl(text);
       CHECK(text == "Some Text");
       CHECK(etl::holds_alternative<std::string>(variant_text_etl));
@@ -550,19 +835,19 @@ namespace
     TEST(test_constructor_move_value)
     {
       // Char.
-      char c = 'a';
+      char               c = 'a';
       test_variant_etl_3 variant_char_etl(etl::move(c));
       CHECK(etl::holds_alternative<char>(variant_char_etl));
       CHECK_EQUAL(c, etl::get<char>(variant_char_etl));
 
       // Int.
-      int i = 1;
+      int                i = 1;
       test_variant_etl_3 variant_int_etl(etl::move(i));
       CHECK(etl::holds_alternative<int>(variant_int_etl));
       CHECK_EQUAL(i, etl::get<int>(variant_int_etl));
 
       // String.
-      std::string text("Some Text");
+      std::string        text("Some Text");
       test_variant_etl_3 variant_text_etl(etl::move(text));
       CHECK(etl::holds_alternative<std::string>(variant_text_etl));
       CHECK_EQUAL(std::string("Some Text"), etl::get<std::string>(variant_text_etl));
@@ -571,7 +856,7 @@ namespace
     //*************************************************************************
     TEST(test_construct_multiple_parameters_by_type)
     {
-#if ETL_USING_CPP17
+  #if ETL_USING_CPP17
       test_variant_emplace variant_etl1(etl::in_place_type<D1>, "1");
       CHECK(etl::holds_alternative<D1>(variant_etl1));
       CHECK_EQUAL(D1("1"), etl::get<D1>(variant_etl1));
@@ -587,7 +872,7 @@ namespace
       test_variant_emplace variant_etl4(etl::in_place_type<D4>, "1", "2", "3", "4");
       CHECK(etl::holds_alternative<D4>(variant_etl4));
       CHECK_EQUAL(D4("1", "2", "3", "4"), etl::get<D4>(variant_etl4));
-#else
+  #else
       test_variant_emplace variant_etl1(etl::in_place_type_t<D1>{}, "1");
       CHECK(etl::holds_alternative<D1>(variant_etl1));
       CHECK_EQUAL(D1("1"), etl::get<D1>(variant_etl1));
@@ -603,13 +888,13 @@ namespace
       test_variant_emplace variant_etl4(etl::in_place_type_t<D4>{}, "1", "2", "3", "4");
       CHECK(etl::holds_alternative<D4>(variant_etl4));
       CHECK_EQUAL(D4("1", "2", "3", "4"), etl::get<D4>(variant_etl4));
-#endif
+  #endif
     }
 
     //*************************************************************************
     TEST(test_construct_multiple_parameters_by_index)
     {
-#if ETL_USING_CPP17
+  #if ETL_USING_CPP17
       test_variant_emplace variant_etl1(etl::in_place_index<1>, "1");
       CHECK(etl::holds_alternative<D1>(variant_etl1));
       CHECK_EQUAL(D1("1"), etl::get<D1>(variant_etl1));
@@ -625,7 +910,7 @@ namespace
       test_variant_emplace variant_etl4(etl::in_place_index<4>, "1", "2", "3", "4");
       CHECK(etl::holds_alternative<D4>(variant_etl4));
       CHECK_EQUAL(D4("1", "2", "3", "4"), etl::get<D4>(variant_etl4));
-#else
+  #else
       test_variant_emplace variant_etl1(etl::in_place_index_t<1>{}, "1");
       CHECK(etl::holds_alternative<D1>(variant_etl1));
       CHECK_EQUAL(D1("1"), etl::get<D1>(variant_etl1));
@@ -641,16 +926,16 @@ namespace
       test_variant_emplace variant_etl4(etl::in_place_index_t<4>{}, "1", "2", "3", "4");
       CHECK(etl::holds_alternative<D4>(variant_etl4));
       CHECK_EQUAL(D4("1", "2", "3", "4"), etl::get<D4>(variant_etl4));
-#endif
+  #endif
     }
 
-#if ETL_HAS_INITIALIZER_LIST
+  #if ETL_HAS_INITIALIZER_LIST
     //*************************************************************************
     TEST(test_construct_with_initializer_list_by_type)
     {
-      etl::variant<std::vector<int>, std::string> v(etl::in_place_type_t<std::vector<int>>{}, { 0, 1, 2, 3 });
+      etl::variant<std::vector<int>, std::string> v(etl::in_place_type_t<std::vector<int>>{}, {0, 1, 2, 3});
 
-      std::vector<int> expected = { 0, 1, 2, 3 };
+      std::vector<int> expected = {0, 1, 2, 3};
       std::vector<int> result   = etl::get<std::vector<int>>(v);
 
       CHECK_EQUAL(expected.size(), result.size());
@@ -660,30 +945,30 @@ namespace
     //*************************************************************************
     TEST(test_construct_with_initializer_list_by_index)
     {
-      etl::variant<std::vector<int>, std::string> v(etl::in_place_index_t<0U>{}, { 0, 1, 2, 3 });
+      etl::variant<std::vector<int>, std::string> v(etl::in_place_index_t<0U>{}, {0, 1, 2, 3});
 
-      std::vector<int> expected = { 0, 1, 2, 3 };
+      std::vector<int> expected = {0, 1, 2, 3};
       std::vector<int> result   = etl::get<std::vector<int>>(v);
 
       CHECK_EQUAL(expected.size(), result.size());
       CHECK_ARRAY_EQUAL(expected.data(), result.data(), expected.size());
     }
-#endif
+  #endif
 
     //*************************************************************************
     TEST(test_emplace_value_by_type)
     {
       // Char.
-      char c = 'a';
+      char               c = 'a';
       test_variant_etl_3 variant_char_etl;
-      
+
       variant_char_etl.emplace<char>(c);
       CHECK(c == 'a');
       CHECK(etl::holds_alternative<char>(variant_char_etl));
       CHECK_EQUAL(c, etl::get<char>(variant_char_etl));
 
       // Int.
-      int i = 1;
+      int                i = 1;
       test_variant_etl_3 variant_int_etl;
 
       variant_int_etl.emplace<int>(i);
@@ -692,7 +977,7 @@ namespace
       CHECK_EQUAL(i, etl::get<int>(variant_int_etl));
 
       // String.
-      std::string text("Some Text");
+      std::string        text("Some Text");
       test_variant_etl_3 variant_text_etl;
 
       variant_text_etl.emplace<std::string>(text);
@@ -705,7 +990,7 @@ namespace
     TEST(test_emplace_value_by_index)
     {
       // Char.
-      char c = 'a';
+      char               c = 'a';
       test_variant_etl_3 variant_char_etl;
 
       c = variant_char_etl.emplace<0>(c);
@@ -714,7 +999,7 @@ namespace
       CHECK_EQUAL(c, etl::get<char>(variant_char_etl));
 
       // Int.
-      int i = 1;
+      int                i = 1;
       test_variant_etl_3 variant_int_etl;
 
       i = variant_int_etl.emplace<1>(i);
@@ -723,7 +1008,7 @@ namespace
       CHECK_EQUAL(i, etl::get<int>(variant_int_etl));
 
       // String.
-      std::string text("Some Text");
+      std::string        text("Some Text");
       test_variant_etl_3 variant_text_etl;
 
       text = variant_text_etl.emplace<2>(text);
@@ -733,9 +1018,154 @@ namespace
     }
 
     //*************************************************************************
+    // emplace must construct the alternative in place from the forwarded
+    // arguments, without requiring the alternative to be copyable or movable
+    // (see issue #1493).
+    TEST(test_emplace_non_movable_type)
+    {
+      // Trivially destructible suite (variadic_union storage).
+      {
+        etl::variant<int, TrivialNonMovable> v;
+
+        TrivialNonMovable& r1 = v.emplace<TrivialNonMovable>(3, 4);
+        CHECK(etl::holds_alternative<TrivialNonMovable>(v));
+        CHECK_EQUAL(3, r1.a);
+        CHECK_EQUAL(4, r1.b);
+        CHECK_EQUAL(&r1, &etl::get<TrivialNonMovable>(v));
+
+        // Emplace by index over the existing alternative.
+        TrivialNonMovable& r2 = v.emplace<1>(5, 6);
+        CHECK_EQUAL(5, r2.a);
+        CHECK_EQUAL(6, r2.b);
+
+        // Switch to the trivial alternative and back again.
+        v.emplace<int>(42);
+        CHECK(etl::holds_alternative<int>(v));
+        CHECK_EQUAL(42, etl::get<int>(v));
+
+        TrivialNonMovable& r3 = v.emplace<TrivialNonMovable>(7, 8);
+        CHECK(etl::holds_alternative<TrivialNonMovable>(v));
+        CHECK_EQUAL(7, r3.a);
+        CHECK_EQUAL(8, r3.b);
+      }
+
+      // Non-trivially destructible suite (uninitialized_buffer storage).
+      {
+        etl::variant<std::string, NonTrivialNonMovable> v;
+
+        NonTrivialNonMovable& r1 = v.emplace<NonTrivialNonMovable>(1, 2);
+        CHECK(etl::holds_alternative<NonTrivialNonMovable>(v));
+        CHECK_EQUAL(1, r1.a);
+        CHECK_EQUAL(2, r1.b);
+        CHECK_EQUAL(&r1, &etl::get<NonTrivialNonMovable>(v));
+
+        // Emplace by index over the existing alternative.
+        NonTrivialNonMovable& r2 = v.emplace<1>(9, 10);
+        CHECK_EQUAL(9, r2.a);
+        CHECK_EQUAL(10, r2.b);
+
+        // Switch to the std::string alternative and back again.
+        v.emplace<std::string>("Some Text");
+        CHECK(etl::holds_alternative<std::string>(v));
+        CHECK_EQUAL(std::string("Some Text"), etl::get<std::string>(v));
+
+        NonTrivialNonMovable& r3 = v.emplace<NonTrivialNonMovable>(11, 12);
+        CHECK(etl::holds_alternative<NonTrivialNonMovable>(v));
+        CHECK_EQUAL(11, r3.a);
+        CHECK_EQUAL(12, r3.b);
+      }
+    }
+
+  #if ETL_HAS_INITIALIZER_LIST
+    //*************************************************************************
+    // The initializer_list emplace overloads must also construct in place,
+    // without requiring the alternative to be copyable or movable (#1493).
+    TEST(test_emplace_non_movable_type_with_initializer_list)
+    {
+      etl::variant<std::string, NonTrivialNonMovable> v;
+
+      // By type.
+      NonTrivialNonMovable& r1 = v.emplace<NonTrivialNonMovable>({10, 20, 30}, 99);
+      CHECK(etl::holds_alternative<NonTrivialNonMovable>(v));
+      CHECK_EQUAL(60, r1.sum_of_list);
+      CHECK_EQUAL(99, r1.b);
+
+      // By index.
+      NonTrivialNonMovable& r2 = v.emplace<1>({1, 2, 3, 4}, 7);
+      CHECK_EQUAL(10, r2.sum_of_list);
+      CHECK_EQUAL(7, r2.b);
+    }
+  #endif
+
+  #if ETL_USING_EXCEPTIONS
+    //*************************************************************************
+    // A throwing emplace() must leave the variant valueless-after-exception
+    // (index() == variant_npos) rather than reporting the stale old index.
+    struct ThrowOnConstruct
+    {
+      struct exception
+      {
+      };
+
+      ThrowOnConstruct() = default;
+      explicit ThrowOnConstruct(int)
+      {
+        throw exception();
+      }
+    };
+
+    TEST(test_emplace_throwing_is_valueless_by_exception)
+    {
+      // Trivially destructible suite (variadic_union storage).
+      {
+        etl::variant<int, ThrowOnConstruct> v;
+        v.emplace<int>(42);
+        CHECK(!v.valueless_by_exception());
+        CHECK_EQUAL(0U, v.index());
+
+        bool threw = false;
+        try
+        {
+          v.emplace<ThrowOnConstruct>(1);
+        }
+        catch (const ThrowOnConstruct::exception&)
+        {
+          threw = true;
+        }
+
+        CHECK(threw);
+        CHECK(v.valueless_by_exception());
+        CHECK_EQUAL(etl::variant_npos, v.index());
+      }
+
+      // Non-trivially destructible suite (uninitialized_buffer storage).
+      {
+        etl::variant<std::string, ThrowOnConstruct> v;
+        v.emplace<std::string>("Some Text");
+        CHECK(!v.valueless_by_exception());
+        CHECK_EQUAL(0U, v.index());
+
+        bool threw = false;
+        try
+        {
+          v.emplace<1>(1);
+        }
+        catch (const ThrowOnConstruct::exception&)
+        {
+          threw = true;
+        }
+
+        CHECK(threw);
+        CHECK(v.valueless_by_exception());
+        CHECK_EQUAL(etl::variant_npos, v.index());
+      }
+    }
+  #endif
+
+    //*************************************************************************
     TEST(test_copy_constructor)
     {
-      std::string text("Some Text");
+      std::string        text("Some Text");
       test_variant_etl_3 variant_1_etl(text);
 
       test_variant_etl_3 variant_2_etl(variant_1_etl);
@@ -757,7 +1187,7 @@ namespace
     //*************************************************************************
     TEST(test_move_constructor)
     {
-      std::string text("Some Text");
+      std::string        text("Some Text");
       test_variant_etl_3 variant_1_etl(text);
 
       test_variant_etl_3 variant_2_etl(etl::move(variant_1_etl));
@@ -769,7 +1199,7 @@ namespace
     //*************************************************************************
     TEST(test_move_constructor_from_empty)
     {
-      std::string text("Some Text");
+      std::string        text("Some Text");
       test_variant_etl_3 variant_1_etl;
 
       test_variant_etl_3 variant_2_etl(etl::move(variant_1_etl));
@@ -778,9 +1208,178 @@ namespace
     }
 
     //*************************************************************************
+    // Issue #1512: a variant must only be copy constructible / copy assignable
+    // when every alternative is copy constructible. Moveable is move-only
+    // (its copy operations are deleted), so a variant containing it must not
+    // be copyable, while remaining move constructible / move assignable.
+    TEST(test_copy_disabled_with_non_copyable_alternative)
+    {
+      typedef etl::variant<int, Moveable> non_copyable_variant;
+
+      CHECK(!etl::is_copy_constructible<non_copyable_variant>::value);
+      CHECK(!etl::is_copy_assignable<non_copyable_variant>::value);
+      CHECK(etl::is_move_constructible<non_copyable_variant>::value);
+      CHECK(etl::is_move_assignable<non_copyable_variant>::value);
+
+      // A variant of purely copyable alternatives must remain copyable.
+      typedef etl::variant<int, Copyable> copyable_variant;
+
+      CHECK(etl::is_copy_constructible<copyable_variant>::value);
+      CHECK(etl::is_copy_assignable<copyable_variant>::value);
+    }
+
+    //*************************************************************************
+    // A non-copy-assignable alternative must disable the variant's copy
+    // assignment operator, and a non-move-assignable alternative must disable
+    // the variant's move assignment operator, while leaving the corresponding
+    // constructors available.
+    TEST(test_assignment_disabled_with_non_assignable_alternative)
+    {
+      typedef etl::variant<int, CopyConstructibleNonCopyAssignable> copy_non_assignable_variant;
+
+      CHECK(etl::is_copy_constructible<copy_non_assignable_variant>::value);
+      CHECK(!etl::is_copy_assignable<copy_non_assignable_variant>::value);
+
+      typedef etl::variant<int, MoveConstructibleNonMoveAssignable> move_non_assignable_variant;
+
+      CHECK(etl::is_move_constructible<move_non_assignable_variant>::value);
+      CHECK(!etl::is_move_assignable<move_non_assignable_variant>::value);
+    }
+
+    //*************************************************************************
+    // When source and destination hold the SAME alternative, assignment must
+    // dispatch through that alternative's own assignment operator rather than
+    // destroying and reconstructing it. Non-trivially-destructible path.
+    TEST(test_copy_assign_same_type_uses_alternative_assignment)
+    {
+      typedef etl::variant<int, AssignTracker> tracker_variant;
+
+      tracker_variant variant_1(etl::in_place_type_t<AssignTracker>{}, 1);
+      tracker_variant variant_2(etl::in_place_type_t<AssignTracker>{}, 2);
+
+      variant_1 = variant_2;
+
+      CHECK_EQUAL(1U, variant_1.index());
+      CHECK_EQUAL(2, etl::get<AssignTracker>(variant_1).value);
+      CHECK(etl::get<AssignTracker>(variant_1).copy_assigned);
+      CHECK(!etl::get<AssignTracker>(variant_1).move_assigned);
+    }
+
+    //*************************************************************************
+    TEST(test_move_assign_same_type_uses_alternative_assignment)
+    {
+      typedef etl::variant<int, AssignTracker> tracker_variant;
+
+      tracker_variant variant_1(etl::in_place_type_t<AssignTracker>{}, 1);
+      tracker_variant variant_2(etl::in_place_type_t<AssignTracker>{}, 2);
+
+      variant_1 = etl::move(variant_2);
+
+      CHECK_EQUAL(1U, variant_1.index());
+      CHECK_EQUAL(2, etl::get<AssignTracker>(variant_1).value);
+      CHECK(!etl::get<AssignTracker>(variant_1).copy_assigned);
+      CHECK(etl::get<AssignTracker>(variant_1).move_assigned);
+    }
+
+    //*************************************************************************
+    // When source and destination hold DIFFERENT alternatives, assignment must
+    // still destroy and reconstruct.
+    TEST(test_copy_assign_different_type_reconstructs)
+    {
+      typedef etl::variant<int, AssignTracker> tracker_variant;
+
+      tracker_variant variant_1(etl::in_place_type_t<int>{}, 5);
+      tracker_variant variant_2(etl::in_place_type_t<AssignTracker>{}, 2);
+
+      variant_1 = variant_2;
+
+      CHECK_EQUAL(1U, variant_1.index());
+      CHECK_EQUAL(2, etl::get<AssignTracker>(variant_1).value);
+      CHECK(etl::get<AssignTracker>(variant_1).constructed);
+      CHECK(!etl::get<AssignTracker>(variant_1).copy_assigned);
+      CHECK(!etl::get<AssignTracker>(variant_1).move_assigned);
+    }
+
+    //*************************************************************************
+    // Same as above but for the trivially-destructible (variadic_union) path.
+    TEST(test_assign_same_type_uses_alternative_assignment_trivial)
+    {
+      typedef etl::variant<int, TrivialAssignTracker> tracker_variant;
+
+      tracker_variant variant_1(etl::in_place_type_t<TrivialAssignTracker>{}, 1);
+      tracker_variant variant_2(etl::in_place_type_t<TrivialAssignTracker>{}, 2);
+
+      variant_1 = variant_2;
+
+      CHECK_EQUAL(1U, variant_1.index());
+      CHECK_EQUAL(2, etl::get<TrivialAssignTracker>(variant_1).value);
+      CHECK(etl::get<TrivialAssignTracker>(variant_1).copy_assigned);
+      CHECK(!etl::get<TrivialAssignTracker>(variant_1).move_assigned);
+
+      tracker_variant variant_3(etl::in_place_type_t<TrivialAssignTracker>{}, 3);
+      variant_1 = etl::move(variant_3);
+
+      CHECK_EQUAL(1U, variant_1.index());
+      CHECK_EQUAL(3, etl::get<TrivialAssignTracker>(variant_1).value);
+      CHECK(etl::get<TrivialAssignTracker>(variant_1).move_assigned);
+    }
+
+    //*************************************************************************
+    // Issue #1567: the variant propagates trivial copyability from its
+    // alternatives, as required by P0602R4.
+    TEST(test_trivially_copyable)
+    {
+      // Fundamental types are trivially copyable in every ETL configuration.
+      CHECK((std::is_trivially_copyable<etl::variant<char, int, double> >::value));
+      CHECK((std::is_trivially_copy_constructible<etl::variant<char, int, double> >::value));
+      CHECK((std::is_trivially_move_constructible<etl::variant<char, int, double> >::value));
+      CHECK((std::is_trivially_copy_assignable<etl::variant<char, int, double> >::value));
+      CHECK((std::is_trivially_move_assignable<etl::variant<char, int, double> >::value));
+
+      // An alternative that is not trivially copyable prevents propagation.
+      CHECK((!std::is_trivially_copyable<etl::variant<int, AssignTracker> >::value));
+
+      // The variant still copies and moves correctly.
+      typedef etl::variant<char, int, double> trivial_variant;
+
+      trivial_variant variant_1(1.5);
+      trivial_variant variant_2(variant_1);
+      CHECK_EQUAL(2U, variant_2.index());
+      CHECK_EQUAL(1.5, etl::get<double>(variant_2));
+
+      trivial_variant variant_3;
+      variant_3 = variant_2;
+      CHECK_EQUAL(2U, variant_3.index());
+      CHECK_EQUAL(1.5, etl::get<double>(variant_3));
+    }
+
+    //*************************************************************************
+    // Issue #1512: even though the copy operations are disabled at compile
+    // time, a move-only variant must still move construct / move assign
+    // correctly, preserving the active alternative.
+    TEST(test_move_only_variant_moves_correctly)
+    {
+      typedef etl::variant<int, Moveable> non_copyable_variant;
+
+      non_copyable_variant variant_1(etl::in_place_type_t<Moveable>{});
+      CHECK_EQUAL(1U, variant_1.index());
+
+      // Move construction preserves the active alternative.
+      non_copyable_variant variant_2(etl::move(variant_1));
+      CHECK_EQUAL(1U, variant_2.index());
+      CHECK(etl::get<Moveable>(variant_2).moved_to);
+
+      // Move assignment preserves the active alternative.
+      non_copyable_variant variant_3;
+      variant_3 = etl::move(variant_2);
+      CHECK_EQUAL(1U, variant_3.index());
+      CHECK(etl::get<Moveable>(variant_3).moved_to);
+    }
+
+    //*************************************************************************
     TEST(test_assign_from_value)
     {
-      std::string text("Some Text");
+      std::string        text("Some Text");
       test_variant_etl_3 variant_etl;
 
       variant_etl = text;
@@ -791,7 +1390,7 @@ namespace
     //*************************************************************************
     TEST(test_assign_from_variant)
     {
-      std::string text("Some Text");
+      std::string        text("Some Text");
       test_variant_etl_3 variant_1_etl;
       test_variant_etl_3 variant_2_etl;
 
@@ -804,8 +1403,8 @@ namespace
     //*************************************************************************
     TEST(test_assign_from_variant2)
     {
-      std::string text("Some Text");
-      int integer(99);
+      std::string        text("Some Text");
+      int                integer(99);
       test_variant_etl_3 variant_1_etl;
       test_variant_etl_3 variant_2_etl;
 
@@ -819,7 +1418,7 @@ namespace
     //*************************************************************************
     TEST(test_assignment_incorrect_type_exception)
     {
-      std::string text("Some Text");
+      std::string        text("Some Text");
       test_variant_etl_3 variant_etl(text);
 
       int i;
@@ -833,9 +1432,9 @@ namespace
       test_variant_etl_3 variant_etl;
 
       variant_etl = 1;
-#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
+  #include "etl/private/diagnostic_self_assign_overloaded_push.h"
       variant_etl = variant_etl;
-#include "etl/private/diagnostic_pop.h" 
+  #include "etl/private/diagnostic_pop.h"
 
       CHECK_EQUAL(1, etl::get<int>(variant_etl));
     }
@@ -843,8 +1442,8 @@ namespace
     //*************************************************************************
     TEST(test_member_swap_variants)
     {
-      std::string text("Some Text");
-      int integer(99);
+      std::string        text("Some Text");
+      int                integer(99);
       test_variant_etl_3 variant_1_etl(text);
       test_variant_etl_3 variant_2_etl(integer);
 
@@ -860,8 +1459,8 @@ namespace
     //*************************************************************************
     TEST(test_global_swap_variants)
     {
-      std::string text("Some Text");
-      int integer(99);
+      std::string        text("Some Text");
+      int                integer(99);
       test_variant_etl_3 variant_1_etl(text);
       test_variant_etl_3 variant_2_etl(integer);
 
@@ -897,8 +1496,83 @@ namespace
     }
 
     //*************************************************************************
+    // Constructing an alternative must begin the object's lifetime with
+    // placement new, not assign into the (inactive) union member. A trivially
+    // destructible but non-assignable type would fail to compile (deleted
+    // assignment) or invoke undefined behaviour if assignment were used.
+    // (The trivially-destructible-suite union path is taken when the STL or the
+    // compiler type-trait built-ins are available; otherwise construction goes
+    // through the buffer path, which is exercised here just the same.)
+    TEST(test_construct_trivially_destructible_non_assignable_type)
+    {
+      using variant_type = etl::variant<int, NonAssignable>;
+
+      // Emplace by type.
+      variant_type variant_by_type;
+      variant_by_type.emplace<NonAssignable>(42);
+      CHECK(etl::holds_alternative<NonAssignable>(variant_by_type));
+      CHECK_EQUAL(42, etl::get<NonAssignable>(variant_by_type).value);
+
+      // Emplace by index.
+      variant_type variant_by_index;
+      variant_by_index.emplace<1>(43);
+      CHECK(etl::holds_alternative<NonAssignable>(variant_by_index));
+      CHECK_EQUAL(43, etl::get<NonAssignable>(variant_by_index).value);
+
+      // Assignment from a value (operator=(T&&)).
+      variant_type variant_by_assignment;
+      variant_by_assignment = NonAssignable(44);
+      CHECK(etl::holds_alternative<NonAssignable>(variant_by_assignment));
+      CHECK_EQUAL(44, etl::get<NonAssignable>(variant_by_assignment).value);
+
+      // Re-emplace over an already-active alternative (do_destroy then
+      // placement new into the same union member).
+      variant_by_assignment.emplace<NonAssignable>(45);
+      CHECK(etl::holds_alternative<NonAssignable>(variant_by_assignment));
+      CHECK_EQUAL(45, etl::get<NonAssignable>(variant_by_assignment).value);
+    }
+
+    //*************************************************************************
+    // Constructing an alternative must take the raw storage address for
+    // placement new via etl::addressof, not the built-in unary operator&.
+    // NonAddressable deletes operator&, so the old `&variadic_union_get(...)`
+    // form would be ill-formed. Read-back uses by-index etl::get (which returns
+    // a reference) and the reference returned by emplace, so it never invokes
+    // operator&. (The trivially-destructible-suite union path is taken when the
+    // STL or the compiler built-ins are available; otherwise construction goes
+    // through the buffer path, which is exercised here just the same.)
+    TEST(test_construct_type_with_overloaded_address_of_operator)
+    {
+      using variant_type = etl::variant<int, NonAddressable>;
+
+      // Emplace by type (returns a reference, so no operator& on read-back).
+      variant_type    variant_by_type;
+      NonAddressable& by_type = variant_by_type.emplace<NonAddressable>(42);
+      CHECK(etl::holds_alternative<NonAddressable>(variant_by_type));
+      CHECK_EQUAL(42, by_type.value);
+      CHECK_EQUAL(42, etl::get<1>(variant_by_type).value);
+
+      // Emplace by index.
+      variant_type variant_by_index;
+      variant_by_index.emplace<1>(43);
+      CHECK(etl::holds_alternative<NonAddressable>(variant_by_index));
+      CHECK_EQUAL(43, etl::get<1>(variant_by_index).value);
+
+      // Assignment from a value (operator=(T&&)).
+      variant_type variant_by_assignment;
+      variant_by_assignment = NonAddressable(44);
+      CHECK(etl::holds_alternative<NonAddressable>(variant_by_assignment));
+      CHECK_EQUAL(44, etl::get<1>(variant_by_assignment).value);
+
+      // Re-emplace over an already-active alternative.
+      variant_by_assignment.emplace<1>(45);
+      CHECK(etl::holds_alternative<NonAddressable>(variant_by_assignment));
+      CHECK_EQUAL(45, etl::get<1>(variant_by_assignment).value);
+    }
+
+    //*************************************************************************
     TEST(test_variant_accept_visitor)
-    {    
+    {
       struct Visitor : public etl::visitor<char&, int&, std::string&>
       {
         Visitor()
@@ -923,11 +1597,11 @@ namespace
         void visit(std::string& s)
         {
           result_s = s;
-          s = "4";
+          s        = "4";
         }
 
-        char result_c;
-        int  result_i;
+        char        result_c;
+        int         result_i;
         std::string result_s;
       };
 
@@ -939,7 +1613,7 @@ namespace
       variant_etl.accept(visitor);
       CHECK_EQUAL(1, visitor.result_c);
       CHECK_EQUAL(2, etl::get<char>(variant_etl));
-      
+
       variant_etl = int(2);
       variant_etl.accept(visitor);
       CHECK_EQUAL(2, visitor.result_i);
@@ -978,11 +1652,11 @@ namespace
         void visit(std::string& s)
         {
           result_s = s;
-          s = "4";
+          s        = "4";
         }
 
-        char result_c;
-        int  result_i;
+        char        result_c;
+        int         result_i;
         std::string result_s;
       };
 
@@ -1007,6 +1681,7 @@ namespace
     }
 
     //*************************************************************************
+  #include "etl/private/diagnostic_uninitialized_push.h"
     TEST(test_const_variant_accept_visitor)
     {
       struct Visitor : public etl::visitor<const char&, const int&, const std::string&>
@@ -1033,8 +1708,8 @@ namespace
           result_s = s;
         }
 
-        char result_c;
-        int  result_i;
+        char        result_c;
+        int         result_i;
         std::string result_s;
       };
 
@@ -1057,8 +1732,10 @@ namespace
       const_variant_etl3.accept(visitor);
       CHECK_EQUAL("3", visitor.result_s);
     }
+  #include "etl/private/diagnostic_pop.h"
 
     //*************************************************************************
+  #include "etl/private/diagnostic_uninitialized_push.h"
     TEST(test_const_variant_accept_visitor_deprecated)
     {
       struct Visitor : public etl::visitor<char, int, const std::string&>
@@ -1085,8 +1762,8 @@ namespace
           result_s = s;
         }
 
-        char result_c;
-        int  result_i;
+        char        result_c;
+        int         result_i;
         std::string result_s;
       };
 
@@ -1101,16 +1778,17 @@ namespace
 
       variant_etl = int(2);
       const test_variant_etl_3 const_variant_etl2(variant_etl);
-      //const_variant_etl2.accept_visitor(visitor);
+      // const_variant_etl2.accept_visitor(visitor);
       const_variant_etl2.accept(visitor);
       CHECK_EQUAL(2, visitor.result_i);
 
       variant_etl = std::string("3");
       const test_variant_etl_3 const_variant_etl3(variant_etl);
-      //const_variant_etl3.accept_visitor(visitor);
+      // const_variant_etl3.accept_visitor(visitor);
       const_variant_etl3.accept(visitor);
       CHECK_EQUAL("3", visitor.result_s);
     }
+  #include "etl/private/diagnostic_pop.h"
 
     //*************************************************************************
     TEST(test_variant_accept_functor_with_functor_class)
@@ -1139,17 +1817,17 @@ namespace
         void operator()(std::string& s)
         {
           result_s = s;
-          s = "4";
+          s        = "4";
         }
 
-        char result_c;
-        int  result_i;
+        char        result_c;
+        int         result_i;
         std::string result_s;
       };
 
       Visitor visitor;
 
-      test_variant_etl_3 variant_etl;      
+      test_variant_etl_3 variant_etl;
 
       variant_etl = char(1);
       variant_etl.accept(visitor);
@@ -1194,8 +1872,8 @@ namespace
           result_s = s;
         }
 
-        char result_c;
-        int  result_i;
+        char        result_c;
+        int         result_i;
         std::string result_s;
       };
 
@@ -1212,12 +1890,13 @@ namespace
       CHECK_EQUAL(2, visitor.result_i);
 
       variant_etl = std::string("3");
-      //variant_etl.accept_functor(visitor);
+      // variant_etl.accept_functor(visitor);
       variant_etl.accept(visitor);
       CHECK_EQUAL("3", visitor.result_s);
     }
 
     //*************************************************************************
+  #include "etl/private/diagnostic_uninitialized_push.h"
     TEST(test_const_variant_accept_functor_with_functor_class)
     {
       struct Visitor
@@ -1244,8 +1923,8 @@ namespace
           result_s = s;
         }
 
-        char result_c;
-        int  result_i;
+        char        result_c;
+        int         result_i;
         std::string result_s;
       };
 
@@ -1268,8 +1947,10 @@ namespace
       const_variant_etl3.accept(visitor);
       CHECK_EQUAL("3", visitor.result_s);
     }
+  #include "etl/private/diagnostic_pop.h"
 
     //*************************************************************************
+  #include "etl/private/diagnostic_uninitialized_push.h"
     TEST(test_const_variant_accept_functor_with_functor_class_deprecated)
     {
       struct Visitor
@@ -1296,8 +1977,8 @@ namespace
           result_s = s;
         }
 
-        char result_c;
-        int  result_i;
+        char        result_c;
+        int         result_i;
         std::string result_s;
       };
 
@@ -1320,18 +2001,32 @@ namespace
       const_variant_etl3.accept(visitor);
       CHECK_EQUAL("3", visitor.result_s);
     }
+  #include "etl/private/diagnostic_pop.h"
 
     //*************************************************************************
-#if ETL_USING_CPP17
+  #if ETL_USING_CPP17
     TEST(test_variant_accept_functor_with_overload)
     {
-      char result_c;
-      int  result_i;
+      char        result_c;
+      int         result_i;
       std::string result_s;
 
-      auto visitor = etl::make_overload([&result_c](char& c) { result_c = 1; ++c; },
-                                        [&result_i](int& i) { result_i = 2; ++i; },
-                                        [&result_s](std::string& s) { result_s = "3"; s = "4"; });
+      auto visitor = etl::make_overload(
+        [&result_c](char& c)
+        {
+          result_c = 1;
+          ++c;
+        },
+        [&result_i](int& i)
+        {
+          result_i = 2;
+          ++i;
+        },
+        [&result_s](std::string& s)
+        {
+          result_s = "3";
+          s        = "4";
+        });
 
       test_variant_etl_3 variant_etl;
 
@@ -1354,13 +2049,12 @@ namespace
     //*************************************************************************
     TEST(test_variant_accept_functor_with_overload_deprecated)
     {
-      char result_c;
-      int  result_i;
+      char        result_c;
+      int         result_i;
       std::string result_s;
 
-      auto visitor = etl::make_overload([&result_c](char) { result_c = 1; },
-        [&result_i](int) { result_i = 2; },
-        [&result_s](const std::string&) { result_s = "3"; });
+      auto visitor = etl::make_overload([&result_c](char) { result_c = 1; }, [&result_i](int) { result_i = 2; },
+                                        [&result_s](const std::string&) { result_s = "3"; });
 
       test_variant_etl_3 variant_etl;
 
@@ -1377,15 +2071,15 @@ namespace
       CHECK_EQUAL("3", result_s);
     }
 
-    //*************************************************************************
+      //*************************************************************************
+    #include "etl/private/diagnostic_uninitialized_push.h"
     TEST(test_const_variant_accept_functor_with_overload)
     {
-      char result_c;
-      int  result_i;
+      char        result_c;
+      int         result_i;
       std::string result_s;
 
-      auto visitor = etl::make_overload([&result_c](char) { result_c = 1; },
-                                        [&result_i](int) { result_i = 2; },
+      auto visitor = etl::make_overload([&result_c](char) { result_c = 1; }, [&result_i](int) { result_i = 2; },
                                         [&result_s](const std::string&) { result_s = "3"; });
 
       test_variant_etl_3 variant_etl;
@@ -1405,16 +2099,17 @@ namespace
       const_variant_etl3.accept(visitor);
       CHECK_EQUAL("3", result_s);
     }
+    #include "etl/private/diagnostic_pop.h"
 
-    //*************************************************************************
+      //*************************************************************************
+    #include "etl/private/diagnostic_uninitialized_push.h"
     TEST(test_const_variant_accept_functor_with_overload_deprecated)
     {
-      char result_c;
-      int  result_i;
+      char        result_c;
+      int         result_i;
       std::string result_s;
 
-      auto visitor = etl::make_overload([&result_c](char) { result_c = 1; },
-                                        [&result_i](int) { result_i = 2; },
+      auto visitor = etl::make_overload([&result_c](char) { result_c = 1; }, [&result_i](int) { result_i = 2; },
                                         [&result_s](const std::string&) { result_s = "3"; });
 
       test_variant_etl_3 variant_etl;
@@ -1434,7 +2129,8 @@ namespace
       const_variant_etl3.accept(visitor);
       CHECK_EQUAL("3", result_s);
     }
-#endif
+    #include "etl/private/diagnostic_pop.h"
+  #endif
 
     //*************************************************************************
     TEST(test_get_if_index)
@@ -1464,19 +2160,19 @@ namespace
 
       variant_etl = char(1);
       CHECK(etl::get_if<char>(&variant_etl) != nullptr);
-      CHECK(etl::get_if<int>(&variant_etl)  == nullptr);
+      CHECK(etl::get_if<int>(&variant_etl) == nullptr);
       CHECK(etl::get_if<std::string>(&variant_etl) == nullptr);
 
-#include "etl/private/diagnostic_useless_cast_push.h"
+  #include "etl/private/diagnostic_useless_cast_push.h"
       variant_etl = int(2);
-#include "etl/private/diagnostic_pop.h"
+  #include "etl/private/diagnostic_pop.h"
       CHECK(etl::get_if<char>(&variant_etl) == nullptr);
-      CHECK(etl::get_if<int>(&variant_etl)  != nullptr);
+      CHECK(etl::get_if<int>(&variant_etl) != nullptr);
       CHECK(etl::get_if<std::string>(&variant_etl) == nullptr);
 
       variant_etl = std::string("3");
       CHECK(etl::get_if<char>(&variant_etl) == nullptr);
-      CHECK(etl::get_if<int>(&variant_etl)  == nullptr);
+      CHECK(etl::get_if<int>(&variant_etl) == nullptr);
       CHECK(etl::get_if<std::string>(&variant_etl) != nullptr);
     }
 
@@ -1485,14 +2181,14 @@ namespace
     {
       test_variant_etl_3 variant_etl;
 
-#if ETL_USING_CPP17
+  #if ETL_USING_CPP17
       CHECK_EQUAL(3U, etl::variant_size_v<test_variant_etl_3>);
-#else
+  #else
       CHECK_EQUAL(3U, etl::variant_size<test_variant_etl_3>::value);
-#endif
+  #endif
     }
 
-#if ETL_USING_CPP17
+  #if ETL_USING_CPP17
     //*************************************************************************
     TEST(test_compare_etl_and_stl_variant_with_moveable_type)
     {
@@ -1509,15 +2205,15 @@ namespace
       variant_std = etl::move(from_std);
 
       CHECK_EQUAL(from_std.moved_from, from_etl.moved_from);
-      CHECK_EQUAL(from_std.moved_to,   from_etl.moved_to);
-      CHECK_EQUAL(from_std.copied_to,  from_etl.copied_to);
+      CHECK_EQUAL(from_std.moved_to, from_etl.moved_to);
+      CHECK_EQUAL(from_std.copied_to, from_etl.copied_to);
 
       to_etl = etl::move(etl::get<0>(variant_etl));
       to_std = etl::move(std::get<0>(variant_std));
 
       CHECK_EQUAL(to_std.moved_from, to_etl.moved_from);
-      CHECK_EQUAL(to_std.moved_to,   to_etl.moved_to);
-      CHECK_EQUAL(to_std.copied_to,  to_etl.copied_to);
+      CHECK_EQUAL(to_std.moved_to, to_etl.moved_to);
+      CHECK_EQUAL(to_std.copied_to, to_etl.copied_to);
     }
 
     //*************************************************************************
@@ -1536,15 +2232,15 @@ namespace
       variant_std = from_std;
 
       CHECK_EQUAL(from_std.moved_from, from_etl.moved_from);
-      CHECK_EQUAL(from_std.moved_to,   from_etl.moved_to);
-      CHECK_EQUAL(from_std.copied_to,  from_etl.copied_to);
+      CHECK_EQUAL(from_std.moved_to, from_etl.moved_to);
+      CHECK_EQUAL(from_std.copied_to, from_etl.copied_to);
 
       to_etl = etl::get<0>(variant_etl);
       to_std = std::get<0>(variant_std);
 
       CHECK_EQUAL(to_std.moved_from, to_etl.moved_from);
-      CHECK_EQUAL(to_std.moved_to,   to_etl.moved_to);
-      CHECK_EQUAL(to_std.copied_to,  to_etl.copied_to);
+      CHECK_EQUAL(to_std.moved_to, to_etl.moved_to);
+      CHECK_EQUAL(to_std.copied_to, to_etl.copied_to);
     }
 
     //*************************************************************************
@@ -1563,29 +2259,29 @@ namespace
       variant_std = from_std;
 
       CHECK_EQUAL(from_std.moved_from, from_etl.moved_from);
-      CHECK_EQUAL(from_std.moved_to,   from_etl.moved_to);
-      CHECK_EQUAL(from_std.copied_to,  from_etl.copied_to);
+      CHECK_EQUAL(from_std.moved_to, from_etl.moved_to);
+      CHECK_EQUAL(from_std.copied_to, from_etl.copied_to);
 
       variant_etl = etl::move(from_etl);
       variant_std = etl::move(from_std);
 
       CHECK_EQUAL(from_std.moved_from, from_etl.moved_from);
-      CHECK_EQUAL(from_std.moved_to,   from_etl.moved_to);
-      CHECK_EQUAL(from_std.copied_to,  from_etl.copied_to);
+      CHECK_EQUAL(from_std.moved_to, from_etl.moved_to);
+      CHECK_EQUAL(from_std.copied_to, from_etl.copied_to);
 
       to_etl = etl::get<0>(variant_etl);
       to_std = std::get<0>(variant_std);
 
       CHECK_EQUAL(to_std.moved_from, to_etl.moved_from);
-      CHECK_EQUAL(to_std.moved_to,   to_etl.moved_to);
-      CHECK_EQUAL(to_std.copied_to,  to_etl.copied_to);
+      CHECK_EQUAL(to_std.moved_to, to_etl.moved_to);
+      CHECK_EQUAL(to_std.copied_to, to_etl.copied_to);
 
       to_etl = etl::move(etl::get<0>(variant_etl));
       to_std = etl::move(std::get<0>(variant_std));
 
       CHECK_EQUAL(to_std.moved_from, to_etl.moved_from);
-      CHECK_EQUAL(to_std.moved_to,   to_etl.moved_to);
-      CHECK_EQUAL(to_std.copied_to,  to_etl.copied_to);
+      CHECK_EQUAL(to_std.moved_to, to_etl.moved_to);
+      CHECK_EQUAL(to_std.copied_to, to_etl.copied_to);
     }
 
     //*************************************************************************
@@ -1609,29 +2305,29 @@ namespace
       MoveableCopyable value_vr_etl = etl::get<MoveableCopyable>(rv_etl);
       MoveableCopyable value_vr_std = std::get<MoveableCopyable>(rv_std);
       CHECK_EQUAL(value_vr_std.moved_from, value_vr_etl.moved_from);
-      CHECK_EQUAL(value_vr_std.moved_to,   value_vr_etl.moved_to);
-      CHECK_EQUAL(value_vr_std.copied_to,  value_vr_etl.copied_to);
+      CHECK_EQUAL(value_vr_std.moved_to, value_vr_etl.moved_to);
+      CHECK_EQUAL(value_vr_std.copied_to, value_vr_etl.copied_to);
 
       // From variant const reference
       const MoveableCopyable& value_vcr_etl = etl::get<MoveableCopyable>(crv_etl);
       const MoveableCopyable& value_vcr_std = std::get<MoveableCopyable>(crv_std);
       CHECK_EQUAL(value_vcr_std.moved_from, value_vcr_etl.moved_from);
-      CHECK_EQUAL(value_vcr_std.moved_to,   value_vcr_etl.moved_to);
-      CHECK_EQUAL(value_vcr_std.copied_to,  value_vcr_etl.copied_to);
+      CHECK_EQUAL(value_vcr_std.moved_to, value_vcr_etl.moved_to);
+      CHECK_EQUAL(value_vcr_std.copied_to, value_vcr_etl.copied_to);
 
       // From variant rvalue reference
       MoveableCopyable&& value_vrr_etl = etl::get<MoveableCopyable>(etl::move(v_etl));
       MoveableCopyable&& value_vrr_std = std::get<MoveableCopyable>(etl::move(v_std));
       CHECK_EQUAL(value_vrr_std.moved_from, value_vrr_etl.moved_from);
-      CHECK_EQUAL(value_vrr_std.moved_to,   value_vrr_etl.moved_to);
-      CHECK_EQUAL(value_vrr_std.copied_to,  value_vrr_etl.copied_to);
-         
+      CHECK_EQUAL(value_vrr_std.moved_to, value_vrr_etl.moved_to);
+      CHECK_EQUAL(value_vrr_std.copied_to, value_vrr_etl.copied_to);
+
       // From variant const rvalue reference
       const MoveableCopyable&& value_vcrr_etl = etl::get<MoveableCopyable>(etl::move(cv_etl));
       const MoveableCopyable&& value_vcrr_std = std::get<MoveableCopyable>(etl::move(cv_std));
       CHECK_EQUAL(value_vcrr_std.moved_from, value_vcrr_etl.moved_from);
-      CHECK_EQUAL(value_vcrr_std.moved_to,   value_vcrr_etl.moved_to);
-      CHECK_EQUAL(value_vcrr_std.copied_to,  value_vcrr_etl.copied_to);
+      CHECK_EQUAL(value_vcrr_std.moved_to, value_vcrr_etl.moved_to);
+      CHECK_EQUAL(value_vcrr_std.copied_to, value_vcrr_etl.copied_to);
     }
 
     //*************************************************************************
@@ -1655,45 +2351,45 @@ namespace
       MoveableCopyable value_vr_etl = etl::get<0U>(rv_etl);
       MoveableCopyable value_vr_std = std::get<0U>(rv_std);
       CHECK_EQUAL(value_vr_std.moved_from, value_vr_etl.moved_from);
-      CHECK_EQUAL(value_vr_std.moved_to,   value_vr_etl.moved_to);
-      CHECK_EQUAL(value_vr_std.copied_to,  value_vr_etl.copied_to);
+      CHECK_EQUAL(value_vr_std.moved_to, value_vr_etl.moved_to);
+      CHECK_EQUAL(value_vr_std.copied_to, value_vr_etl.copied_to);
 
       // From variant const reference
       const MoveableCopyable& value_vcr_etl = etl::get<0U>(crv_etl);
       const MoveableCopyable& value_vcr_std = std::get<0U>(crv_std);
       CHECK_EQUAL(value_vcr_std.moved_from, value_vcr_etl.moved_from);
-      CHECK_EQUAL(value_vcr_std.moved_to,   value_vcr_etl.moved_to);
-      CHECK_EQUAL(value_vcr_std.copied_to,  value_vcr_etl.copied_to);
+      CHECK_EQUAL(value_vcr_std.moved_to, value_vcr_etl.moved_to);
+      CHECK_EQUAL(value_vcr_std.copied_to, value_vcr_etl.copied_to);
 
       // From variant rvalue reference
       MoveableCopyable&& value_vrr_etl = etl::get<0U>(etl::move(v_etl));
       MoveableCopyable&& value_vrr_std = std::get<0U>(etl::move(v_std));
       CHECK_EQUAL(value_vrr_std.moved_from, value_vrr_etl.moved_from);
-      CHECK_EQUAL(value_vrr_std.moved_to,   value_vrr_etl.moved_to);
-      CHECK_EQUAL(value_vrr_std.copied_to,  value_vrr_etl.copied_to);
+      CHECK_EQUAL(value_vrr_std.moved_to, value_vrr_etl.moved_to);
+      CHECK_EQUAL(value_vrr_std.copied_to, value_vrr_etl.copied_to);
 
       // From variant const rvalue reference
       const MoveableCopyable&& value_vcrr_etl = etl::get<0U>(etl::move(cv_etl));
       const MoveableCopyable&& value_vcrr_std = std::get<0U>(etl::move(cv_std));
       CHECK_EQUAL(value_vcrr_std.moved_from, value_vcrr_etl.moved_from);
-      CHECK_EQUAL(value_vcrr_std.moved_to,   value_vcrr_etl.moved_to);
-      CHECK_EQUAL(value_vcrr_std.copied_to,  value_vcrr_etl.copied_to);
+      CHECK_EQUAL(value_vcrr_std.moved_to, value_vcrr_etl.moved_to);
+      CHECK_EQUAL(value_vcrr_std.copied_to, value_vcrr_etl.copied_to);
     }
-#endif
+  #endif
 
     //*************************************************************************
     TEST(test_get_if_by_type)
     {
       int value = 0;
 
-      etl::variant<int, double> v(value);
-      const etl::variant<int, double> cv(value);
-      etl::variant<int, double>& rv(v);
+      etl::variant<int, double>        v(value);
+      const etl::variant<int, double>  cv(value);
+      etl::variant<int, double>&       rv(v);
       const etl::variant<int, double>& crv(v);
 
-      int* pi;
-      const int* pci;
-      double* pd;
+      int*          pi;
+      const int*    pci;
+      double*       pd;
       const double* pcd;
 
       etl::variant<int, double>* pv = nullptr;
@@ -1722,14 +2418,14 @@ namespace
     {
       int value = 0;
 
-      etl::variant<int, double> v(value);
-      const etl::variant<int, double> cv(value);
-      etl::variant<int, double>& rv(v);
+      etl::variant<int, double>        v(value);
+      const etl::variant<int, double>  cv(value);
+      etl::variant<int, double>&       rv(v);
       const etl::variant<int, double>& crv(v);
 
-      int* pi;
-      const int* pci;
-      double* pd;
+      int*          pi;
+      const int*    pci;
+      double*       pd;
       const double* pcd;
 
       etl::variant<int, double>* pv = nullptr;
@@ -1831,18 +2527,18 @@ namespace
       variant = int8_t{};
       variant_test_visit_dispatcher visitor;
       auto const&                   visitor_const = visitor;
-      int16_t                       type = etl::visit(visitor_const, variant);
+      int16_t                       type          = etl::visit(visitor_const, variant);
       CHECK_EQUAL(1, type);
 
       auto const& variant_const = variant;
-      type = etl::visit(visitor_const, variant_const);
+      type                      = etl::visit(visitor_const, variant_const);
       CHECK_EQUAL(10, type);
 
       type = etl::visit(visitor, variant_const);
       CHECK_EQUAL(50, type);
 
       variant = int16_t{};
-      type = etl::visit(visitor_const, variant);
+      type    = etl::visit(visitor_const, variant);
       CHECK_EQUAL(3, type);
 
       type = etl::visit(visitor_const, variant_const);
@@ -1880,27 +2576,28 @@ namespace
       etl::variant<int8_t, uint16_t, uint8_t> variant2;
       variant1 = int8_t{3};
       variant2 = int8_t{1};
-      
+
       auto res = etl::visit<int16_t>(test_variant_multiple_visit_helper{}, variant1, variant2);
       CHECK_EQUAL(11 - 3, res);
-      
+
       variant2 = uint16_t{2};
-      res = etl::visit<int16_t>(test_variant_multiple_visit_helper{}, variant1, variant2);
+      res      = etl::visit<int16_t>(test_variant_multiple_visit_helper{}, variant1, variant2);
       CHECK_EQUAL(21 - 3 * 2, res);
-      
+
       variant1 = uint8_t{};
       variant2 = uint8_t{};
-      res = etl::visit<int16_t>(test_variant_multiple_visit_helper{}, variant1, variant2);
+      res      = etl::visit<int16_t>(test_variant_multiple_visit_helper{}, variant1, variant2);
       CHECK_EQUAL(32, res);
     }
 
+  #if ETL_USING_CPP14
     //*************************************************************************
     TEST(test_variant_multiple_visit_auto_return)
     {
       etl::variant<int8_t, uint8_t>           variant1;
       etl::variant<int8_t, uint16_t, uint8_t> variant2;
-      variant1 = int8_t{3};
-      variant2 = int8_t{1};
+      variant1     = int8_t{3};
+      variant2     = int8_t{1};
       auto const f = [](auto v1, auto v2)
       {
         return v1 * v2;
@@ -1908,12 +2605,12 @@ namespace
 
       auto res = etl::visit(f, variant1, variant2);
       CHECK_EQUAL(3, res);
-      
+
       variant2 = uint16_t{2};
-      res = etl::visit(f, variant1, variant2);
+      res      = etl::visit(f, variant1, variant2);
       CHECK_EQUAL(3 * 2, res);
     }
-    
+
     //*************************************************************************
     TEST(test_variant_visit_void)
     {
@@ -1932,86 +2629,95 @@ namespace
       etl::visit<void>(f, variant1);
       CHECK_EQUAL(false, variant_was_signed);
     }
+  #endif // ETL_USING_CPP14
 
-#if ETL_USING_CPP17
+  #if ETL_USING_CPP17
     //*************************************************************************
     TEST(test_variant_visit_with_overload)
     {
-      struct TypeA { };
-      struct TypeB { };
-      struct TypeC { };
-      struct TypeD { };
+      struct TypeA
+      {
+      };
+      struct TypeB
+      {
+      };
+      struct TypeC
+      {
+      };
+      struct TypeD
+      {
+      };
 
       std::string result = "?";
 
       etl::variant<TypeA, TypeB, TypeC, TypeD> package = TypeA{};
 
-      etl::visit(etl::overload
-        {
-          [&result](TypeA&) { result = "TypeA"; },
-          [&result](TypeB&) { result = "TypeB"; },
-          [&result](TypeC&) { result = "TypeC"; },
-          [&result](TypeD&) { result = "TypeD"; }
-        }, package);
+      etl::visit(etl::overload{[&result](TypeA&) { result = "TypeA"; }, [&result](TypeB&) { result = "TypeB"; },
+                               [&result](TypeC&) { result = "TypeC"; },
+                               [&result](TypeD&)
+                               {
+                                 result = "TypeD";
+                               }},
+                 package);
 
       CHECK_EQUAL(std::string("TypeA"), result);
 
       package = TypeA{};
 
-      etl::visit(etl::overload
-        {
-          [&result](TypeA&) { result = "TypeA"; },
-          [&result](TypeB&) { result = "TypeB"; },
-          [&result](TypeC&) { result = "TypeC"; },
-          [&result](TypeD&) { result = "TypeD"; }
-        }, package);
+      etl::visit(etl::overload{[&result](TypeA&) { result = "TypeA"; }, [&result](TypeB&) { result = "TypeB"; },
+                               [&result](TypeC&) { result = "TypeC"; },
+                               [&result](TypeD&)
+                               {
+                                 result = "TypeD";
+                               }},
+                 package);
 
       CHECK_EQUAL(std::string("TypeA"), result);
 
       package = TypeB{};
 
-      etl::visit(etl::overload
-        {
-          [&result](TypeA&) { result = "TypeA"; },
-          [&result](TypeB&) { result = "TypeB"; },
-          [&result](TypeC&) { result = "TypeC"; },
-          [&result](TypeD&) { result = "TypeD"; }
-        }, package);
+      etl::visit(etl::overload{[&result](TypeA&) { result = "TypeA"; }, [&result](TypeB&) { result = "TypeB"; },
+                               [&result](TypeC&) { result = "TypeC"; },
+                               [&result](TypeD&)
+                               {
+                                 result = "TypeD";
+                               }},
+                 package);
 
       CHECK_EQUAL(std::string("TypeB"), result);
 
       package = TypeC{};
 
-      etl::visit(etl::overload
-        {
-          [&result](TypeA&) { result = "TypeA"; },
-          [&result](TypeB&) { result = "TypeB"; },
-          [&result](TypeC&) { result = "TypeC"; },
-          [&result](TypeD&) { result = "TypeD"; }
-        }, package);
+      etl::visit(etl::overload{[&result](TypeA&) { result = "TypeA"; }, [&result](TypeB&) { result = "TypeB"; },
+                               [&result](TypeC&) { result = "TypeC"; },
+                               [&result](TypeD&)
+                               {
+                                 result = "TypeD";
+                               }},
+                 package);
 
       CHECK_EQUAL(std::string("TypeC"), result);
 
       package = TypeD{};
 
-      etl::visit(etl::overload
-        {
-          [&result](TypeA&) { result = "TypeA"; },
-          [&result](TypeB&) { result = "TypeB"; },
-          [&result](TypeC&) { result = "TypeC"; },
-          [&result](TypeD&) { result = "TypeD"; }
-        }, package);
+      etl::visit(etl::overload{[&result](TypeA&) { result = "TypeA"; }, [&result](TypeB&) { result = "TypeB"; },
+                               [&result](TypeC&) { result = "TypeC"; },
+                               [&result](TypeD&)
+                               {
+                                 result = "TypeD";
+                               }},
+                 package);
 
       CHECK_EQUAL(std::string("TypeD"), result);
     }
-#endif
+  #endif
 
-#if ETL_USING_CPP14
+  #if ETL_USING_CPP14
     //*************************************************************************
     TEST(test_variant_comparisons)
     {
       using Variant = etl::variant<char, int, std::string>;
-    
+
       Variant v_empty1;
       Variant v_empty2;
 
@@ -2064,9 +2770,9 @@ namespace
       CHECK_TRUE(v_hello <= v_hello);
       CHECK_TRUE(v_hello >= v_hello);
     }
-#endif
+  #endif
 
-#if ETL_USING_CPP20 && ETL_USING_STL && !(defined(ETL_DEVELOPMENT_OS_APPLE) && defined(ETL_COMPILER_CLANG))
+  #if ETL_USING_CPP20 && ETL_USING_STL && !(defined(ETL_DEVELOPMENT_OS_APPLE) && defined(ETL_COMPILER_CLANG))
     //*************************************************************************
     TEST(test_variant_spaceship_operator)
     {
@@ -2081,22 +2787,22 @@ namespace
       Variant v_int_1(1);
       Variant v_int_2(2);
 
-      CHECK(std::strong_ordering::equal   == v_empty1 <=> v_empty2);
-      CHECK(std::strong_ordering::less    == v_empty1 <=> v_char_a);
+      CHECK(std::strong_ordering::equal == v_empty1 <=> v_empty2);
+      CHECK(std::strong_ordering::less == v_empty1 <=> v_char_a);
       CHECK(std::strong_ordering::greater == v_char_a <=> v_empty1);
 
-      CHECK(std::strong_ordering::equal   == v_char_a <=> v_char_a);
-      CHECK(std::strong_ordering::less    == v_char_a <=> v_char_b);
+      CHECK(std::strong_ordering::equal == v_char_a <=> v_char_a);
+      CHECK(std::strong_ordering::less == v_char_a <=> v_char_b);
       CHECK(std::strong_ordering::greater == v_char_b <=> v_char_a);
 
-      CHECK(std::strong_ordering::equal   == v_int_1 <=> v_int_1);
-      CHECK(std::strong_ordering::less    == v_int_1 <=> v_int_2);
+      CHECK(std::strong_ordering::equal == v_int_1 <=> v_int_1);
+      CHECK(std::strong_ordering::less == v_int_1 <=> v_int_2);
       CHECK(std::strong_ordering::greater == v_int_2 <=> v_int_1);
 
-      CHECK(std::strong_ordering::less    == v_char_a <=> v_int_1);
-      CHECK(std::strong_ordering::greater == v_int_2  <=> v_char_a);
+      CHECK(std::strong_ordering::less == v_char_a <=> v_int_1);
+      CHECK(std::strong_ordering::greater == v_int_2 <=> v_char_a);
     }
-#endif
+  #endif
 
     //*************************************************************************
     TEST(test_variant_three_way_compare_using_etl_compare_cmp)
@@ -2114,18 +2820,18 @@ namespace
 
       using Compare = etl::compare<Variant>;
 
-      CHECK_EQUAL(Compare::Equal,   (Compare::cmp(v_empty1, v_empty2)));
-      
-      CHECK_EQUAL(Compare::Equal,   (Compare::cmp(v_char_a, v_char_a)));
-      CHECK_EQUAL(Compare::Less,    (Compare::cmp(v_char_a, v_char_b)));
-      CHECK_EQUAL(Compare::Greater, (Compare::cmp(v_char_b, v_char_a)));
-      
-      CHECK_EQUAL(Compare::Equal,   (Compare::cmp(v_int_1,  v_int_1)));
-      CHECK_EQUAL(Compare::Less,    (Compare::cmp(v_int_1,  v_int_2)));
-      CHECK_EQUAL(Compare::Greater, (Compare::cmp(v_int_2,  v_int_1)));
+      CHECK_EQUAL(Compare::Equal, (Compare::cmp(v_empty1, v_empty2)));
 
-      CHECK_EQUAL(Compare::Less,    (Compare::cmp(v_char_a, v_int_1)));
-      CHECK_EQUAL(Compare::Greater, (Compare::cmp(v_int_1,  v_char_a)));
+      CHECK_EQUAL(Compare::Equal, (Compare::cmp(v_char_a, v_char_a)));
+      CHECK_EQUAL(Compare::Less, (Compare::cmp(v_char_a, v_char_b)));
+      CHECK_EQUAL(Compare::Greater, (Compare::cmp(v_char_b, v_char_a)));
+
+      CHECK_EQUAL(Compare::Equal, (Compare::cmp(v_int_1, v_int_1)));
+      CHECK_EQUAL(Compare::Less, (Compare::cmp(v_int_1, v_int_2)));
+      CHECK_EQUAL(Compare::Greater, (Compare::cmp(v_int_2, v_int_1)));
+
+      CHECK_EQUAL(Compare::Less, (Compare::cmp(v_char_a, v_int_1)));
+      CHECK_EQUAL(Compare::Greater, (Compare::cmp(v_int_1, v_char_a)));
     }
 
     //*************************************************************************
@@ -2162,8 +2868,8 @@ namespace
     //*************************************************************************
     TEST(test_is_same_type_legacy_api)
     {
-      char c = 'a';
-      int  i = 1;
+      char               c = 'a';
+      int                i = 1;
       test_variant_etl_3 variant1a(c);
       test_variant_etl_3 variant1b(c);
       test_variant_etl_3 variant2a(i);
@@ -2225,9 +2931,297 @@ namespace
       CHECK(etl::holds_alternative<int>(v1));
       CHECK(etl::get_if<int>(&v1) != nullptr);
     }
+
+    //*************************************************************************
+    // Tests for noexcept properties of etl::variant
+    // The noexcept specs only take effect when ETL_USING_EXCEPTIONS is enabled,
+    // because ETL_NOEXCEPT_IF expands to nothing otherwise.
+    // The etl::is_nothrow_* traits only work with STL or builtins.
+    //*************************************************************************
+  #if ETL_USING_EXCEPTIONS && (defined(ETL_USE_TYPE_TRAITS_BUILTINS) || (ETL_USING_STL && !defined(ETL_USER_DEFINED_TYPE_TRAITS)))
+
+    struct VariantNothrowType
+    {
+      VariantNothrowType() noexcept {}
+      VariantNothrowType(const VariantNothrowType&) noexcept {}
+      VariantNothrowType(VariantNothrowType&&) noexcept {}
+      VariantNothrowType& operator=(const VariantNothrowType&) noexcept
+      {
+        return *this;
+      }
+      VariantNothrowType& operator=(VariantNothrowType&&) noexcept
+      {
+        return *this;
+      }
+    };
+
+    struct VariantThrowingCopy
+    {
+      VariantThrowingCopy() noexcept {}
+      VariantThrowingCopy(const VariantThrowingCopy&) {} // may throw
+      VariantThrowingCopy(VariantThrowingCopy&&) noexcept {}
+      VariantThrowingCopy& operator=(const VariantThrowingCopy&)
+      {
+        return *this;
+      }
+      VariantThrowingCopy& operator=(VariantThrowingCopy&&) noexcept
+      {
+        return *this;
+      }
+    };
+
+    struct VariantThrowingMove
+    {
+      VariantThrowingMove() noexcept {}
+      VariantThrowingMove(const VariantThrowingMove&) noexcept {}
+      VariantThrowingMove(VariantThrowingMove&&) {} // may throw
+      VariantThrowingMove& operator=(const VariantThrowingMove&) noexcept
+      {
+        return *this;
+      }
+      VariantThrowingMove& operator=(VariantThrowingMove&&)
+      {
+        return *this;
+      }
+    };
+
+    TEST(test_variant_nothrow_copy_constructible)
+    {
+      // variant<Ts...> is nothrow copy constructible only if all Ts are
+      using AllNothrow = etl::variant<int, double, VariantNothrowType>;
+      static_assert(etl::is_nothrow_copy_constructible<AllNothrow>::value, "variant<int, double, NothrowType> should be nothrow copy constructible");
+
+      using HasThrowingCopy = etl::variant<int, VariantThrowingCopy>;
+      static_assert(!etl::is_nothrow_copy_constructible<HasThrowingCopy>::value,
+                    "variant<int, ThrowingCopy> should NOT be nothrow copy constructible");
+
+      using HasThrowingMove = etl::variant<int, VariantThrowingMove>;
+      static_assert(etl::is_nothrow_copy_constructible<HasThrowingMove>::value,
+                    "variant<int, ThrowingMove> should be nothrow copy constructible (copy is nothrow)");
+
+      CHECK(true);
+    }
+
+    TEST(test_variant_nothrow_move_constructible)
+    {
+      // variant<Ts...> is nothrow move constructible only if all Ts are
+      using AllNothrow = etl::variant<int, double, VariantNothrowType>;
+      static_assert(etl::is_nothrow_move_constructible<AllNothrow>::value, "variant<int, double, NothrowType> should be nothrow move constructible");
+
+      using HasThrowingMove = etl::variant<int, VariantThrowingMove>;
+      static_assert(!etl::is_nothrow_move_constructible<HasThrowingMove>::value,
+                    "variant<int, ThrowingMove> should NOT be nothrow move constructible");
+
+      using HasThrowingCopy = etl::variant<int, VariantThrowingCopy>;
+      static_assert(etl::is_nothrow_move_constructible<HasThrowingCopy>::value,
+                    "variant<int, ThrowingCopy> should be nothrow move constructible (move is nothrow)");
+
+      CHECK(true);
+    }
+
+    TEST(test_variant_nothrow_default_constructible)
+    {
+      // variant default-constructs the first alternative
+      using NothrowFirst = etl::variant<int, VariantThrowingCopy>;
+      static_assert(etl::is_nothrow_default_constructible<NothrowFirst>::value,
+                    "variant<int, ...> should be nothrow default constructible (int is nothrow)");
+
+      using ThrowingFirst = etl::variant<VariantThrowingCopy, int>;
+      // VariantThrowingCopy has noexcept default ctor, so this should be nothrow
+      static_assert(etl::is_nothrow_default_constructible<ThrowingFirst>::value,
+                    "variant<ThrowingCopy, int> should be nothrow default constructible (ThrowingCopy has noexcept default ctor)");
+
+      CHECK(true);
+    }
+
+    TEST(test_variant_nothrow_copy_assignable)
+    {
+      using AllNothrow = etl::variant<int, double, VariantNothrowType>;
+      static_assert(etl::is_nothrow_copy_assignable<AllNothrow>::value, "variant<int, double, NothrowType> should be nothrow copy assignable");
+
+      using HasThrowingCopy = etl::variant<int, VariantThrowingCopy>;
+      static_assert(!etl::is_nothrow_copy_assignable<HasThrowingCopy>::value, "variant<int, ThrowingCopy> should NOT be nothrow copy assignable");
+
+      CHECK(true);
+    }
+
+    TEST(test_variant_nothrow_move_assignable)
+    {
+      using AllNothrow = etl::variant<int, double, VariantNothrowType>;
+      static_assert(etl::is_nothrow_move_assignable<AllNothrow>::value, "variant<int, double, NothrowType> should be nothrow move assignable");
+
+      using HasThrowingMove = etl::variant<int, VariantThrowingMove>;
+      static_assert(!etl::is_nothrow_move_assignable<HasThrowingMove>::value, "variant<int, ThrowingMove> should NOT be nothrow move assignable");
+
+      CHECK(true);
+    }
+  #endif
+  }
+} // namespace
+
+  //*************************************************************************
+  // Tests for constexpr / ROM-placeable variant (trivially destructible types)
+  //*************************************************************************
+  #if ETL_USING_CPP17
+
+namespace
+{
+  // Verify that variant of trivially destructible types is itself trivially destructible.
+  static_assert(std::is_trivially_destructible<etl::variant<int, float, char>>::value, "variant<int, float, char> should be trivially destructible");
+
+  // Verify that variant of non-trivially destructible types is NOT trivially destructible.
+  static_assert(!std::is_trivially_destructible<etl::variant<int, std::string>>::value,
+                "variant<int, std::string> should NOT be trivially destructible");
+
+  // constexpr default construction
+  constexpr etl::variant<int, float, char> cv_default{};
+  static_assert(cv_default.index() == 0, "Default constructed variant should have index 0");
+
+  // constexpr construction from value
+  constexpr etl::variant<int, float, char> cv_int{42};
+  static_assert(cv_int.index() == 0, "variant holding int should have index 0");
+  static_assert(etl::get<int>(cv_int) == 42, "get<int> should return 42");
+  static_assert(etl::get<0>(cv_int) == 42, "get<0> should return 42");
+
+  constexpr etl::variant<int, float, char> cv_float{3.0f};
+  static_assert(cv_float.index() == 1, "variant holding float should have index 1");
+
+  constexpr etl::variant<int, float, char> cv_char{'A'};
+  static_assert(cv_char.index() == 2, "variant holding char should have index 2");
+  static_assert(etl::get<char>(cv_char) == 'A', "get<char> should return 'A'");
+  static_assert(etl::get<2>(cv_char) == 'A', "get<2> should return 'A'");
+
+  // constexpr construction with in_place_type
+  constexpr etl::variant<int, float, char> cv_ipt{etl::in_place_type_t<float>{}, 2.0f};
+  static_assert(cv_ipt.index() == 1, "in_place_type_t<float> should set index 1");
+
+  // constexpr construction with in_place_index
+  constexpr etl::variant<int, float, char> cv_ipi{etl::in_place_index_t<2>{}, 'Z'};
+  static_assert(cv_ipi.index() == 2, "in_place_index_t<2> should set index 2");
+  static_assert(etl::get<2>(cv_ipi) == 'Z', "get<2> should return 'Z'");
+
+  // constexpr holds_alternative
+  static_assert(etl::holds_alternative<int>(cv_int), "cv_int should hold int");
+  static_assert(!etl::holds_alternative<float>(cv_int), "cv_int should not hold float");
+  static_assert(etl::holds_alternative<float>(cv_float), "cv_float should hold float");
+
+  // constexpr get_if
+  static_assert(etl::get_if<int>(&cv_int) != nullptr, "get_if<int> should not be nullptr");
+  static_assert(*etl::get_if<int>(&cv_int) == 42, "get_if<int> should point to 42");
+  static_assert(etl::get_if<float>(&cv_int) == nullptr, "get_if<float> on int variant should be nullptr");
+
+  // Verify the constexpr variant can be used in ROM-like context
+  // (static constexpr / const at namespace scope should be placed in .rodata)
+  static constexpr etl::variant<int, float, char> rom_variant{100};
+  static_assert(etl::get<int>(rom_variant) == 100, "ROM variant should hold 100");
+} // namespace
+
+SUITE(test_variant_constexpr)
+{
+  TEST(test_constexpr_default_construction)
+  {
+    constexpr etl::variant<int, float, char> v{};
+    CHECK_EQUAL(0U, v.index());
+  }
+
+  TEST(test_constexpr_value_construction)
+  {
+    constexpr etl::variant<int, float, char> v{42};
+    CHECK_EQUAL(0U, v.index());
+    CHECK_EQUAL(42, etl::get<int>(v));
+  }
+
+  TEST(test_constexpr_in_place_type)
+  {
+    constexpr etl::variant<int, float, char> v{etl::in_place_type_t<float>{}, 1.5f};
+    CHECK_EQUAL(1U, v.index());
+    CHECK_CLOSE(1.5f, etl::get<float>(v), 0.001f);
+  }
+
+  TEST(test_constexpr_in_place_index)
+  {
+    constexpr etl::variant<int, float, char> v{etl::in_place_index_t<2>{}, 'X'};
+    CHECK_EQUAL(2U, v.index());
+    CHECK_EQUAL('X', etl::get<char>(v));
+  }
+
+  TEST(test_constexpr_get_by_type)
+  {
+    constexpr etl::variant<int, float, char> v{99};
+    constexpr int                            value = etl::get<int>(v);
+    CHECK_EQUAL(99, value);
+  }
+
+  TEST(test_constexpr_get_by_index)
+  {
+    constexpr etl::variant<int, float, char> v{3.14f};
+    constexpr float                          value = etl::get<1>(v);
+    CHECK_CLOSE(3.14f, value, 0.001f);
+  }
+
+  TEST(test_constexpr_holds_alternative)
+  {
+    constexpr etl::variant<int, float, char> v{'B'};
+    CHECK(etl::holds_alternative<char>(v));
+    CHECK(!etl::holds_alternative<int>(v));
+    CHECK(!etl::holds_alternative<float>(v));
+  }
+
+  TEST(test_constexpr_get_if)
+  {
+    constexpr etl::variant<int, float, char> v{42};
+    CHECK(etl::get_if<int>(&v) != nullptr);
+    CHECK_EQUAL(42, *etl::get_if<int>(&v));
+    CHECK(etl::get_if<float>(&v) == nullptr);
+  }
+
+  TEST(test_trivially_destructible_trait)
+  {
+    using trivial_variant      = etl::variant<int, float, char>;
+    using trivial_variant_1    = etl::variant<int>;
+    using trivial_variant_3    = etl::variant<int, double, long>;
+    using nontrivial_variant   = etl::variant<int, std::string>;
+    using nontrivial_variant_1 = etl::variant<std::string>;
+
+    CHECK(std::is_trivially_destructible<trivial_variant>::value);
+    CHECK(std::is_trivially_destructible<trivial_variant_1>::value);
+    CHECK(std::is_trivially_destructible<trivial_variant_3>::value);
+    CHECK(!std::is_trivially_destructible<nontrivial_variant>::value);
+    CHECK(!std::is_trivially_destructible<nontrivial_variant_1>::value);
+  }
+
+  TEST(test_constexpr_rom_placement)
+  {
+    // This test verifies that a constexpr variant can be stored in ROM
+    // (static constexpr at function scope)
+    static constexpr etl::variant<int, float, char> v1{42};
+    static constexpr etl::variant<int, float, char> v2{3.14f};
+    static constexpr etl::variant<int, float, char> v3{'Z'};
+
+    CHECK_EQUAL(42, etl::get<int>(v1));
+    CHECK_CLOSE(3.14f, etl::get<float>(v2), 0.001f);
+    CHECK_EQUAL('Z', etl::get<char>(v3));
+  }
+
+  TEST(test_runtime_trivially_destructible_variant)
+  {
+    // Ensure trivially destructible variants still work at runtime too
+    etl::variant<int, float, char> v{10};
+    CHECK_EQUAL(10, etl::get<int>(v));
+
+    v = 2.5f;
+    CHECK_CLOSE(2.5f, etl::get<float>(v), 0.001f);
+
+    v = 'Q';
+    CHECK_EQUAL('Q', etl::get<char>(v));
+
+    v.emplace<0>(77);
+    CHECK_EQUAL(77, etl::get<0>(v));
   }
 }
 
-#include "etl/private/diagnostic_pop.h"
+  #endif // ETL_USING_CPP17
+
+  #include "etl/private/diagnostic_pop.h"
 
 #endif

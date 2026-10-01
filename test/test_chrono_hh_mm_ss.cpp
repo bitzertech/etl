@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Documentation: 
+Documentation:
 
 Copyright(c) 2025 John Wellbelove
 
@@ -39,12 +39,12 @@ SOFTWARE.
 
 #if ETL_USING_ETL_CHRONO
   #define Chrono etl::chrono
-  #define Ratio etl::ratio
+  #define Ratio  etl::ratio
 #else
   #if ETL_USING_CPP20
     #include <chrono>
     #define Chrono std::chrono
-    #define Ratio std::ratio
+    #define Ratio  std::ratio
   #else
     #error std::chrono not supported
   #endif
@@ -68,11 +68,11 @@ namespace
       auto sub = time.subseconds();
       auto dur = time.to_duration();
 
-      CHECK_EQUAL(Chrono::hours(0).count(),   h.count());
+      CHECK_EQUAL(Chrono::hours(0).count(), h.count());
       CHECK_EQUAL(Chrono::minutes(0).count(), m.count());
       CHECK_EQUAL(Chrono::seconds(0).count(), s.count());
-      CHECK_EQUAL(duration_type(0).count(),   sub.count());
-      CHECK_EQUAL(0,                          dur.count());
+      CHECK_EQUAL(duration_type(0).count(), sub.count());
+      CHECK_EQUAL(0, dur.count());
       CHECK_FALSE(time.is_negative());
       CHECK_EQUAL(0, time.fractional_width);
       CHECK_TRUE((std::is_same<duration_type, Chrono::hh_mm_ss<duration_type>::precision>::value));
@@ -94,7 +94,7 @@ namespace
       auto sub = time.subseconds();
       auto dur = time.to_duration();
 
-      CHECK_EQUAL(Chrono::hours(1).count(),   h.count());
+      CHECK_EQUAL(Chrono::hours(1).count(), h.count());
       CHECK_EQUAL(Chrono::minutes(2).count(), m.count());
       CHECK_EQUAL(Chrono::seconds(3).count(), s.count());
       CHECK_EQUAL(duration_type(0).count(), sub.count());
@@ -120,10 +120,10 @@ namespace
       auto sub = time.subseconds();
       auto dur = time.to_duration();
 
-      CHECK_EQUAL(Chrono::hours(1).count(),   h.count());
+      CHECK_EQUAL(Chrono::hours(1).count(), h.count());
       CHECK_EQUAL(Chrono::minutes(2).count(), m.count());
       CHECK_EQUAL(Chrono::seconds(3).count(), s.count());
-      CHECK_EQUAL(duration_type(0).count(),   sub.count());
+      CHECK_EQUAL(duration_type(0).count(), sub.count());
       CHECK_EQUAL(-3723, dur.count());
       CHECK_TRUE(time.is_negative());
       CHECK_EQUAL(0, time.fractional_width);
@@ -146,10 +146,10 @@ namespace
       auto sub = time.subseconds();
       auto dur = time.to_duration();
 
-      CHECK_EQUAL(Chrono::hours(1).count(),   h.count());
+      CHECK_EQUAL(Chrono::hours(1).count(), h.count());
       CHECK_EQUAL(Chrono::minutes(2).count(), m.count());
       CHECK_EQUAL(Chrono::seconds(3).count(), s.count());
-      CHECK_EQUAL(duration_type(456).count(),   sub.count());
+      CHECK_EQUAL(duration_type(456).count(), sub.count());
       CHECK_EQUAL(3723456, dur.count());
       CHECK_FALSE(time.is_negative());
       CHECK_EQUAL(3, time.fractional_width);
@@ -161,7 +161,8 @@ namespace
     {
       using duration_type = Chrono::milliseconds;
 
-      // Create a duration of minus 1 hour, 2 minutes, 3 seconds, 456 milliseconds
+      // Create a duration of minus 1 hour, 2 minutes, 3 seconds, 456
+      // milliseconds
       duration_type duration = -(Chrono::hours(1) + Chrono::minutes(2) + Chrono::seconds(3) + duration_type(456));
 
       Chrono::hh_mm_ss<duration_type> time(duration);
@@ -172,10 +173,10 @@ namespace
       auto sub = time.subseconds();
       auto dur = time.to_duration();
 
-      CHECK_EQUAL(Chrono::hours(1).count(),   h.count());
+      CHECK_EQUAL(Chrono::hours(1).count(), h.count());
       CHECK_EQUAL(Chrono::minutes(2).count(), m.count());
       CHECK_EQUAL(Chrono::seconds(3).count(), s.count());
-      CHECK_EQUAL(duration_type(456).count(),   sub.count());
+      CHECK_EQUAL(duration_type(456).count(), sub.count());
       CHECK_EQUAL(-3723456, dur.count());
       CHECK_TRUE(time.is_negative());
       CHECK_EQUAL(3, time.fractional_width);
@@ -285,5 +286,86 @@ namespace
       CHECK_EQUAL(0, time.fractional_width);
       CHECK_TRUE((std::is_same<duration_type, Chrono::hh_mm_ss<duration_type>::precision>::value));
     }
+
+    //*************************************************************************
+    TEST(test_is_am)
+    {
+      for (int h = 0; h <= 11; ++h)
+      {
+        CHECK_TRUE(Chrono::is_am(Chrono::hours(h)));
+      }
+
+      for (int h = 12; h <= 23; ++h)
+      {
+        CHECK_FALSE(Chrono::is_am(Chrono::hours(h)));
+      }
+    }
+
+    //*************************************************************************
+    TEST(test_is_pm)
+    {
+      for (int h = 0; h <= 11; ++h)
+      {
+        CHECK_FALSE(Chrono::is_pm(Chrono::hours(h)));
+      }
+
+      for (int h = 12; h <= 23; ++h)
+      {
+        CHECK_TRUE(Chrono::is_pm(Chrono::hours(h)));
+      }
+    }
+
+    //*************************************************************************
+    TEST(test_make12)
+    {
+      // Midnight (0h) maps to 12h.
+      CHECK_EQUAL(12, Chrono::make12(Chrono::hours(0)).count());
+
+      // 1h..12h are unchanged.
+      for (int h = 1; h <= 12; ++h)
+      {
+        CHECK_EQUAL(h, Chrono::make12(Chrono::hours(h)).count());
+      }
+
+      // 13h..23h map to 1h..11h.
+      for (int h = 13; h <= 23; ++h)
+      {
+        CHECK_EQUAL(h - 12, Chrono::make12(Chrono::hours(h)).count());
+      }
+    }
+
+    //*************************************************************************
+    TEST(test_make24)
+    {
+      // am: 12h maps to 0h, 1h..11h are unchanged.
+      CHECK_EQUAL(0, Chrono::make24(Chrono::hours(12), false).count());
+
+      for (int h = 1; h <= 11; ++h)
+      {
+        CHECK_EQUAL(h, Chrono::make24(Chrono::hours(h), false).count());
+      }
+
+      // pm: 12h stays 12h, 1h..11h map to 13h..23h.
+      CHECK_EQUAL(12, Chrono::make24(Chrono::hours(12), true).count());
+
+      for (int h = 1; h <= 11; ++h)
+      {
+        CHECK_EQUAL(h + 12, Chrono::make24(Chrono::hours(h), true).count());
+      }
+    }
+
+    //*************************************************************************
+    TEST(test_make12_make24_round_trip)
+    {
+      // For every 24-hour value, make12 plus its am/pm flag round-trips via make24.
+      for (int h = 0; h <= 23; ++h)
+      {
+        Chrono::hours h24(h);
+        bool          pm  = Chrono::is_pm(h24);
+        Chrono::hours h12 = Chrono::make12(h24);
+
+        CHECK_EQUAL(h, Chrono::make24(h12, pm).count());
+      }
+    }
   }
-}
+} // namespace

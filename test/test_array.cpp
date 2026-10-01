@@ -32,9 +32,12 @@ SOFTWARE.
 
 #include "etl/array.h"
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <iterator>
+#if ETL_USING_CPP11
+  #include <tuple>
+#endif
 #include <type_traits>
 
 #include "etl/integral_limits.h"
@@ -50,15 +53,15 @@ namespace
     using Data         = etl::array<int, SIZE>;
     using Compare_Data = std::array<int, SIZE>;
 
-    using ZeroData     = etl::array<int, 0>;
+    using ZeroData = etl::array<int, 0>;
 
-    Compare_Data compare_data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    Compare_Data swap_data    = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
+    Compare_Data compare_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    Compare_Data swap_data    = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
 
     //*************************************************************************
     TEST(test_constructor)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       CHECK_EQUAL(data.size(), size_t(SIZE));
       CHECK_EQUAL(data.max_size(), SIZE);
@@ -74,12 +77,12 @@ namespace
       CHECK_EQUAL(data.max_size(), 0);
     }
 
-#if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
+#if ETL_USING_CPP17 && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     //*************************************************************************
     TEST(test_cpp17_deduced_constructor)
     {
-      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      Data compare = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::array data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      Data       compare = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       bool isEqual = std::equal(data.begin(), data.end(), compare.begin());
       CHECK(isEqual);
@@ -89,7 +92,7 @@ namespace
     //*************************************************************************
     TEST(test_assignment)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
       Data other_data;
 
       other_data = data;
@@ -102,59 +105,79 @@ namespace
     //*************************************************************************
     TEST(test_at)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       for (size_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data.at(i), compare_data.at(i));
       }
 
-      CHECK_THROW({ int d = data.at(data.size()); (void)d; }, etl::array_out_of_range);
+      CHECK_THROW(
+        {
+          int d = data.at(data.size());
+          (void)d;
+        },
+        etl::array_out_of_range);
     }
 
     //*************************************************************************
     TEST(test_at_const)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       for (size_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data.at(i), compare_data.at(i));
       }
 
-      CHECK_THROW({ int d = data.at(data.size()); (void)d; }, etl::array_out_of_range);
+      CHECK_THROW(
+        {
+          int d = data.at(data.size());
+          (void)d;
+        },
+        etl::array_out_of_range);
     }
 
     //*************************************************************************
     TEST(test_index_operator)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       for (size_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data[i], compare_data[i]);
       }
 
-      CHECK_THROW({ int d = data[data.size()]; (void)d; }, etl::array_out_of_range);
+      CHECK_THROW(
+        {
+          int d = data[data.size()];
+          (void)d;
+        },
+        etl::array_out_of_range);
     }
 
     //*************************************************************************
     TEST(test_index_operator_const)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       for (size_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data[i], compare_data[i]);
       }
 
-      CHECK_THROW({ int d = data[data.size()]; (void)d; }, etl::array_out_of_range);
+      CHECK_THROW(
+        {
+          int d = data[data.size()];
+          (void)d;
+        },
+        etl::array_out_of_range);
     }
 
     //*************************************************************************
     TEST(test_front)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       int& ref = data.front();
       CHECK(ref == compare_data.front());
@@ -166,7 +189,7 @@ namespace
     //*************************************************************************
     TEST(test_front_const)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       const int& ref = data.front();
       CHECK(ref == compare_data.front());
@@ -175,7 +198,7 @@ namespace
     //*************************************************************************
     TEST(test_back)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       int& ref = data.back();
       CHECK(ref == compare_data.back());
@@ -187,7 +210,7 @@ namespace
     //*************************************************************************
     TEST(test_back_const)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       const int& ref = data.back();
       CHECK(ref == compare_data.back());
@@ -196,7 +219,7 @@ namespace
     //*************************************************************************
     TEST(test_data)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       bool isEqual = std::equal(data.begin(), data.end(), data.data());
 
@@ -206,7 +229,7 @@ namespace
     //*************************************************************************
     TEST(test_data_const)
     {
-      const Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      const Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       bool isEqual = std::equal(data.begin(), data.end(), data.data());
 
@@ -216,7 +239,7 @@ namespace
     //*************************************************************************
     TEST(test_begin)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       CHECK_EQUAL(data.begin(), &data[0]);
     }
@@ -224,7 +247,7 @@ namespace
     //*************************************************************************
     TEST(test_end)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       CHECK_EQUAL(data.end(), data.data() + SIZE);
     }
@@ -232,7 +255,7 @@ namespace
     //*************************************************************************
     TEST(test_cbegin)
     {
-      const Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      const Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       CHECK_EQUAL(data.cbegin(), data.data());
     }
@@ -240,7 +263,7 @@ namespace
     //*************************************************************************
     TEST(test_cend)
     {
-      const Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      const Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       CHECK_EQUAL(data.cend(), data.data() + SIZE);
     }
@@ -248,7 +271,7 @@ namespace
     //*************************************************************************
     TEST(test_rbegin)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       CHECK(data.rbegin() == Data::reverse_iterator(data.data() + SIZE));
     }
@@ -256,7 +279,7 @@ namespace
     //*************************************************************************
     TEST(test_rend)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       CHECK(data.rend() == Data::reverse_iterator(&data[0]));
     }
@@ -264,7 +287,7 @@ namespace
     //*************************************************************************
     TEST(test_crbegin)
     {
-      const Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      const Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       CHECK(data.crbegin() == Data::const_reverse_iterator(data.data() + SIZE));
     }
@@ -272,7 +295,7 @@ namespace
     //*************************************************************************
     TEST(test_crend)
     {
-      const Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      const Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       CHECK(data.crend() == Data::const_reverse_iterator(&data[0]));
     }
@@ -280,7 +303,7 @@ namespace
     //*************************************************************************
     TEST(test_iterator)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       bool isEqual = std::equal(data.begin(), data.end(), compare_data.begin());
 
@@ -290,7 +313,7 @@ namespace
     //*************************************************************************
     TEST(test_const_iterator)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       bool isEqual = std::equal(data.cbegin(), data.cend(), compare_data.cbegin());
 
@@ -300,7 +323,7 @@ namespace
     //*************************************************************************
     TEST(test_reverse_iterator)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       bool isEqual = std::equal(data.rbegin(), data.rend(), compare_data.rbegin());
 
@@ -310,7 +333,7 @@ namespace
     //*************************************************************************
     TEST(test_const_reverse_iterator)
     {
-      Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       bool isEqual = std::equal(data.crbegin(), data.crend(), compare_data.crbegin());
 
@@ -320,7 +343,7 @@ namespace
     //*************************************************************************
     TEST(test_empty)
     {
-      Data data = { 0 };
+      Data data = {0};
 
       CHECK(!data.empty());
     }
@@ -328,7 +351,7 @@ namespace
     //*************************************************************************
     TEST(test_size)
     {
-      Data data = { 0 };
+      Data data = {0};
 
       CHECK_EQUAL(SIZE, data.size());
     }
@@ -336,16 +359,15 @@ namespace
     //*************************************************************************
     TEST(test_max_size)
     {
-      Data data = { 0 };
+      Data data = {0};
 
       CHECK_EQUAL(SIZE, data.max_size());
     }
 
-
     //*************************************************************************
     TEST(test_fill)
     {
-      Data data = { 0 };
+      Data data = {0};
       data.fill(1);
 
       Compare_Data compare;
@@ -359,8 +381,8 @@ namespace
     //*************************************************************************
     TEST(test_swap)
     {
-      Data data1 = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
-      Data data2 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data1 = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+      Data data2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       swap(data1, data2);
 
@@ -371,25 +393,115 @@ namespace
     //*************************************************************************
     TEST(test_get)
     {
-      Data data1       = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      const Data data2 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data       data1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      const Data data2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       CHECK_EQUAL(data1[3], etl::get<3>(data1));
       CHECK_EQUAL(data2[3], etl::get<3>(data2));
 
       // The following line should fail with a compile error.
-      //int i = etl::get<11>(data2);
+      // int i = etl::get<11>(data2);
     }
+
+#if ETL_USING_CPP11
+    //*************************************************************************
+    TEST(test_get_rvalue)
+    {
+      Data       data1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      const Data data2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+      int&&       r0 = etl::get<3>(std::move(data1));
+      const int&& r1 = etl::get<3>(std::move(data2));
+
+      CHECK_EQUAL(3, r0);
+      CHECK_EQUAL(3, r1);
+
+      // The rvalue overloads must be selected and return rvalue references.
+      CHECK((std::is_same<int&&, decltype(etl::get<3>(std::move(data1)))>::value));
+      CHECK((std::is_same<const int&&, decltype(etl::get<3>(std::move(data2)))>::value));
+
+      // Moving out of an rvalue array element actually moves.
+      etl::array<Moveable, 2U> data3 = {Moveable(1), Moveable(2)};
+
+      Moveable moved(etl::get<0>(std::move(data3)));
+
+      CHECK_EQUAL(1, moved.value);
+      CHECK(!data3[0].valid);
+    }
+#endif
+
+    //*************************************************************************
+    TEST(test_get_constexpr)
+    {
+      ETL_CONSTEXPR14 Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+      ETL_CONSTEXPR14 int result = etl::get<3>(data);
+      CHECK_EQUAL(3, result);
+    }
+
+#if ETL_USING_CPP11
+    //*************************************************************************
+    TEST(test_tuple_size)
+    {
+      CHECK_EQUAL(SIZE, (etl::tuple_size<Data>::value));
+      CHECK_EQUAL(SIZE, (std::tuple_size<Data>::value));
+
+  #if ETL_USING_CPP17
+      CHECK_EQUAL(SIZE, (etl::tuple_size_v<Data>));
+      CHECK_EQUAL(SIZE, (std::tuple_size_v<Data>));
+  #endif
+    }
+
+    //*************************************************************************
+    TEST(test_tuple_element)
+    {
+      CHECK_TRUE((std::is_same<int, etl::tuple_element_t<0, Data>>::value));
+      CHECK_TRUE((std::is_same<int, etl::tuple_element_t<SIZE - 1, Data>>::value));
+
+      CHECK_TRUE((std::is_same<int, std::tuple_element<0, Data>::type>::value));
+      CHECK_TRUE((std::is_same<int, std::tuple_element<SIZE - 1, Data>::type>::value));
+    }
+#endif
+
+#if ETL_USING_CPP17
+    //*************************************************************************
+    TEST(test_structured_bindings)
+    {
+      etl::array<int, 3> data = {1, 2, 3};
+
+      // Bind by reference and modify.
+      auto& [a, b, c] = data;
+
+      CHECK_EQUAL(1, a);
+      CHECK_EQUAL(2, b);
+      CHECK_EQUAL(3, c);
+
+      a = 10;
+      b = 20;
+      c = 30;
+
+      CHECK_EQUAL(10, data[0]);
+      CHECK_EQUAL(20, data[1]);
+      CHECK_EQUAL(30, data[2]);
+
+      // Bind by const reference.
+      const auto& [x, y, z] = data;
+
+      CHECK_EQUAL(10, x);
+      CHECK_EQUAL(20, y);
+      CHECK_EQUAL(30, z);
+    }
+#endif
 
     //*************************************************************************
     TEST(test_assign)
     {
-      int initial[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-      int source[]  = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-      int check1[]  = { 0, 1, 2, 3, 4, -1, -1, -1, -1, -1 };
-      int check2[]  = { 0, 1, 2, 3, 4, 99, 99, 99, 99, 99 };
+      int initial[] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+      int source[]  = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+      int check1[]  = {0, 1, 2, 3, 4, -1, -1, -1, -1, -1};
+      int check2[]  = {0, 1, 2, 3, 4, 99, 99, 99, 99, 99};
 
-      Data data = { 0 };
+      Data data = {0};
 
       Data::iterator result;
 
@@ -419,12 +531,12 @@ namespace
     //*************************************************************************
     TEST(test_insert_value)
     {
-      int initial[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      int check1[]  = { 99, 0, 1, 2, 3, 4, 5, 6, 7, 8 };
-      int check2[]  = { 0, 1, 2, 3, 4, 99, 5, 6, 7, 8 };
-      int check3[]  = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 99 };
+      int initial[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      int check1[]  = {99, 0, 1, 2, 3, 4, 5, 6, 7, 8};
+      int check2[]  = {0, 1, 2, 3, 4, 99, 5, 6, 7, 8};
+      int check3[]  = {0, 1, 2, 3, 4, 5, 6, 7, 8, 99};
 
-      Data data = { 0 };
+      Data           data = {0};
       Data::iterator result;
 
       // Insert beginning.
@@ -455,15 +567,15 @@ namespace
     //*************************************************************************
     TEST(test_insert_range)
     {
-      int source1[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-      int source2[] = { 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
-      int check1[]  = { 12, 11, 10, 0, 1, 2, 3, 4, 5, 6 };
-      int check2[]  = { 0, 1, 2, 3, 12, 11, 10, 4, 5, 6 };
-      int check3[]  = { 0, 1, 2, 3, 4, 5, 6, 12, 11, 10 };
-      int check4[]  = { 12, 11, 10, 9, 8, 7, 6, 5, 4, 3 };
-      int check5[]  = { 0, 1, 2, 3, 12, 11, 10, 9, 8, 7, 6 };
+      int source1[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+      int source2[] = {12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+      int check1[]  = {12, 11, 10, 0, 1, 2, 3, 4, 5, 6};
+      int check2[]  = {0, 1, 2, 3, 12, 11, 10, 4, 5, 6};
+      int check3[]  = {0, 1, 2, 3, 4, 5, 6, 12, 11, 10};
+      int check4[]  = {12, 11, 10, 9, 8, 7, 6, 5, 4, 3};
+      int check5[]  = {0, 1, 2, 3, 12, 11, 10, 9, 8, 7, 6};
 
-      Data data = { 0 };
+      Data           data = {0};
       Data::iterator result;
 
       // Insert smaller, beginning.
@@ -508,15 +620,15 @@ namespace
     //*************************************************************************
     TEST(test_erase_single)
     {
-      int initial[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      int check1a[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 9 };
-      int check1b[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 99 };
-      int check2a[] = { 0, 1, 2, 3, 4, 6, 7, 8, 9, 9 };
-      int check2b[] = { 0, 1, 2, 3, 4, 6, 7, 8, 9, 99 };
-      int check3a[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      int check3b[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 99 };
+      int initial[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      int check1a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 9};
+      int check1b[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 99};
+      int check2a[] = {0, 1, 2, 3, 4, 6, 7, 8, 9, 9};
+      int check2b[] = {0, 1, 2, 3, 4, 6, 7, 8, 9, 99};
+      int check3a[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      int check3b[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 99};
 
-      Data data = { 0 };
+      Data           data = {0};
       Data::iterator result;
 
       // Erase beginning.
@@ -565,15 +677,15 @@ namespace
     //*************************************************************************
     TEST(test_erase_range)
     {
-      int initial[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      int check1a[] = { 5, 6, 7, 8, 9, 5, 6, 7, 8, 9 };
-      int check1b[] = { 5, 6, 7, 8, 9, 99, 99, 99, 99, 99 };
-      int check2a[] = { 0, 1, 7, 8, 9, 5, 6, 7, 8, 9 };
-      int check2b[] = { 0, 1, 7, 8, 9, 99, 99, 99, 99, 99 };
-      int check3a[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      int check3b[] = { 0, 1, 2, 3, 4, 99, 99, 99, 99, 99 };
+      int initial[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      int check1a[] = {5, 6, 7, 8, 9, 5, 6, 7, 8, 9};
+      int check1b[] = {5, 6, 7, 8, 9, 99, 99, 99, 99, 99};
+      int check2a[] = {0, 1, 7, 8, 9, 5, 6, 7, 8, 9};
+      int check2b[] = {0, 1, 7, 8, 9, 99, 99, 99, 99, 99};
+      int check3a[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      int check3b[] = {0, 1, 2, 3, 4, 99, 99, 99, 99, 99};
 
-      Data data = { 0 };
+      Data           data = {0};
       Data::iterator result;
 
       // Erase beginning.
@@ -625,8 +737,8 @@ namespace
     //*************************************************************************
     TEST(test_equal)
     {
-      Data data1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      Data data2 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      Data data1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      Data data2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       CHECK(data1 == data2);
     }
@@ -634,8 +746,8 @@ namespace
     //*************************************************************************
     TEST(test_equal_constexpr)
     {
-      ETL_CONSTEXPR14 Data data1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      ETL_CONSTEXPR14 Data data2 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      ETL_CONSTEXPR14 Data data1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      ETL_CONSTEXPR14 Data data2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
       ETL_CONSTEXPR14 bool result = (data1 == data2);
       CHECK(result);
@@ -644,8 +756,8 @@ namespace
     //*************************************************************************
     TEST(test_not_equal)
     {
-      Data data1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      Data data2 = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
+      Data data1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      Data data2 = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
 
       CHECK(data1 != data2);
     }
@@ -653,8 +765,8 @@ namespace
     //*************************************************************************
     TEST(test_not_equal_constexpr)
     {
-      ETL_CONSTEXPR14 Data data1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      ETL_CONSTEXPR14 Data data2 = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
+      ETL_CONSTEXPR14 Data data1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      ETL_CONSTEXPR14 Data data2 = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
 
       ETL_CONSTEXPR14 bool result = (data1 != data2);
       CHECK(result);
@@ -663,56 +775,96 @@ namespace
     //*************************************************************************
     TEST(test_less_than)
     {
-      Data data    = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      Data greater = { 0, 1, 2, 3, 5, 5, 6, 7, 8, 9 };
-      Data lesser  = { 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
+      Data data    = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      Data greater = {0, 1, 2, 3, 5, 5, 6, 7, 8, 9};
+      Data lesser  = {0, 1, 2, 3, 4, 4, 6, 7, 8, 9};
 
-      CHECK(lesser    < data);
-      CHECK(!(data    < data));
+      CHECK(lesser < data);
+      CHECK(!(data < data));
       CHECK(!(greater < data));
+    }
+
+    //*************************************************************************
+    TEST(test_less_than_constexpr)
+    {
+      ETL_CONSTEXPR14 Data lesser = {0, 1, 2, 3, 4, 4, 6, 7, 8, 9};
+      ETL_CONSTEXPR14 Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+      ETL_CONSTEXPR14 bool result = (lesser < data);
+      CHECK(result);
     }
 
     //*************************************************************************
     TEST(test_less_than_equal)
     {
-      Data data    = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      Data greater = { 0, 1, 2, 3, 5, 5, 6, 7, 8, 9 };
-      Data lesser  = { 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
+      Data data    = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      Data greater = {0, 1, 2, 3, 5, 5, 6, 7, 8, 9};
+      Data lesser  = {0, 1, 2, 3, 4, 4, 6, 7, 8, 9};
 
-      CHECK(lesser    <= data);
-      CHECK(data      <= data);
+      CHECK(lesser <= data);
+      CHECK(data <= data);
       CHECK(!(greater <= data));
+    }
+
+    //*************************************************************************
+    TEST(test_less_than_equal_constexpr)
+    {
+      ETL_CONSTEXPR14 Data lesser = {0, 1, 2, 3, 4, 4, 6, 7, 8, 9};
+      ETL_CONSTEXPR14 Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+      ETL_CONSTEXPR14 bool result = (lesser <= data);
+      CHECK(result);
     }
 
     //*************************************************************************
     TEST(test_greater_than)
     {
-      Data data    = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      Data greater = { 0, 1, 2, 3, 5, 5, 6, 7, 8, 9 };
-      Data lesser  = { 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
+      Data data    = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      Data greater = {0, 1, 2, 3, 5, 5, 6, 7, 8, 9};
+      Data lesser  = {0, 1, 2, 3, 4, 4, 6, 7, 8, 9};
 
-      CHECK(greater  > data);
-      CHECK(!(data   > data));
+      CHECK(greater > data);
+      CHECK(!(data > data));
       CHECK(!(lesser > data));
+    }
+
+    //*************************************************************************
+    TEST(test_greater_than_constexpr)
+    {
+      ETL_CONSTEXPR14 Data greater = {0, 1, 2, 3, 5, 5, 6, 7, 8, 9};
+      ETL_CONSTEXPR14 Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+      ETL_CONSTEXPR14 bool result = (greater > data);
+      CHECK(result);
     }
 
     //*************************************************************************
     TEST(test_greater_than_equal)
     {
-      Data data    = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      Data greater = { 0, 1, 2, 3, 5, 5, 6, 7, 8, 9 };
-      Data lesser  = { 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
+      Data data    = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      Data greater = {0, 1, 2, 3, 5, 5, 6, 7, 8, 9};
+      Data lesser  = {0, 1, 2, 3, 4, 4, 6, 7, 8, 9};
 
-      CHECK(greater  >= data);
-      CHECK(data     >= data);
+      CHECK(greater >= data);
+      CHECK(data >= data);
       CHECK(!(lesser >= data));
     }
 
     //*************************************************************************
-#if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
+    TEST(test_greater_than_equal_constexpr)
+    {
+      ETL_CONSTEXPR14 Data greater = {0, 1, 2, 3, 5, 5, 6, 7, 8, 9};
+      ETL_CONSTEXPR14 Data data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+      ETL_CONSTEXPR14 bool result = (greater >= data);
+      CHECK(result);
+    }
+
+    //*************************************************************************
+#if ETL_USING_CPP17 && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     TEST(test_array_template_deduction)
     {
-      etl::array data{ char(0), short(1), 2, long(3), 4, 5, 6, 7, 8, 9 };
+      etl::array data{char(0), short(1), 2, long(3), 4, 5, 6, 7, 8, 9};
 
       using Type = std::remove_reference_t<decltype(data[0])>;
       CHECK((std::is_same_v<long, Type>));
@@ -731,10 +883,11 @@ namespace
 #endif
 
     //*************************************************************************
-#if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST
+#if ETL_USING_CPP17
     TEST(test_array_template_deduction_for_movable)
     {
-      etl::array data{ Moveable(0), Moveable(1), Moveable(2), Moveable(3), Moveable(4), Moveable(5), Moveable(6), Moveable(7), Moveable(8), Moveable(9) };
+      etl::array data{Moveable(0), Moveable(1), Moveable(2), Moveable(3), Moveable(4),
+                      Moveable(5), Moveable(6), Moveable(7), Moveable(8), Moveable(9)};
 
       using Type = std::remove_reference_t<decltype(data[0])>;
       CHECK((std::is_same_v<Moveable, Type>));
@@ -753,7 +906,7 @@ namespace
 #endif
 
     //*************************************************************************
-#if ETL_HAS_INITIALIZER_LIST
+#if ETL_USING_CPP11
     TEST(test_make_array)
     {
       auto data = etl::make_array<char>(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
@@ -775,10 +928,11 @@ namespace
 #endif
 
     //*************************************************************************
-#if ETL_HAS_INITIALIZER_LIST
+#if ETL_USING_CPP11
     TEST(test_make_array_for_movable)
     {
-      auto data = etl::make_array<Moveable>(Moveable(0), Moveable(1), Moveable(2), Moveable(3), Moveable(4), Moveable(5), Moveable(6), Moveable(7), Moveable(8), Moveable(9));
+      auto data = etl::make_array<Moveable>(Moveable(0), Moveable(1), Moveable(2), Moveable(3), Moveable(4), Moveable(5), Moveable(6), Moveable(7),
+                                            Moveable(8), Moveable(9));
 
       using Type = etl::remove_reference_t<decltype(data[0])>;
       CHECK((std::is_same<Moveable, Type>::value));
@@ -793,6 +947,136 @@ namespace
       CHECK_EQUAL(Moveable(7), data[7]);
       CHECK_EQUAL(Moveable(8), data[8]);
       CHECK_EQUAL(Moveable(9), data[9]);
+    }
+#endif
+
+    //*************************************************************************
+#if ETL_USING_CPP11
+    // Arguments that are const-qualified lvalues of the element type used to be rejected:
+    // the old implementation forwarded each argument as T, and forward<T> cannot accept a
+    // const T lvalue (it requires a non-const T&, and T&& cannot bind to a reference-related
+    // const lvalue).
+    TEST(test_make_array_from_const_lvalues_of_element_type)
+    {
+      static const char static_const_lvalue = 42;
+      const char        local_const_lvalue  = 43;
+      char              mutable_lvalue      = 44;
+
+      auto data = etl::make_array<char>(static_const_lvalue, local_const_lvalue, mutable_lvalue);
+
+      using Type = etl::remove_reference_t<decltype(data[0])>;
+      CHECK((std::is_same<char, Type>::value));
+
+      CHECK_EQUAL(42, data[0]);
+      CHECK_EQUAL(43, data[1]);
+      CHECK_EQUAL(44, data[2]);
+    }
+#endif
+
+    //*************************************************************************
+#if ETL_USING_CPP11
+    // The arguments are converted to the element type with static_cast, so narrowing
+    // initialisers (int literals and int lvalues narrowed to char) must keep working.
+    // Plain forwarding into the braced initialiser list would reject them.
+    TEST(test_make_array_from_narrowing_values)
+    {
+      static const int static_const_int = 45;
+      const int        local_const_int  = 46;
+      int              mutable_int      = 47;
+
+      auto data = etl::make_array<char>(0, 1, static_const_int, local_const_int, mutable_int);
+
+      using Type = etl::remove_reference_t<decltype(data[0])>;
+      CHECK((std::is_same<char, Type>::value));
+
+      CHECK_EQUAL(0, data[0]);
+      CHECK_EQUAL(1, data[1]);
+      CHECK_EQUAL(45, data[2]);
+      CHECK_EQUAL(46, data[3]);
+      CHECK_EQUAL(47, data[4]);
+    }
+#endif
+
+    //*************************************************************************
+#if ETL_USING_CPP11
+    // With no explicit element type, the element type is deduced as the
+    // decayed common type of the arguments (Library Fundamentals TS
+    // make_array design).
+    TEST(test_make_array_deduced_element_type)
+    {
+      static const int static_const_lvalue = 1;
+
+      auto data = etl::make_array(static_const_lvalue, 2L, 3);
+
+      CHECK((std::is_same<etl::array<long, 3U>, decltype(data)>::value));
+
+      CHECK_EQUAL(1L, data[0]);
+      CHECK_EQUAL(2L, data[1]);
+      CHECK_EQUAL(3L, data[2]);
+    }
+#endif
+
+    //*************************************************************************
+#if ETL_USING_CPP11
+    // An empty array requires the element type to be supplied explicitly.
+    // etl::make_array() with no element type and no arguments is ill-formed,
+    // as in the Library Fundamentals TS: there is nothing to deduce the
+    // element type from.
+    TEST(test_make_array_empty)
+    {
+      auto data = etl::make_array<int>();
+
+      CHECK((std::is_same<etl::array<int, 0U>, decltype(data)>::value));
+      CHECK_TRUE(data.empty());
+      CHECK_EQUAL(0U, data.size());
+    }
+#endif
+
+    //*************************************************************************
+#if ETL_USING_CPP11
+    // Arguments that already have the element type are forwarded rather than
+    // cast. Casting created a prvalue that, before C++17, had to be
+    // materialised through the move constructor, so a copyable type with a
+    // deleted move constructor was rejected.
+    TEST(test_make_array_for_copyable_non_movable)
+    {
+      struct NonMovable
+      {
+        explicit NonMovable(int v_)
+          : v(v_)
+        {
+        }
+        NonMovable(const NonMovable&) = default;
+        NonMovable(NonMovable&&)      = delete;
+        int v;
+      };
+
+      NonMovable       mutable_lvalue(1);
+      const NonMovable const_lvalue(2);
+
+      auto data = etl::make_array<NonMovable>(mutable_lvalue, const_lvalue);
+
+      using Type = etl::remove_reference_t<decltype(data[0])>;
+      CHECK((std::is_same<NonMovable, Type>::value));
+
+      CHECK_EQUAL(1, data[0].v);
+      CHECK_EQUAL(2, data[1].v);
+    }
+#endif
+
+    //*************************************************************************
+#if ETL_USING_CPP14
+    TEST(test_make_array_is_constexpr)
+    {
+      static constexpr unsigned char constexpr_value = 0x18U;
+
+      constexpr auto data = etl::make_array<unsigned char>(constexpr_value, constexpr_value);
+
+      static_assert(data.size() == 2U, "make_array size");
+      static_assert(data[0] == 0x18U, "make_array element");
+
+      CHECK_EQUAL(0x18U, data[0]);
+      CHECK_EQUAL(0x18U, data[1]);
     }
 #endif
 
@@ -812,7 +1096,7 @@ namespace
       return *(data.cbegin() + 5);
     }
 
-#if ETL_USING_CPP20 && ETL_USING_STL
+  #if ETL_USING_CPP20 && ETL_USING_STL
     //*********************************
     constexpr int RBeginREnd(const Array& data) noexcept
     {
@@ -824,7 +1108,7 @@ namespace
     {
       return *(data.crbegin() + 5);
     }
-#endif
+  #endif
 
     //*********************************
     constexpr int DataSize(const Array& data) noexcept
@@ -843,19 +1127,19 @@ namespace
     }
 
     //*********************************
-#if ETL_USING_CPP20 && ETL_USING_STL
+  #if ETL_USING_CPP20 && ETL_USING_STL
     constexpr Array Swap(Array data1, Array data2) noexcept
     {
       data1.swap(data2);
 
       return data1;
     }
-#endif
+  #endif
 
     TEST(test_cpp14_constexpr)
     {
-      constexpr Array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      
+      constexpr Array data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
       // [] operator
       constexpr int i0 = data[0];
       constexpr int i1 = data[1];
@@ -892,7 +1176,7 @@ namespace
       constexpr int cb5 = CBeginCEnd(data);
       CHECK_EQUAL(data[5], cb5);
 
-#if ETL_USING_CPP20 && ETL_USING_STL
+  #if ETL_USING_CPP20 && ETL_USING_STL
       // rbegin & rend
       constexpr int rb5 = RBeginREnd(data);
       CHECK_EQUAL(data[4], rb5);
@@ -900,7 +1184,7 @@ namespace
       // crbegin & crend
       constexpr int crb5 = CRBeginCREnd(data);
       CHECK_EQUAL(data[4], crb5);
-#endif
+  #endif
 
       // data
       constexpr int d5 = DataSize(data);
@@ -931,14 +1215,14 @@ namespace
       CHECK_EQUAL(5, a[8]);
       CHECK_EQUAL(5, a[9]);
 
-#if ETL_USING_CPP20 && ETL_USING_STL
+  #if ETL_USING_CPP20 && ETL_USING_STL
       // swap
-      constexpr Array data1{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-      constexpr Array data2{ 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
+      constexpr Array data1{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      constexpr Array data2{9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
       constexpr Array data3 = Swap(data1, data2);
       CHECK_ARRAY_EQUAL(data2.data(), data3.data(), data2.size());
-#endif
+  #endif
     }
 #endif
   }
-}
+} // namespace

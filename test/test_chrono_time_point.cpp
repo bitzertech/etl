@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Documentation: 
+Documentation:
 
 Copyright(c) 2025 John Wellbelove
 
@@ -34,8 +34,8 @@ SOFTWARE.
 
 #include "etl/chrono.h"
 
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 // Set to 0 to reference against std::chrono
 #define ETL_USING_ETL_CHRONO 1
@@ -78,7 +78,7 @@ namespace
 
       for (int d = 1; d < 100; ++d)
       {
-        TimePoint tp{ Chrono::days(d) };
+        TimePoint tp{Chrono::days(d)};
 
         auto hours                = tp.time_since_epoch().count();
         auto hours_scaled_to_days = (hours * num_hours) / num_days;
@@ -95,8 +95,8 @@ namespace
 
       for (int d = 1; d < 100; ++d)
       {
-        TimePoint tp{ Chrono::days(d) };
-        TimePoint tp2{ tp };
+        TimePoint tp{Chrono::days(d)};
+        TimePoint tp2{tp};
 
         auto hours                = tp2.time_since_epoch().count();
         auto hours_scaled_to_days = (hours * num_hours) / num_days;
@@ -112,7 +112,7 @@ namespace
       auto num_hours = Chrono::hours::period::num;
 
       Chrono::days ds(2);
-      TimePoint tp{ Chrono::days(0) };
+      TimePoint    tp{Chrono::days(0)};
 
       for (int d = 1; d < 100; ++d)
       {
@@ -130,9 +130,9 @@ namespace
     {
       auto num_days  = Chrono::days::period::num;
       auto num_hours = Chrono::hours::period::num;
-      
+
       Chrono::hours hs(48);
-      TimePoint tp{ Chrono::days(0) };
+      TimePoint     tp{Chrono::days(0)};
 
       for (int d = 1; d < 100; ++d)
       {
@@ -152,7 +152,7 @@ namespace
       auto num_hours = Chrono::hours::period::num;
 
       Chrono::days ds(2);
-      TimePoint tp{ Chrono::days(100) };
+      TimePoint    tp{Chrono::days(100)};
 
       for (int d = 1; d < 100; ++d)
       {
@@ -172,7 +172,7 @@ namespace
       auto num_hours = Chrono::hours::period::num;
 
       Chrono::hours hs(48);
-      TimePoint tp{ Chrono::days(100) };
+      TimePoint     tp{Chrono::days(100)};
 
       for (int d = 1; d < 100; ++d)
       {
@@ -183,6 +183,99 @@ namespace
 
         CHECK_EQUAL(100 - (d * 2), hours_scaled_to_days);
       }
+    }
+
+    //*************************************************************************
+    TEST(test_operator_plus_time_point_duration)
+    {
+      TimePoint tp{Chrono::hours(10)};
+
+      // Same duration type.
+      auto result = tp + Chrono::hours(5);
+      CHECK_EQUAL(15, result.time_since_epoch().count());
+
+      // Mixed duration types resolve to the common (finer) type.
+      auto result_mixed = tp + Chrono::days(1); // 10 hours + 24 hours
+      CHECK_EQUAL(34, result_mixed.time_since_epoch().count());
+      CHECK_TRUE((std::is_same<decltype(result_mixed)::duration, Chrono::hours>::value));
+    }
+
+    //*************************************************************************
+    TEST(test_operator_plus_duration_time_point)
+    {
+      TimePoint tp{Chrono::hours(10)};
+
+      // Same duration type.
+      auto result = Chrono::hours(5) + tp;
+      CHECK_EQUAL(15, result.time_since_epoch().count());
+
+      // Mixed duration types resolve to the common (finer) type.
+      auto result_mixed = Chrono::days(1) + tp; // 24 hours + 10 hours
+      CHECK_EQUAL(34, result_mixed.time_since_epoch().count());
+      CHECK_TRUE((std::is_same<decltype(result_mixed)::duration, Chrono::hours>::value));
+    }
+
+    //*************************************************************************
+    TEST(test_operator_minus_time_point_duration)
+    {
+      TimePoint tp{Chrono::hours(50)};
+
+      // Same duration type.
+      auto result = tp - Chrono::hours(5);
+      CHECK_EQUAL(45, result.time_since_epoch().count());
+
+      // Mixed duration types resolve to the common (finer) type.
+      auto result_mixed = tp - Chrono::days(1); // 50 hours - 24 hours
+      CHECK_EQUAL(26, result_mixed.time_since_epoch().count());
+      CHECK_TRUE((std::is_same<decltype(result_mixed)::duration, Chrono::hours>::value));
+    }
+
+    //*************************************************************************
+    TEST(test_operator_minus_time_point_time_point)
+    {
+      TimePoint tp1{Chrono::hours(50)};
+      TimePoint tp2{Chrono::hours(20)};
+
+      // Subtracting two time_points yields the duration between them.
+      auto diff = tp1 - tp2;
+      CHECK_EQUAL(30, diff.count());
+      CHECK_TRUE((std::is_same<decltype(diff), Chrono::hours>::value));
+
+      // Mixed duration types resolve to the common (finer) duration.
+      Chrono::time_point<test_clock, Chrono::days> tp_days{Chrono::days(2)};   // 48 hours
+      auto                                         diff_mixed = tp1 - tp_days; // 50 hours - 48 hours
+      CHECK_EQUAL(2, diff_mixed.count());
+      CHECK_TRUE((std::is_same<decltype(diff_mixed), Chrono::hours>::value));
+
+      // The reverse difference is negative.
+      auto diff_negative = tp2 - tp1;
+      CHECK_EQUAL(-30, diff_negative.count());
+    }
+
+    //*************************************************************************
+    TEST(test_increment_decrement_operators)
+    {
+      TimePoint tp{Chrono::hours(10)};
+
+      // Pre-increment.
+      auto& pre_inc = ++tp;
+      CHECK_EQUAL(11, tp.time_since_epoch().count());
+      CHECK_EQUAL(11, pre_inc.time_since_epoch().count());
+
+      // Post-increment returns the previous value.
+      TimePoint post_inc = tp++;
+      CHECK_EQUAL(11, post_inc.time_since_epoch().count());
+      CHECK_EQUAL(12, tp.time_since_epoch().count());
+
+      // Pre-decrement.
+      auto& pre_dec = --tp;
+      CHECK_EQUAL(11, tp.time_since_epoch().count());
+      CHECK_EQUAL(11, pre_dec.time_since_epoch().count());
+
+      // Post-decrement returns the previous value.
+      TimePoint post_dec = tp--;
+      CHECK_EQUAL(11, post_dec.time_since_epoch().count());
+      CHECK_EQUAL(10, tp.time_since_epoch().count());
     }
 
 #if ETL_USING_ETL_CHRONO
@@ -200,12 +293,12 @@ namespace
     TEST(test_time_point_comparison_operators)
     {
       // 10 days
-      TimePoint tp10h{ Chrono::hours(240) };
-      TimePoint tp10d{ Chrono::days(10) };
+      TimePoint tp10h{Chrono::hours(240)};
+      TimePoint tp10d{Chrono::days(10)};
 
       // 20 days
-      TimePoint tp20h{ Chrono::hours(480) };
-      TimePoint tp20d{ Chrono::days(20) };
+      TimePoint tp20h{Chrono::hours(480)};
+      TimePoint tp20d{Chrono::days(20)};
 
       // ==
       CHECK_TRUE(tp10h == tp10h);
@@ -273,17 +366,17 @@ namespace
       CHECK_FALSE(tp10h >= tp20d);
 
 #if ETL_USING_CPP20
-        CHECK_TRUE((tp10h <=> tp10h) == 0);
-        CHECK_TRUE((tp10h <=> tp20h)  < 0);
-        CHECK_TRUE((tp20h <=> tp10h)  > 0);
+      CHECK_TRUE((tp10h <=> tp10h) == 0);
+      CHECK_TRUE((tp10h <=> tp20h) < 0);
+      CHECK_TRUE((tp20h <=> tp10h) > 0);
 
-        CHECK_TRUE((tp10h <=> tp10d) == 0);
-        CHECK_TRUE((tp10d <=> tp20h)  < 0);
-        CHECK_TRUE((tp20h <=> tp10d)  > 0);
-        
-        CHECK_TRUE((tp10d <=> tp10h) == 0);
-        CHECK_TRUE((tp10h <=> tp20d)  < 0);
-        CHECK_TRUE((tp20d <=> tp10h)  > 0);
+      CHECK_TRUE((tp10h <=> tp10d) == 0);
+      CHECK_TRUE((tp10d <=> tp20h) < 0);
+      CHECK_TRUE((tp20h <=> tp10d) > 0);
+
+      CHECK_TRUE((tp10d <=> tp10h) == 0);
+      CHECK_TRUE((tp10h <=> tp20d) < 0);
+      CHECK_TRUE((tp20d <=> tp10h) > 0);
 #endif
     }
 
@@ -304,11 +397,11 @@ namespace
       using TimePoint = Chrono::time_point<test_clock, Chrono::milliseconds>;
 
       TimePoint tp(Chrono::milliseconds(1234)); // 1234 milliseconds
-      auto floored_tp = floor<Chrono::seconds>(tp);
+      auto      floored_tp = floor<Chrono::seconds>(tp);
       CHECK_EQUAL(1, floored_tp.time_since_epoch().count());
 
       TimePoint negative_tp(Chrono::milliseconds(-1234)); // -1234 milliseconds
-      auto floored_negative_tp = floor<Chrono::seconds>(negative_tp);
+      auto      floored_negative_tp = floor<Chrono::seconds>(negative_tp);
       CHECK_EQUAL(-2, floored_negative_tp.time_since_epoch().count());
     }
 
@@ -318,11 +411,11 @@ namespace
       using TimePoint = Chrono::time_point<test_clock, Chrono::milliseconds>;
 
       TimePoint tp(Chrono::milliseconds(1234)); // 1234 milliseconds
-      auto ceil_tp = ceil<Chrono::seconds>(tp);
+      auto      ceil_tp = ceil<Chrono::seconds>(tp);
       CHECK_EQUAL(2, ceil_tp.time_since_epoch().count());
 
       TimePoint negative_tp(Chrono::milliseconds(-1234)); // -1234 milliseconds
-      auto ceil_negative_tp = ceil<Chrono::seconds>(negative_tp);
+      auto      ceil_negative_tp = ceil<Chrono::seconds>(negative_tp);
       CHECK_EQUAL(-1, ceil_negative_tp.time_since_epoch().count());
     }
 
@@ -331,16 +424,16 @@ namespace
     {
       using TimePoint = Chrono::time_point<test_clock, Chrono::milliseconds>;
 
-      TimePoint tp1(Chrono::milliseconds(1500)); // 1500 milliseconds
-      auto round1 = round<Chrono::seconds>(tp1); // Round to seconds
+      TimePoint tp1(Chrono::milliseconds(1500));      // 1500 milliseconds
+      auto      round1 = round<Chrono::seconds>(tp1); // Round to seconds
       CHECK_EQUAL(2, round1.time_since_epoch().count());
 
-      TimePoint tp2(Chrono::milliseconds(2500)); // 2500 milliseconds
-      auto round2 = round<Chrono::seconds>(tp2); // Round to seconds
+      TimePoint tp2(Chrono::milliseconds(2500));      // 2500 milliseconds
+      auto      round2 = round<Chrono::seconds>(tp2); // Round to seconds
       CHECK_EQUAL(2, round2.time_since_epoch().count());
 
-      TimePoint tp3(Chrono::milliseconds(-1500)); // -1500 milliseconds
-      auto round3 = round<Chrono::seconds>(tp3);  // Round to seconds
+      TimePoint tp3(Chrono::milliseconds(-1500));     // -1500 milliseconds
+      auto      round3 = round<Chrono::seconds>(tp3); // Round to seconds
       CHECK_EQUAL(-2, round3.time_since_epoch().count());
     }
 
@@ -359,4 +452,4 @@ namespace
       CHECK_EQUAL(expected, actual);
     }
   }
-}
+} // namespace

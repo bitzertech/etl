@@ -33,9 +33,9 @@ SOFTWARE.
 
 #include "platform.h"
 #include "basic_string.h"
-#include "string_view.h"
 #include "hash.h"
 #include "initializer_list.h"
+#include "string_view.h"
 
 #include "private/minmax_push.h"
 
@@ -46,12 +46,12 @@ namespace etl
   {
     inline namespace string_literals
     {
-      inline constexpr etl::u32string_view operator ""_sv(const char32_t* str, size_t length) ETL_NOEXCEPT
+      inline constexpr etl::u32string_view operator""_sv(const char32_t* str, size_t length) ETL_NOEXCEPT
       {
-        return etl::u32string_view{ str, length };
+        return etl::u32string_view{str, length};
       }
-    }
-  }
+    } // namespace string_literals
+  } // namespace literals
 #endif
 
   typedef ibasic_string<char32_t> iu32string;
@@ -77,7 +77,7 @@ namespace etl
     /// Constructor.
     //*************************************************************************
     u32string()
-      : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
+      : iu32string(buffer, MAX_SIZE)
     {
       this->initialise();
     }
@@ -87,7 +87,7 @@ namespace etl
     ///\param other The other string.
     //*************************************************************************
     u32string(const etl::u32string<MAX_SIZE_>& other)
-      : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
+      : iu32string(buffer, MAX_SIZE)
     {
       this->assign(other);
     }
@@ -97,7 +97,7 @@ namespace etl
     ///\param other The other iu32string.
     //*************************************************************************
     u32string(const etl::iu32string& other)
-      : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
+      : iu32string(buffer, MAX_SIZE)
     {
       this->assign(other);
     }
@@ -109,7 +109,7 @@ namespace etl
     ///\param length   The number of characters. Default = npos.
     //*************************************************************************
     u32string(const etl::iu32string& other, size_type position, size_type length = npos)
-      : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
+      : iu32string(buffer, MAX_SIZE)
     {
       ETL_ASSERT(position < other.size(), ETL_ERROR(string_out_of_bounds));
 
@@ -121,7 +121,7 @@ namespace etl
     ///\param text The initial text of the u32string.
     //*************************************************************************
     ETL_EXPLICIT_STRING_FROM_CHAR u32string(const value_type* text)
-      : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
+      : iu32string(buffer, MAX_SIZE)
     {
       this->assign(text);
     }
@@ -132,7 +132,7 @@ namespace etl
     ///\param count The number of characters to copy.
     //*************************************************************************
     u32string(const value_type* text, size_type count)
-      : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
+      : iu32string(buffer, MAX_SIZE)
     {
       this->assign(text, text + count);
     }
@@ -143,7 +143,7 @@ namespace etl
     ///\param value        The value to fill the u32string with.
     //*************************************************************************
     u32string(size_type count, value_type c)
-      : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
+      : iu32string(buffer, MAX_SIZE)
     {
       this->initialise();
       this->resize(count, c);
@@ -157,7 +157,7 @@ namespace etl
     //*************************************************************************
     template <typename TIterator>
     u32string(TIterator first, TIterator last, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
-      : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
+      : iu32string(buffer, MAX_SIZE)
     {
       this->assign(first, last);
     }
@@ -167,7 +167,7 @@ namespace etl
     /// Construct from initializer_list.
     //*************************************************************************
     u32string(std::initializer_list<value_type> init)
-      : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
+      : iu32string(buffer, MAX_SIZE)
     {
       this->assign(init.begin(), init.end());
     }
@@ -178,7 +178,7 @@ namespace etl
     ///\param view The string_view.
     //*************************************************************************
     explicit u32string(const etl::u32string_view& view)
-      : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
+      : iu32string(buffer, MAX_SIZE)
     {
       this->assign(view.begin(), view.end());
     }
@@ -207,7 +207,7 @@ namespace etl
     //*************************************************************************
     /// Assignment operator.
     //*************************************************************************
-    u32string& operator = (const u32string& rhs)
+    u32string& operator=(const u32string& rhs)
     {
       if (&rhs != this)
       {
@@ -220,7 +220,7 @@ namespace etl
     //*************************************************************************
     /// Assignment operator.
     //*************************************************************************
-    u32string& operator = (const value_type* text)
+    u32string& operator=(const value_type* text)
     {
       this->assign(text);
 
@@ -230,7 +230,7 @@ namespace etl
     //*************************************************************************
     /// Assignment operator.
     //*************************************************************************
-    u32string& operator = (const etl::u32string_view& view)
+    u32string& operator=(const etl::u32string_view& view)
     {
       this->assign(view);
 
@@ -266,7 +266,7 @@ namespace etl
     typedef iu32string interface_type;
 
     typedef iu32string::value_type value_type;
-    typedef iu32string::size_type size_type;
+    typedef iu32string::size_type  size_type;
 
     //*************************************************************************
     /// Constructor.
@@ -568,12 +568,13 @@ namespace etl
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
     template <typename TIterator>
-    u32string_ext(TIterator first, TIterator last, value_type* buffer, size_type buffer_size, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
+    u32string_ext(TIterator first, TIterator last, value_type* buffer, size_type buffer_size,
+                  typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : iu32string(buffer, buffer_size - 1U)
     {
       if (this->is_within_buffer(reinterpret_cast<const_iterator>(etl::addressof(*first))))
       {
-        this->current_size = etl::distance(first, last);
+        this->current_size = static_cast<size_type>(etl::distance(first, last));
       }
       else
       {
@@ -589,12 +590,13 @@ namespace etl
     ///\param buffer The array buffer.
     //*************************************************************************
     template <typename TIterator, size_t BufferSize>
-    u32string_ext(TIterator first, TIterator last, value_type (&buffer)[BufferSize], typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
+    u32string_ext(TIterator first, TIterator last, value_type (&buffer)[BufferSize],
+                  typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : iu32string(buffer, BufferSize - 1U)
     {
       if (this->is_within_buffer(reinterpret_cast<const_iterator>(etl::addressof(*first))))
       {
-        this->current_size = etl::distance(first, last);
+        this->current_size = static_cast<size_type>(etl::distance(first, last));
       }
       else
       {
@@ -628,7 +630,7 @@ namespace etl
     //*************************************************************************
     /// Assignment operator.
     //*************************************************************************
-    u32string_ext& operator = (const u32string_ext& rhs)
+    u32string_ext& operator=(const u32string_ext& rhs)
     {
       if (&rhs != this)
       {
@@ -641,7 +643,7 @@ namespace etl
     //*************************************************************************
     /// Assignment operator.
     //*************************************************************************
-    u32string_ext& operator = (const iu32string& rhs)
+    u32string_ext& operator=(const iu32string& rhs)
     {
       if (&rhs != this)
       {
@@ -654,7 +656,7 @@ namespace etl
     //*************************************************************************
     /// Assignment operator.
     //*************************************************************************
-    u32string_ext& operator = (const value_type* text)
+    u32string_ext& operator=(const value_type* text)
     {
       this->assign(text);
 
@@ -664,7 +666,7 @@ namespace etl
     //*************************************************************************
     /// Assignment operator.
     //*************************************************************************
-    u32string_ext& operator = (const etl::u32string_view& view)
+    u32string_ext& operator=(const etl::u32string_view& view)
     {
       this->assign(view);
 
@@ -728,8 +730,8 @@ namespace etl
   //***************************************************************************
   /// Make string from string literal or array
   //***************************************************************************
-  template<size_t Array_Size>
-  etl::u32string<Array_Size - 1U> make_string(const char32_t(&text)[Array_Size])
+  template <size_t Array_Size>
+  etl::u32string<Array_Size - 1U> make_string(const char32_t (&text)[Array_Size])
   {
     return etl::u32string<Array_Size - 1U>(text, etl::strlen(text, Array_Size - 1U));
   }
@@ -737,12 +739,12 @@ namespace etl
   //***************************************************************************
   /// Make string with max capacity from string literal or array
   //***************************************************************************
-  template<size_t MAX_SIZE, size_t SIZE>
-  etl::u32string<MAX_SIZE> make_string_with_capacity(const char32_t(&text)[SIZE])
+  template <size_t MAX_SIZE, size_t SIZE>
+  etl::u32string<MAX_SIZE> make_string_with_capacity(const char32_t (&text)[SIZE])
   {
     return etl::u32string<MAX_SIZE>(text, etl::strlen(text, SIZE));
   }
-}
+} // namespace etl
 
 #include "private/minmax_pop.h"
 

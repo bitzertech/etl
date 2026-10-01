@@ -28,12 +28,12 @@ SOFTWARE.
 
 #include "unit_test_framework.h"
 
-#include <map>
-#include <array>
 #include <algorithm>
-#include <utility>
+#include <array>
 #include <iterator>
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "data.h"
@@ -51,14 +51,14 @@ namespace
   typedef ETL_OR_STD::pair<int, DC>  ElementDC;
   typedef ETL_OR_STD::pair<int, NDC> ElementNDC;
 
-  typedef ETL_OR_STD::pair<int, int>  ElementInt;
+  typedef ETL_OR_STD::pair<int, int> ElementInt;
 
   typedef etl::flat_multimap<int, DC, SIZE>  DataDC;
   typedef etl::flat_multimap<int, NDC, SIZE> DataNDC;
   typedef etl::iflat_multimap<int, DC>       IDataDC;
   typedef etl::iflat_multimap<int, NDC>      IDataNDC;
 
-  typedef etl::flat_multimap<int, int, SIZE>  DataInt;
+  typedef etl::flat_multimap<int, int, SIZE> DataInt;
 
   typedef etl::flat_multimap<int, MC, SIZE> DataM;
   typedef etl::iflat_multimap<int, MC>      IDataM;
@@ -66,16 +66,16 @@ namespace
   typedef std::multimap<int, DC>  Compare_DataDC;
   typedef std::multimap<int, NDC> Compare_DataNDC;
 
-  NDC N0 = NDC("A");
-  NDC N1 = NDC("B");
-  NDC N2 = NDC("C");
-  NDC N3 = NDC("D");
-  NDC N4 = NDC("E");
-  NDC N5 = NDC("F");
-  NDC N6 = NDC("G");
-  NDC N7 = NDC("H");
-  NDC N8 = NDC("I");
-  NDC N9 = NDC("J");
+  NDC N0  = NDC("A");
+  NDC N1  = NDC("B");
+  NDC N2  = NDC("C");
+  NDC N3  = NDC("D");
+  NDC N4  = NDC("E");
+  NDC N5  = NDC("F");
+  NDC N6  = NDC("G");
+  NDC N7  = NDC("H");
+  NDC N8  = NDC("I");
+  NDC N9  = NDC("J");
   NDC N10 = NDC("K");
   NDC N11 = NDC("L");
   NDC N12 = NDC("M");
@@ -107,8 +107,8 @@ namespace
   struct D2
   {
     D2(const std::string& a_, const std::string& b_)
-      : a(a_),
-        b(b_)
+      : a(a_)
+      , b(b_)
     {
     }
 
@@ -119,9 +119,9 @@ namespace
   struct D3
   {
     D3(const std::string& a_, const std::string& b_, const std::string& c_)
-      : a(a_),
-        b(b_),
-        c(c_)
+      : a(a_)
+      , b(b_)
+      , c(c_)
     {
     }
 
@@ -133,10 +133,10 @@ namespace
   struct D4
   {
     D4(const std::string& a_, const std::string& b_, const std::string& c_, const std::string& d_)
-      : a(a_),
-        b(b_),
-        c(c_),
-        d(d_)
+      : a(a_)
+      , b(b_)
+      , c(c_)
+      , d(d_)
     {
     }
 
@@ -146,42 +146,42 @@ namespace
     std::string d;
   };
 
-  bool operator == (const D1& lhs, const D1& rhs)
+  bool operator==(const D1& lhs, const D1& rhs)
   {
     return (lhs.a == rhs.a);
   }
 
-  bool operator == (const D2& lhs, const D2& rhs)
+  bool operator==(const D2& lhs, const D2& rhs)
   {
     return (lhs.a == rhs.a) && (lhs.b == rhs.b);
   }
 
-  bool operator == (const D3& lhs, const D3& rhs)
+  bool operator==(const D3& lhs, const D3& rhs)
   {
     return (lhs.a == rhs.a) && (lhs.b == rhs.b) && (lhs.c == rhs.c);
   }
 
-  bool operator == (const D4& lhs, const D4& rhs)
+  bool operator==(const D4& lhs, const D4& rhs)
   {
     return (lhs.a == rhs.a) && (lhs.b == rhs.b) && (lhs.c == rhs.c) && (lhs.d == rhs.d);
   }
 
-  bool operator != (const D1& lhs, const D1& rhs)
+  bool operator!=(const D1& lhs, const D1& rhs)
   {
     return !(lhs == rhs);
   }
 
-  bool operator != (const D2& lhs, const D2& rhs)
+  bool operator!=(const D2& lhs, const D2& rhs)
   {
     return !(lhs == rhs);
   }
 
-  bool operator != (const D3& lhs, const D3& rhs)
+  bool operator!=(const D3& lhs, const D3& rhs)
   {
     return !(lhs == rhs);
   }
 
-  bool operator != (const D4& lhs, const D4& rhs)
+  bool operator!=(const D4& lhs, const D4& rhs)
   {
     return !(lhs == rhs);
   }
@@ -211,12 +211,12 @@ namespace
     int k;
   };
 
-  bool operator <(const Key& lhs, const int& rhs)
+  bool operator<(const Key& lhs, const int& rhs)
   {
     return (lhs.k < rhs);
   }
 
-  bool operator <(const int& lhs, const Key& rhs)
+  bool operator<(const int& lhs, const Key& rhs)
   {
     return (lhs < rhs.k);
   }
@@ -239,6 +239,8 @@ namespace
     return true;
   }
 
+  static_assert(etl::is_same<etl::iflat_multimap<int, D1>, etl::iflat_multimap<int, D1, etl::less<int>>>::value, "default compare is not less");
+
   SUITE(test_flat_multimap)
   {
     //*************************************************************************
@@ -246,36 +248,20 @@ namespace
     {
       SetupFixture()
       {
-        ElementNDC n[] =
-        {
-          ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(3, N3), ElementNDC(4, N4),
-          ElementNDC(5, N5), ElementNDC(6, N6), ElementNDC(7, N7), ElementNDC(8, N8), ElementNDC(9, N9)
-        };
+        ElementNDC n[] = {ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(3, N3), ElementNDC(4, N4),
+                          ElementNDC(5, N5), ElementNDC(6, N6), ElementNDC(7, N7), ElementNDC(8, N8), ElementNDC(9, N9)};
 
-        ElementNDC n2[] =
-        {
-          ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(3, N3), ElementNDC(4, N4),
-          ElementNDC(5, N5), ElementNDC(6, N6), ElementNDC(7, N7), ElementNDC(8, N8), ElementNDC(9, N9),
-          ElementNDC(10, N10)
-        };
+        ElementNDC n2[] = {ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(3, N3), ElementNDC(4, N4),  ElementNDC(5, N5),
+                           ElementNDC(6, N6), ElementNDC(7, N7), ElementNDC(8, N8), ElementNDC(9, N9), ElementNDC(10, N10)};
 
-        ElementNDC n3[] =
-        {
-          ElementNDC(10, N10), ElementNDC(11, N11), ElementNDC(12, N12), ElementNDC(13, N13), ElementNDC(14, N14),
-          ElementNDC(15, N15), ElementNDC(16, N16), ElementNDC(17, N17), ElementNDC(18, N18), ElementNDC(19, N19)
-        };
+        ElementNDC n3[] = {ElementNDC(10, N10), ElementNDC(11, N11), ElementNDC(12, N12), ElementNDC(13, N13), ElementNDC(14, N14),
+                           ElementNDC(15, N15), ElementNDC(16, N16), ElementNDC(17, N17), ElementNDC(18, N18), ElementNDC(19, N19)};
 
-        ElementNDC n4[] =
-        {
-          ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(1, N3), ElementNDC(3, N4),
-          ElementNDC(4, N5), ElementNDC(4, N6), ElementNDC(5, N7), ElementNDC(4, N8), ElementNDC(0, N9)
-        };
+        ElementNDC n4[] = {ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(1, N3), ElementNDC(3, N4),
+                           ElementNDC(4, N5), ElementNDC(4, N6), ElementNDC(5, N7), ElementNDC(4, N8), ElementNDC(0, N9)};
 
-        ElementInt n5[] =
-        {
-          ElementInt(0, 0), ElementInt(1, 1), ElementInt(2, 2), ElementInt(3, 3), ElementInt(4, 4),
-          ElementInt(5, 5), ElementInt(6, 6), ElementInt(7, 7), ElementInt(8, 8), ElementInt(9, 9)
-        };
+        ElementInt n5[] = {ElementInt(0, 0), ElementInt(1, 1), ElementInt(2, 2), ElementInt(3, 3), ElementInt(4, 4),
+                           ElementInt(5, 5), ElementInt(6, 6), ElementInt(7, 7), ElementInt(8, 8), ElementInt(9, 9)};
 
         initial_data.assign(std::begin(n), std::end(n));
         excess_data.assign(std::begin(n2), std::end(n2));
@@ -301,10 +287,10 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_cpp17_deduced_constructor)
     {
-      etl::flat_multimap data{ ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(3, N3), ElementNDC(4, N4),
-                               ElementNDC(5, N5), ElementNDC(6, N6), ElementNDC(7, N7), ElementNDC(8, N8), ElementNDC(9, N9) };
-      etl::flat_multimap<int, NDC, 10U> check = { ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(3, N3), ElementNDC(4, N4),
-                                                  ElementNDC(5, N5), ElementNDC(6, N6), ElementNDC(7, N7), ElementNDC(8, N8), ElementNDC(9, N9) };
+      etl::flat_multimap                data{ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(3, N3), ElementNDC(4, N4),
+                              ElementNDC(5, N5), ElementNDC(6, N6), ElementNDC(7, N7), ElementNDC(8, N8), ElementNDC(9, N9)};
+      etl::flat_multimap<int, NDC, 10U> check = {ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(3, N3), ElementNDC(4, N4),
+                                                 ElementNDC(5, N5), ElementNDC(6, N6), ElementNDC(7, N7), ElementNDC(8, N8), ElementNDC(9, N9)};
 
       CHECK(!data.empty());
       CHECK(data.full());
@@ -323,7 +309,7 @@ namespace
       int current_count = NDC::get_instance_count();
 
       DataNDC* pdata = new DataNDC(initial_data.begin(), initial_data.end());
-      CHECK(int(current_count + initial_data.size()) == NDC::get_instance_count());
+      CHECK(int(current_count + int(initial_data.size())) == NDC::get_instance_count());
 
       IDataNDC* pidata = pdata;
       delete pidata;
@@ -340,10 +326,7 @@ namespace
       CHECK(data.size() == SIZE);
       CHECK(!data.empty());
 
-
-      bool isEqual = std::equal(data.begin(),
-                                data.end(),
-                                compare_data.begin());
+      bool isEqual = std::equal(data.begin(), data.end(), compare_data.begin());
       CHECK(isEqual);
     }
 
@@ -351,16 +334,14 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_constructor_initializer_list)
     {
-      Compare_DataNDC compare_data = { ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(3, N3), ElementNDC(4, N4) };
+      Compare_DataNDC compare_data = {ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(3, N3), ElementNDC(4, N4)};
 
-      DataNDC data = { ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(3, N3), ElementNDC(4, N4) };
+      DataNDC data = {ElementNDC(0, N0), ElementNDC(1, N1), ElementNDC(2, N2), ElementNDC(3, N3), ElementNDC(4, N4)};
 
       CHECK(compare_data.size() == data.size());
       CHECK(!data.empty());
 
-      bool isEqual = std::equal(data.begin(),
-                                data.end(),
-                                compare_data.begin());
+      bool isEqual = std::equal(data.begin(), data.end(), compare_data.begin());
       CHECK(isEqual);
     }
 #endif
@@ -411,9 +392,7 @@ namespace
 
       other_data = data;
 
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 other_data.begin());
+      bool isEqual = Check_Equal(data.begin(), data.end(), other_data.begin());
 
       CHECK(isEqual);
     }
@@ -429,9 +408,7 @@ namespace
 
       idata2 = idata1;
 
-      bool isEqual = Check_Equal(data1.begin(),
-                                 data1.end(),
-                                 data2.begin());
+      bool isEqual = Check_Equal(data1.begin(), data1.end(), data2.begin());
 
       CHECK(isEqual);
     }
@@ -442,13 +419,11 @@ namespace
       DataNDC data(initial_data.begin(), initial_data.end());
       DataNDC other_data(data);
 
-#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h"
       other_data = other_data;
-#include "etl/private/diagnostic_pop.h" 
+#include "etl/private/diagnostic_pop.h"
 
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 other_data.begin());
+      bool isEqual = Check_Equal(data.begin(), data.end(), other_data.begin());
 
       CHECK(isEqual);
     }
@@ -456,7 +431,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_begin)
     {
-      DataNDC data(initial_data.begin(), initial_data.end());
+      DataNDC       data(initial_data.begin(), initial_data.end());
       const DataNDC constData(data);
 
       CHECK(data.begin() == std::begin(data));
@@ -466,7 +441,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_end)
     {
-      DataNDC data(initial_data.begin(), initial_data.end());
+      DataNDC       data(initial_data.begin(), initial_data.end());
       const DataNDC constData(data);
 
       CHECK(data.end() == std::end(data));
@@ -501,9 +476,7 @@ namespace
 
       data.assign(compare_data.begin(), compare_data.end());
 
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 compare_data.begin());
+      bool isEqual = Check_Equal(data.begin(), data.end(), compare_data.begin());
 
       CHECK(isEqual);
 
@@ -514,32 +487,26 @@ namespace
     TEST_FIXTURE(SetupFixture, test_insert_value)
     {
       Compare_DataNDC compare_data;
-      DataNDC data;
+      DataNDC         data;
 
       data.insert(DataNDC::value_type(0, N0));
       compare_data.insert(ETL_OR_STD::make_pair(0, N0));
 
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 compare_data.begin());
+      bool isEqual = Check_Equal(data.begin(), data.end(), compare_data.begin());
 
       CHECK(isEqual);
 
       data.insert(ETL_OR_STD::make_pair(2, N2));
       compare_data.insert(ETL_OR_STD::make_pair(2, N2));
 
-      isEqual = Check_Equal(data.begin(),
-                            data.end(),
-                            compare_data.begin());
+      isEqual = Check_Equal(data.begin(), data.end(), compare_data.begin());
 
       CHECK(isEqual);
 
       data.insert(ETL_OR_STD::make_pair(1, N1));
       compare_data.insert(ETL_OR_STD::make_pair(1, N1));
 
-      isEqual = Check_Equal(data.begin(),
-                            data.end(),
-                            compare_data.begin());
+      isEqual = Check_Equal(data.begin(), data.end(), compare_data.begin());
 
       CHECK(isEqual);
 
@@ -550,7 +517,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_insert_value_multiple)
     {
       Compare_DataNDC compare_data;
-      DataNDC data;
+      DataNDC         data;
 
       data.insert(ETL_OR_STD::make_pair(0, N0));
       compare_data.insert(ETL_OR_STD::make_pair(0, N0));
@@ -573,9 +540,7 @@ namespace
 
       CHECK(compare_data.size() == data.size());
 
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 compare_data.begin());
+      bool isEqual = Check_Equal(data.begin(), data.end(), compare_data.begin());
 
       CHECK(isEqual);
 
@@ -596,14 +561,12 @@ namespace
     TEST_FIXTURE(SetupFixture, test_insert_range)
     {
       Compare_DataNDC compare_data;
-      DataNDC data;
+      DataNDC         data;
 
       data.insert(initial_data.begin(), initial_data.end());
       compare_data.insert(initial_data.begin(), initial_data.end());
 
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 compare_data.begin());
+      bool isEqual = Check_Equal(data.begin(), data.end(), compare_data.begin());
 
       CHECK(isEqual);
 
@@ -624,7 +587,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_emplace_value1)
     {
       Compare1 compare;
-      Data1 data;
+      Data1    data;
 
       data.emplace(0, "0");
       compare.emplace(0, D1("0"));
@@ -647,9 +610,7 @@ namespace
 
       CHECK(compare.size() == data.size());
 
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 compare.begin());
+      bool isEqual = Check_Equal(data.begin(), data.end(), compare.begin());
 
       CHECK(isEqual);
     }
@@ -658,7 +619,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_emplace_value2)
     {
       Compare2 compare;
-      Data2 data;
+      Data2    data;
 
       data.emplace(0, "0", "1");
       compare.emplace(0, D2("0", "1"));
@@ -681,9 +642,7 @@ namespace
 
       CHECK(compare.size() == data.size());
 
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 compare.begin());
+      bool isEqual = Check_Equal(data.begin(), data.end(), compare.begin());
 
       CHECK(isEqual);
     }
@@ -692,7 +651,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_emplace_value3)
     {
       Compare3 compare;
-      Data3 data;
+      Data3    data;
 
       data.emplace(0, "0", "1", "2");
       compare.emplace(0, D3("0", "1", "2"));
@@ -715,9 +674,7 @@ namespace
 
       CHECK(compare.size() == data.size());
 
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 compare.begin());
+      bool isEqual = Check_Equal(data.begin(), data.end(), compare.begin());
 
       CHECK(isEqual);
     }
@@ -726,7 +683,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_emplace_value4)
     {
       Compare4 compare;
-      Data4 data;
+      Data4    data;
 
       data.emplace(0, "0", "1", "2", "3");
       compare.emplace(0, D4("0", "1", "2", "3"));
@@ -749,27 +706,38 @@ namespace
 
       CHECK(compare.size() == data.size());
 
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 compare.begin());
+      bool isEqual = Check_Equal(data.begin(), data.end(), compare.begin());
 
       CHECK(isEqual);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_emplace_moved_value)
+    {
+      DataM data;
+
+      data.emplace(1, MC("1"));
+      data.emplace(2, MC("2"));
+      data.emplace(3, MC("3"));
+
+      CHECK("1" == data.find(1)->second.value);
+      CHECK("2" == data.find(2)->second.value);
+      CHECK("3" == data.find(3)->second.value);
+      CHECK_EQUAL(3U, data.size());
     }
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_erase_key)
     {
       Compare_DataNDC compare_data(initial_data.begin(), initial_data.end());
-      DataNDC data(initial_data.begin(), initial_data.end());
+      DataNDC         data(initial_data.begin(), initial_data.end());
 
       size_t count_compare = compare_data.erase(5);
       size_t count         = data.erase(5);
 
       CHECK(count_compare == count);
 
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 compare_data.begin());
+      bool isEqual = Check_Equal(data.begin(), data.end(), compare_data.begin());
 
       CHECK(isEqual);
     }
@@ -784,7 +752,7 @@ namespace
       EMap data(initial_data.begin(), initial_data.end());
 
       size_t count_compare = compare_data.erase(5);
-      size_t count = data.erase(Key(5));
+      size_t count         = data.erase(Key(5));
 
       CHECK(count_compare == count);
 
@@ -797,7 +765,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_erase_single_iterator)
     {
       Compare_DataNDC compare_data(initial_data.begin(), initial_data.end());
-      DataNDC data(initial_data.begin(), initial_data.end());
+      DataNDC         data(initial_data.begin(), initial_data.end());
 
       Compare_DataNDC::iterator i_compare_begin = compare_data.begin();
       DataNDC::iterator         i_data_begin    = data.begin();
@@ -806,7 +774,7 @@ namespace
       DataNDC::iterator         i_data    = i_data_begin;
 
       Compare_DataNDC::iterator i_compare_expected = i_compare_begin;
-      DataNDC::iterator         i_data_expected   = i_data_begin;
+      DataNDC::iterator         i_data_expected    = i_data_begin;
 
       std::advance(i_compare, 2);
       std::advance(i_data, 2);
@@ -821,14 +789,12 @@ namespace
       DataNDC::iterator         i_data_result    = data.erase(i_data);
 
       CHECK(compare_expected.first == i_compare_result->first);
-      CHECK(data_expected.first    == i_data_result->first);
+      CHECK(data_expected.first == i_data_result->first);
 
       CHECK(compare_expected.second == i_compare_result->second);
-      CHECK(data_expected.second   == i_data_result->second);
+      CHECK(data_expected.second == i_data_result->second);
 
-      bool isEqual = std::equal(data.begin(),
-                                data.end(),
-                                compare_data.begin());
+      bool isEqual = std::equal(data.begin(), data.end(), compare_data.begin());
 
       CHECK(isEqual);
     }
@@ -837,7 +803,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_erase_single_const_iterator)
     {
       Compare_DataNDC compare_data(initial_data.begin(), initial_data.end());
-      DataNDC data(initial_data.begin(), initial_data.end());
+      DataNDC         data(initial_data.begin(), initial_data.end());
 
       Compare_DataNDC::iterator i_compare_begin = compare_data.begin();
       DataNDC::iterator         i_data_begin    = data.begin();
@@ -861,14 +827,12 @@ namespace
       DataNDC::iterator         i_data_result    = data.erase(i_data);
 
       CHECK(compare_expected.first == i_compare_result->first);
-      CHECK(data_expected.first    == i_data_result->first);
+      CHECK(data_expected.first == i_data_result->first);
 
       CHECK(compare_expected.second == i_compare_result->second);
-      CHECK(data_expected.second    == i_data_result->second);
+      CHECK(data_expected.second == i_data_result->second);
 
-      bool isEqual = std::equal(data.begin(),
-                                data.end(),
-                                compare_data.begin());
+      bool isEqual = std::equal(data.begin(), data.end(), compare_data.begin());
 
       CHECK(isEqual);
     }
@@ -877,7 +841,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_erase_range)
     {
       Compare_DataNDC compare_data(initial_data.begin(), initial_data.end());
-      DataNDC data(initial_data.begin(), initial_data.end());
+      DataNDC         data(initial_data.begin(), initial_data.end());
 
       Compare_DataNDC::const_iterator i_compare = compare_data.begin();
       DataNDC::const_iterator         i_data    = data.begin();
@@ -898,14 +862,12 @@ namespace
       DataNDC::iterator         i_data_result    = data.erase(i_data, i_data_end);
 
       CHECK(compare_expected.first == i_compare_result->first);
-      CHECK(data_expected.first    == i_data_result->first);
+      CHECK(data_expected.first == i_data_result->first);
 
       CHECK(compare_expected.second == i_compare_result->second);
-      CHECK(data_expected.second    == i_data_result->second);
+      CHECK(data_expected.second == i_data_result->second);
 
-      bool isEqual = std::equal(data.begin(),
-                                data.end(),
-                                compare_data.begin());
+      bool isEqual = std::equal(data.begin(), data.end(), compare_data.begin());
 
       CHECK(isEqual);
     }
@@ -948,9 +910,7 @@ namespace
 
       DataNDC data(compare_data.begin(), compare_data.end());
 
-      bool isEqual = Check_Equal(data.begin(),
-                                 data.end(),
-                                 compare_data.begin());
+      bool isEqual = Check_Equal(data.begin(), data.end(), compare_data.begin());
 
       CHECK(isEqual);
     }
@@ -962,9 +922,7 @@ namespace
 
       DataNDC data(compare_data.begin(), compare_data.end());
 
-      bool isEqual = Check_Equal(data.cbegin(),
-                                 data.cend(),
-                                 compare_data.cbegin());
+      bool isEqual = Check_Equal(data.cbegin(), data.cend(), compare_data.cbegin());
 
       CHECK(isEqual);
     }
@@ -976,9 +934,7 @@ namespace
 
       DataNDC data(compare_data.begin(), compare_data.end());
 
-      bool isEqual = Check_Equal(data.rbegin(),
-                                 data.rend(),
-                                 compare_data.rbegin());
+      bool isEqual = Check_Equal(data.rbegin(), data.rend(), compare_data.rbegin());
 
       CHECK(isEqual);
     }
@@ -990,9 +946,7 @@ namespace
 
       DataNDC data(compare_data.begin(), compare_data.end());
 
-      bool isEqual = Check_Equal(data.crbegin(),
-                                 data.crend(),
-                                 compare_data.crbegin());
+      bool isEqual = Check_Equal(data.crbegin(), data.crend(), compare_data.crbegin());
 
       CHECK(isEqual);
     }
@@ -1101,7 +1055,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_lower_bound)
     {
       Compare_DataNDC compare_data(initial_data.begin(), initial_data.end());
-      DataNDC data(initial_data.begin(), initial_data.end());
+      DataNDC         data(initial_data.begin(), initial_data.end());
 
       Compare_DataNDC::iterator i_compare = compare_data.lower_bound(5);
       DataNDC::iterator         i_data    = data.lower_bound(5);
@@ -1128,7 +1082,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_upper_bound)
     {
       Compare_DataNDC compare_data(initial_data.begin(), initial_data.end());
-      DataNDC data(initial_data.begin(), initial_data.end());
+      DataNDC         data(initial_data.begin(), initial_data.end());
 
       Compare_DataNDC::iterator i_compare = compare_data.upper_bound(5);
       DataNDC::iterator         i_data    = data.upper_bound(5);
@@ -1155,12 +1109,12 @@ namespace
     TEST_FIXTURE(SetupFixture, test_equal_range)
     {
       Compare_DataNDC compare_data(initial_data.begin(), initial_data.end());
-      DataNDC data(initial_data.begin(), initial_data.end());
+      DataNDC         data(initial_data.begin(), initial_data.end());
 
       ETL_OR_STD::pair<Compare_DataNDC::iterator, Compare_DataNDC::iterator> i_compare = compare_data.equal_range(5);
-      ETL_OR_STD::pair<DataNDC::iterator, DataNDC::iterator> i_data = data.equal_range(5);
+      ETL_OR_STD::pair<DataNDC::iterator, DataNDC::iterator>                 i_data    = data.equal_range(5);
 
-      CHECK(std::distance(compare_data.begin(), i_compare.first) ==  std::distance(data.begin(), i_data.first));
+      CHECK(std::distance(compare_data.begin(), i_compare.first) == std::distance(data.begin(), i_data.first));
       CHECK(std::distance(compare_data.begin(), i_compare.second) == std::distance(data.begin(), i_data.second));
     }
 
@@ -1174,7 +1128,7 @@ namespace
       EMap data(initial_data.begin(), initial_data.end());
 
       ETL_OR_STD::pair<CMap::iterator, CMap::iterator> i_compare = compare_data.equal_range(5);
-      ETL_OR_STD::pair<EMap::iterator, EMap::iterator> i_data = data.equal_range(Key(5));
+      ETL_OR_STD::pair<EMap::iterator, EMap::iterator> i_data    = data.equal_range(Key(5));
 
       CHECK(std::distance(compare_data.begin(), i_compare.first) == std::distance(data.begin(), i_data.first));
       CHECK(std::distance(compare_data.begin(), i_compare.second) == std::distance(data.begin(), i_data.second));
@@ -1243,10 +1197,10 @@ namespace
     TEST_FIXTURE(SetupFixture, test_multi)
     {
       Compare_DataNDC compare_data(multi_data.begin(), multi_data.end());
-      DataNDC data(multi_data.begin(), multi_data.end());
+      DataNDC         data(multi_data.begin(), multi_data.end());
 
       ETL_OR_STD::pair<Compare_DataNDC::iterator, Compare_DataNDC::iterator> compare_range;
-      ETL_OR_STD::pair<DataNDC::iterator, DataNDC::iterator> test_range;
+      ETL_OR_STD::pair<DataNDC::iterator, DataNDC::iterator>                 test_range;
 
       compare_range = compare_data.equal_range(0);
       test_range    = data.equal_range(0);
@@ -1277,7 +1231,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_count)
     {
       Compare_DataNDC compare_data(multi_data.begin(), multi_data.end());
-      DataNDC data(multi_data.begin(), multi_data.end());
+      DataNDC         data(multi_data.begin(), multi_data.end());
 
       CHECK(compare_data.count(0) == data.count(0));
       CHECK(compare_data.count(1) == data.count(1));
@@ -1293,9 +1247,10 @@ namespace
     {
       using Pair = ETL_OR_STD::pair<const int, NDC>;
 
-      etl::flat_multimap data{ Pair(0, NDC("A")), Pair(1, NDC("B")), Pair(1, NDC("B2")), Pair(2, NDC("C")), Pair(3, NDC("D")), Pair(4, NDC("E")), Pair(5, NDC("F")) };
-      auto v = *data.begin();
-      using Type = decltype(v);
+      etl::flat_multimap data{Pair(0, NDC("A")), Pair(1, NDC("B")), Pair(1, NDC("B2")), Pair(2, NDC("C")),
+                              Pair(3, NDC("D")), Pair(4, NDC("E")), Pair(5, NDC("F"))};
+      auto               v = *data.begin();
+      using Type           = decltype(v);
       CHECK((std::is_same_v<Pair, Type>));
 
       decltype(data)::const_iterator itr = data.begin();
@@ -1322,9 +1277,10 @@ namespace
     {
       using Pair = ETL_OR_STD::pair<const int, NDC>;
 
-      auto data = etl::make_flat_multimap<const int, NDC>(Pair(0, NDC("A")), Pair(1, NDC("B")), Pair(1, NDC("B2")), Pair(2, NDC("C")), Pair(3, NDC("D")), Pair(4, NDC("E")), Pair(5, NDC("F")));
+      auto data = etl::make_flat_multimap<const int, NDC>(Pair(0, NDC("A")), Pair(1, NDC("B")), Pair(1, NDC("B2")), Pair(2, NDC("C")),
+                                                          Pair(3, NDC("D")), Pair(4, NDC("E")), Pair(5, NDC("F")));
 
-      auto v = *data.begin();
+      auto v     = *data.begin();
       using Type = decltype(v);
       CHECK((std::is_same<Pair, Type>::value));
 
@@ -1347,6 +1303,29 @@ namespace
 #endif
 
     //*************************************************************************
+#if ETL_HAS_INITIALIZER_LIST
+    // Arguments that are const-qualified lvalues of the pair type must be
+    // accepted. Guards against the defect fixed for make_array and make_deque,
+    // which forwarded each argument as the element type rather than as its own
+    // deduced type and so rejected const lvalues.
+    TEST_FIXTURE(SetupFixture, test_make_flat_multimap_from_const_lvalues_of_pair_type)
+    {
+      using Pair = ETL_OR_STD::pair<const char, int>;
+
+      static const Pair static_const_lvalue('a', 0);
+      const Pair        local_const_lvalue('b', 1);
+      Pair              mutable_lvalue('c', 2);
+
+      auto data = etl::make_flat_multimap<char, int>(static_const_lvalue, local_const_lvalue, mutable_lvalue);
+
+      CHECK_EQUAL(3U, data.size());
+      CHECK_EQUAL(0, data.find('a')->second);
+      CHECK_EQUAL(1, data.find('b')->second);
+      CHECK_EQUAL(2, data.find('c')->second);
+    }
+#endif
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_contains)
     {
       DataNDC data(initial_data.begin(), initial_data.end());
@@ -1365,4 +1344,4 @@ namespace
       CHECK(!data.contains(Key(99)));
     }
   }
-}
+} // namespace

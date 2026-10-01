@@ -34,24 +34,30 @@ SOFTWARE.
 ///\defgroup expected expected
 ///\ingroup utilities
 #include "platform.h"
-#include "exception.h"
 #include "error_handler.h"
+#include "exception.h"
+#include "initializer_list.h"
+#include "invoke.h"
+#include "memory.h"
+#include "type_traits.h"
 #include "utility.h"
 #include "variant.h"
-#include "initializer_list.h"
-#include "type_traits.h"
-#include "invoke.h"
 
 namespace etl
 {
   // Forward declaration for is_expected
-  template <typename TValue, typename TError> class expected;
-  
-  template <typename T>
-  struct is_expected : etl::false_type {};
-  
   template <typename TValue, typename TError>
-  struct is_expected<expected<TValue,TError> > : etl::true_type {};
+  class expected;
+
+  template <typename T>
+  struct is_expected : etl::false_type
+  {
+  };
+
+  template <typename TValue, typename TError>
+  struct is_expected<expected<TValue, TError> > : etl::true_type
+  {
+  };
 
   //***************************************************************************
   /// Base exception for et::expected
@@ -149,8 +155,7 @@ namespace etl
     //*******************************************
     /// Assign from etl::unexpected.
     //*******************************************
-    ETL_CONSTEXPR14
-    etl::unexpected<TError>& operator =(const etl::unexpected<TError>& rhs)
+    ETL_CONSTEXPR14 etl::unexpected<TError>& operator=(const etl::unexpected<TError>& rhs)
     {
 #if ETL_USING_CPP11
       ETL_STATIC_ASSERT(etl::is_copy_constructible<TError>::value, "Error not copy assignable");
@@ -164,8 +169,7 @@ namespace etl
     //*******************************************
     /// Move assign from etl::unexpected.
     //*******************************************
-    ETL_CONSTEXPR14
-      etl::unexpected<TError>& operator =(etl::unexpected<TError>&& rhs)
+    ETL_CONSTEXPR14 etl::unexpected<TError>& operator=(etl::unexpected<TError>&& rhs)
     {
       ETL_STATIC_ASSERT(etl::is_move_constructible<TError>::value, "Error not move assignable");
 
@@ -178,7 +182,7 @@ namespace etl
     //*******************************************
     /// Get the error.
     //*******************************************
-    ETL_CONSTEXPR14 TError& error()& ETL_NOEXCEPT
+    ETL_CONSTEXPR14 TError& error() & ETL_NOEXCEPT
     {
       return error_value;
     }
@@ -194,7 +198,7 @@ namespace etl
     //*******************************************
     /// Get the error.
     //*******************************************
-    ETL_CONSTEXPR14 TError&& error()&& ETL_NOEXCEPT
+    ETL_CONSTEXPR14 TError&& error() && ETL_NOEXCEPT
     {
       return etl::move(error_value);
     }
@@ -202,7 +206,7 @@ namespace etl
     //*******************************************
     /// Get the error.
     //*******************************************
-    ETL_CONSTEXPR14 TError&& error() const&& ETL_NOEXCEPT
+    ETL_CONSTEXPR14 const TError&& error() const&& ETL_NOEXCEPT
     {
       return etl::move(error_value);
     }
@@ -236,15 +240,99 @@ namespace etl
   //*****************************************************************************
   struct unexpect_t
   {
-    ETL_CONSTEXPR14 explicit unexpect_t()
-    {
-    }
+    ETL_CONSTEXPR14 explicit unexpect_t() {}
   };
 
 #if ETL_USING_CPP17
   inline ETL_CONSTEXPR unexpect_t unexpect{};
 #else
   static const unexpect_t unexpect;
+#endif
+
+#if ETL_USING_CPP11
+  namespace private_expected
+  {
+    //*****************************************************************************
+    // Detects etl::unexpected, which the value constructors must not accept as a value.
+    //*****************************************************************************
+    template <typename T>
+    struct is_unexpected : etl::false_type
+    {
+    };
+
+    template <typename TError>
+    struct is_unexpected<etl::unexpected<TError> > : etl::true_type
+    {
+    };
+
+    //*****************************************************************************
+    // True when TValue can be built from the source expected, which must be wrapped rather than unwrapped.
+    //*****************************************************************************
+    template <typename TValue, typename U, typename G>
+    struct constructible_from_expected
+      : etl::integral_constant<
+          bool, etl::is_constructible<TValue, etl::expected<U, G>&>::value || etl::is_constructible<TValue, etl::expected<U, G> >::value
+                  || etl::is_constructible<TValue, const etl::expected<U, G>&>::value
+                  || etl::is_constructible<TValue, const etl::expected<U, G> >::value || etl::is_convertible<etl::expected<U, G>&, TValue>::value
+                  || etl::is_convertible<etl::expected<U, G>&&, TValue>::value || etl::is_convertible<const etl::expected<U, G>&, TValue>::value
+                  || etl::is_convertible<const etl::expected<U, G>&&, TValue>::value>
+    {
+    };
+
+    //*****************************************************************************
+    // True when TError can be built from the source expected, which must be wrapped rather than unwrapped.
+    //*****************************************************************************
+    template <typename TError, typename U, typename G>
+    struct unexpected_constructible_from_expected
+      : etl::integral_constant<bool, etl::is_constructible<etl::unexpected<TError>, etl::expected<U, G>&>::value
+                                       || etl::is_constructible<etl::unexpected<TError>, etl::expected<U, G> >::value
+                                       || etl::is_constructible<etl::unexpected<TError>, const etl::expected<U, G>&>::value
+                                       || etl::is_constructible<etl::unexpected<TError>, const etl::expected<U, G> >::value>
+    {
+    };
+
+    //*****************************************************************************
+    // Constraints shared by the implicit and explicit value constructors.
+    //*****************************************************************************
+    template <typename TValue, typename TError, typename U>
+    struct is_value_constructor_candidate
+      : etl::integral_constant<bool, !etl::is_same<typename etl::decay<U>::type, etl::expected<TValue, TError> >::value
+                                       && !etl::is_same<typename etl::decay<U>::type, TValue>::value
+                                       && !etl::is_same<typename etl::decay<U>::type, etl::in_place_t>::value
+                                       && !etl::is_same<typename etl::decay<U>::type, etl::unexpect_t>::value
+                                       && !is_unexpected<typename etl::decay<U>::type>::value && etl::is_constructible<TValue, U&&>::value>
+    {
+    };
+
+    //*****************************************************************************
+    // Constraints on the source expected that hold whatever its value category.
+    //*****************************************************************************
+    template <typename TValue, typename TError, typename U, typename G>
+    struct is_expected_conversion_allowed
+      : etl::integral_constant<bool, !etl::is_same<etl::expected<U, G>, etl::expected<TValue, TError> >::value
+                                       && !constructible_from_expected<TValue, U, G>::value
+                                       && !unexpected_constructible_from_expected<TError, U, G>::value>
+    {
+    };
+
+    //*****************************************************************************
+    // UArgument and GArgument are the source members as the constructor receives them.
+    //*****************************************************************************
+    template <typename TValue, typename TError, typename UArgument, typename GArgument>
+    struct is_expected_conversion_constructible
+      : etl::integral_constant<bool, etl::is_constructible<TValue, UArgument>::value && etl::is_constructible<TError, GArgument>::value>
+    {
+    };
+
+    //*****************************************************************************
+    // A converting constructor is implicit only when both the value and the error convert implicitly.
+    //*****************************************************************************
+    template <typename TValue, typename TError, typename UArgument, typename GArgument>
+    struct is_expected_conversion_implicit
+      : etl::integral_constant<bool, etl::is_convertible<UArgument, TValue>::value && etl::is_convertible<GArgument, TError>::value>
+    {
+    };
+  } // namespace private_expected
 #endif
 
   //*****************************************************************************
@@ -291,6 +379,114 @@ namespace etl
     }
 #endif
 
+#if ETL_USING_CPP11
+    //*******************************************
+    /// Constructor from a value convertible to value_type.
+    //*******************************************
+    template <typename U,
+              typename etl::enable_if<
+                private_expected::is_value_constructor_candidate<TValue, TError, U>::value && etl::is_convertible<U&&, TValue>::value, int>::type = 0>
+    ETL_CONSTEXPR14 expected(U&& value_)
+      : storage(etl::in_place_index_t<Value_Type>(), etl::forward<U>(value_))
+    {
+    }
+
+    //*******************************************
+    /// Constructor from a value explicitly convertible to value_type.
+    //*******************************************
+    template <typename U, typename etl::enable_if<private_expected::is_value_constructor_candidate<TValue, TError, U>::value
+                                                    && !etl::is_convertible<U&&, TValue>::value,
+                                                  int>::type = 0>
+    ETL_CONSTEXPR14 explicit expected(U&& value_)
+      : storage(etl::in_place_index_t<Value_Type>(), etl::forward<U>(value_))
+    {
+    }
+
+    //*******************************************
+    /// Copy constructor from an expected with convertible value and error types.
+    //*******************************************
+    template <typename U, typename G,
+              typename etl::enable_if<private_expected::is_expected_conversion_allowed<TValue, TError, U, G>::value
+                                        && private_expected::is_expected_conversion_constructible<TValue, TError, const U&, const G&>::value
+                                        && private_expected::is_expected_conversion_implicit<TValue, TError, const U&, const G&>::value,
+                                      int>::type = 0>
+    expected(const etl::expected<U, G>& other)
+      : storage(private_variant::valueless_t())
+    {
+      if (other.has_value())
+      {
+        storage.template emplace<Value_Type>(other.value());
+      }
+      else
+      {
+        storage.template emplace<Error_Type>(other.error());
+      }
+    }
+
+    //*******************************************
+    /// Copy constructor from an expected with explicitly convertible value or error types.
+    //*******************************************
+    template <typename U, typename G,
+              typename etl::enable_if<private_expected::is_expected_conversion_allowed<TValue, TError, U, G>::value
+                                        && private_expected::is_expected_conversion_constructible<TValue, TError, const U&, const G&>::value
+                                        && !private_expected::is_expected_conversion_implicit<TValue, TError, const U&, const G&>::value,
+                                      int>::type = 0>
+    explicit expected(const etl::expected<U, G>& other)
+      : storage(private_variant::valueless_t())
+    {
+      if (other.has_value())
+      {
+        storage.template emplace<Value_Type>(other.value());
+      }
+      else
+      {
+        storage.template emplace<Error_Type>(other.error());
+      }
+    }
+
+    //*******************************************
+    /// Move constructor from an expected with convertible value and error types.
+    //*******************************************
+    template <typename U, typename G,
+              typename etl::enable_if<private_expected::is_expected_conversion_allowed<TValue, TError, U, G>::value
+                                        && private_expected::is_expected_conversion_constructible<TValue, TError, U&&, G&&>::value
+                                        && private_expected::is_expected_conversion_implicit<TValue, TError, U&&, G&&>::value,
+                                      int>::type = 0>
+    expected(etl::expected<U, G>&& other)
+      : storage(private_variant::valueless_t())
+    {
+      if (other.has_value())
+      {
+        storage.template emplace<Value_Type>(etl::move(other.value()));
+      }
+      else
+      {
+        storage.template emplace<Error_Type>(etl::move(other.error()));
+      }
+    }
+
+    //*******************************************
+    /// Move constructor from an expected with explicitly convertible value or error types.
+    //*******************************************
+    template <typename U, typename G,
+              typename etl::enable_if<private_expected::is_expected_conversion_allowed<TValue, TError, U, G>::value
+                                        && private_expected::is_expected_conversion_constructible<TValue, TError, U&&, G&&>::value
+                                        && !private_expected::is_expected_conversion_implicit<TValue, TError, U&&, G&&>::value,
+                                      int>::type = 0>
+    explicit expected(etl::expected<U, G>&& other)
+      : storage(private_variant::valueless_t())
+    {
+      if (other.has_value())
+      {
+        storage.template emplace<Value_Type>(etl::move(other.value()));
+      }
+      else
+      {
+        storage.template emplace<Error_Type>(etl::move(other.error()));
+      }
+    }
+#endif
+
     //*******************************************
     /// Copy constructor
     //*******************************************
@@ -313,13 +509,13 @@ namespace etl
     //*******************************************
     /// Copy construct from unexpected type.
     //*******************************************
-    template <typename G, typename etl::enable_if<!etl::is_convertible<const G&, TError>::value, bool>::type = false>
+    template <typename G, etl::enable_if_t<!etl::is_convertible<const G&, TError>::value, bool> = false>
     ETL_CONSTEXPR14 explicit expected(const etl::unexpected<G>& ue)
       : storage(etl::in_place_index_t<Error_Type>(), ue.error())
     {
     }
 
-    template <typename G, typename etl::enable_if<etl::is_convertible<const G&, TError>::value, bool>::type = false>
+    template <typename G, etl::enable_if_t<etl::is_convertible<const G&, TError>::value, bool> = false>
     ETL_CONSTEXPR14 expected(const etl::unexpected<G>& ue)
       : storage(etl::in_place_index_t<Error_Type>(), ue.error())
     {
@@ -336,13 +532,13 @@ namespace etl
     //*******************************************
     /// Move construct from unexpected type.
     //*******************************************
-    template <typename G, typename etl::enable_if<!etl::is_convertible<const G&, TError>::value, bool>::type = false>
+    template <typename G, etl::enable_if_t< !etl::is_convertible<const G&, TError>::value, bool> = false>
     ETL_CONSTEXPR14 explicit expected(etl::unexpected<G>&& ue)
       : storage(etl::in_place_index_t<Error_Type>(), etl::move(ue.error()))
     {
     }
 
-    template <typename G, typename etl::enable_if<etl::is_convertible<const G&, TError>::value, bool>::type = false>
+    template <typename G, etl::enable_if_t<etl::is_convertible<const G&, TError>::value, bool> = false>
     ETL_CONSTEXPR14 expected(etl::unexpected<G>&& ue)
       : storage(etl::in_place_index_t<Error_Type>(), etl::move(ue.error()))
     {
@@ -367,7 +563,7 @@ namespace etl
     {
     }
 
-#if ETL_HAS_INITIALIZER_LIST
+  #if ETL_HAS_INITIALIZER_LIST
     //*******************************************
     /// Construct value type from initializser_list and arguments.
     //*******************************************
@@ -376,7 +572,7 @@ namespace etl
       : storage(etl::in_place_index_t<Value_Type>(), il, etl::forward<Args>(args)...)
     {
     }
-#endif
+  #endif
 
     //*******************************************
     /// Construct error type from arguments.
@@ -387,7 +583,7 @@ namespace etl
     {
     }
 
-#if ETL_HAS_INITIALIZER_LIST
+  #if ETL_HAS_INITIALIZER_LIST
     //*******************************************
     /// Construct error type from initializser_list and arguments.
     //*******************************************
@@ -396,13 +592,13 @@ namespace etl
       : storage(error_type(il, etl::forward<Args>(args)...))
     {
     }
-#endif
+  #endif
 #endif
 
     //*******************************************
     /// Copy assign from etl::expected.
     //*******************************************
-    this_type& operator =(const this_type& other)
+    this_type& operator=(const this_type& other)
     {
       ETL_STATIC_ASSERT(etl::is_copy_constructible<TValue>::value && etl::is_copy_constructible<TError>::value, "Not copy assignable");
 
@@ -415,7 +611,7 @@ namespace etl
     //*******************************************
     /// Move assign from etl::expected.
     //*******************************************
-    this_type& operator =(this_type&& other)
+    this_type& operator=(this_type&& other)
     {
       ETL_STATIC_ASSERT(etl::is_move_constructible<TValue>::value && etl::is_move_constructible<TError>::value, "Not move assignable");
 
@@ -428,7 +624,7 @@ namespace etl
     //*******************************************
     /// Copy assign from value
     //*******************************************
-    expected& operator =(const value_type& value)
+    expected& operator=(const value_type& value)
     {
       ETL_STATIC_ASSERT(etl::is_copy_constructible<TValue>::value, "Value not copy assignable");
 
@@ -441,11 +637,22 @@ namespace etl
     //*******************************************
     /// Move assign from value
     //*******************************************
-    expected& operator =(value_type&& value)
+    expected& operator=(value_type&& value)
     {
       ETL_STATIC_ASSERT(etl::is_move_constructible<TValue>::value, "Value not move assignable");
 
       storage.template emplace<Value_Type>(etl::move(value));
+
+      return *this;
+    }
+
+    //*******************************************
+    /// Assign from a value convertible to value_type.
+    //*******************************************
+    template <typename U, typename etl::enable_if<private_expected::is_value_constructor_candidate<TValue, TError, U>::value, int>::type = 0>
+    expected& operator=(U&& value)
+    {
+      storage.template emplace<Value_Type>(etl::forward<U>(value));
 
       return *this;
     }
@@ -454,7 +661,7 @@ namespace etl
     //*******************************************
     /// Copy assign from unexpected
     //*******************************************
-    expected& operator =(const unexpected_type& ue)
+    expected& operator=(const unexpected_type& ue)
     {
 #if ETL_USING_CPP11
       ETL_STATIC_ASSERT(etl::is_copy_constructible<TError>::value, "Error not copy assignable");
@@ -469,7 +676,7 @@ namespace etl
     //*******************************************
     /// Move assign from unexpected
     //*******************************************
-    expected& operator =(unexpected_type&& ue)
+    expected& operator=(unexpected_type&& ue)
     {
       ETL_STATIC_ASSERT(etl::is_move_constructible<TError>::value, "Error not move assignable");
 
@@ -483,7 +690,7 @@ namespace etl
     //*******************************************
     /// Get the value.
     //*******************************************
-    ETL_CONSTEXPR14 value_type& value()&
+    ETL_CONSTEXPR14 value_type& value() &
     {
       return etl::get<Value_Type>(storage);
     }
@@ -499,7 +706,7 @@ namespace etl
     //*******************************************
     /// Get the value.
     //*******************************************
-    ETL_CONSTEXPR14 value_type&& value()&&
+    ETL_CONSTEXPR14 value_type&& value() &&
     {
       return etl::move(etl::get<Value_Type>(storage));
     }
@@ -524,9 +731,7 @@ namespace etl
     //*******************************************
     ///
     //*******************************************
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    bool has_value() const ETL_NOEXCEPT
+    ETL_NODISCARD ETL_CONSTEXPR14 bool has_value() const ETL_NOEXCEPT
     {
       return (storage.index() == Value_Type);
     }
@@ -534,10 +739,7 @@ namespace etl
     //*******************************************
     ///
     //*******************************************
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    ETL_EXPLICIT
-    operator bool() const ETL_NOEXCEPT
+    ETL_NODISCARD ETL_CONSTEXPR14 ETL_EXPLICIT operator bool() const ETL_NOEXCEPT
     {
       return has_value();
     }
@@ -547,10 +749,7 @@ namespace etl
     ///
     //*******************************************
     template <typename U>
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    etl::enable_if_t<etl::is_convertible<U, value_type>::value, value_type>
-      value_or(U&& default_value) const&
+    ETL_NODISCARD ETL_CONSTEXPR14 etl::enable_if_t<etl::is_convertible<U, value_type>::value, value_type> value_or(U&& default_value) const&
     {
       if (has_value())
       {
@@ -566,10 +765,7 @@ namespace etl
     ///
     //*******************************************
     template <typename U>
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    etl::enable_if_t<etl::is_convertible<U, value_type>::value, value_type>
-      value_or(U&& default_value)&&
+    ETL_NODISCARD ETL_CONSTEXPR14 etl::enable_if_t<etl::is_convertible<U, value_type>::value, value_type> value_or(U&& default_value) &&
     {
       if (has_value())
       {
@@ -584,9 +780,7 @@ namespace etl
     //*******************************************
     ///
     //*******************************************
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    error_type& error()& ETL_NOEXCEPT
+    ETL_NODISCARD ETL_CONSTEXPR14 error_type& error() & ETL_NOEXCEPT
     {
       return etl::get<Error_Type>(storage);
     }
@@ -594,9 +788,7 @@ namespace etl
     //*******************************************
     ///
     //*******************************************
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    const error_type& error() const& ETL_NOEXCEPT
+    ETL_NODISCARD ETL_CONSTEXPR14 const error_type& error() const& ETL_NOEXCEPT
     {
       return etl::get<Error_Type>(storage);
     }
@@ -604,9 +796,7 @@ namespace etl
     //*******************************************
     ///
     //*******************************************
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    error_type&& error()&& ETL_NOEXCEPT
+    ETL_NODISCARD ETL_CONSTEXPR14 error_type&& error() && ETL_NOEXCEPT
     {
       return etl::move(etl::get<Error_Type>(storage));
     }
@@ -614,13 +804,42 @@ namespace etl
     //*******************************************
     ///
     //*******************************************
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    const error_type&& error() const&& ETL_NOEXCEPT
+    ETL_NODISCARD ETL_CONSTEXPR14 const error_type&& error() const&& ETL_NOEXCEPT
     {
       return etl::move(etl::get<Error_Type>(storage));
     }
 
+    //*******************************************
+    /// Get the error or a default value.
+    //*******************************************
+    template <typename G>
+    ETL_NODISCARD ETL_CONSTEXPR14 etl::enable_if_t<etl::is_convertible<G, error_type>::value, error_type> error_or(G&& default_error) const&
+    {
+      if (has_value())
+      {
+        return static_cast<error_type>(etl::forward<G>(default_error));
+      }
+      else
+      {
+        return error();
+      }
+    }
+
+    //*******************************************
+    /// Get the error or a default value.
+    //*******************************************
+    template <typename G>
+    ETL_NODISCARD ETL_CONSTEXPR14 etl::enable_if_t<etl::is_convertible<G, error_type>::value, error_type> error_or(G&& default_error) &&
+    {
+      if (has_value())
+      {
+        return static_cast<error_type>(etl::forward<G>(default_error));
+      }
+      else
+      {
+        return etl::move(error());
+      }
+    }
 
     //*******************************************
     /// Swap with another etl::expected.
@@ -643,10 +862,10 @@ namespace etl
       return value();
     }
 
-    //*******************************************
-    ///
-    //*******************************************
-#if ETL_HAS_INITIALIZER_LIST
+      //*******************************************
+      ///
+      //*******************************************
+  #if ETL_HAS_INITIALIZER_LIST
     template <typename U, typename... Args>
     ETL_CONSTEXPR14 value_type& emplace(std::initializer_list<U> il, Args&&... args) ETL_NOEXCEPT
     {
@@ -654,7 +873,7 @@ namespace etl
 
       return value();
     }
-#endif
+  #endif
 #else
     //*******************************************
     ///
@@ -679,12 +898,28 @@ namespace etl
     {
       return etl::get<Error_Type>(storage);
     }
+
+    //*******************************************
+    /// Get the error or a default value.
+    //*******************************************
+    template <typename G>
+    error_type error_or(const G& default_error) const
+    {
+      if (has_value())
+      {
+        return static_cast<error_type>(default_error);
+      }
+      else
+      {
+        return error();
+      }
+    }
 #endif
 
     //*******************************************
     ///
     //*******************************************
-    value_type* operator ->()
+    value_type* operator->()
     {
       ETL_ASSERT_OR_RETURN_VALUE(has_value(), ETL_ERROR(expected_invalid), ETL_NULLPTR);
 
@@ -694,7 +929,7 @@ namespace etl
     //*******************************************
     ///
     //*******************************************
-    const value_type* operator ->() const
+    const value_type* operator->() const
     {
       ETL_ASSERT_OR_RETURN_VALUE(has_value(), ETL_ERROR(expected_invalid), ETL_NULLPTR);
 
@@ -704,7 +939,7 @@ namespace etl
     //*******************************************
     ///
     //*******************************************
-    value_type& operator *() ETL_LVALUE_REF_QUALIFIER
+    value_type& operator*() ETL_LVALUE_REF_QUALIFIER
     {
       ETL_ASSERT(has_value(), ETL_ERROR(expected_invalid));
 
@@ -714,9 +949,9 @@ namespace etl
     //*******************************************
     ///
     //*******************************************
-    const value_type& operator *() const ETL_LVALUE_REF_QUALIFIER
+    const value_type& operator*() const ETL_LVALUE_REF_QUALIFIER
     {
-      ETL_ASSERT_OR_RETURN_VALUE(has_value(), ETL_ERROR(expected_invalid), ETL_NULLPTR);
+      ETL_ASSERT(has_value(), ETL_ERROR(expected_invalid));
 
       return etl::get<value_type>(storage);
     }
@@ -725,9 +960,9 @@ namespace etl
     //*******************************************
     ///
     //*******************************************
-    value_type&& operator *()&&
+    value_type&& operator*() &&
     {
-      ETL_ASSERT_OR_RETURN_VALUE(has_value(), ETL_ERROR(expected_invalid), ETL_NULLPTR);
+      ETL_ASSERT(has_value(), ETL_ERROR(expected_invalid));
 
       return etl::move(etl::get<value_type>(storage));
     }
@@ -735,7 +970,7 @@ namespace etl
     //*******************************************
     ///
     //*******************************************
-    const value_type&& operator *() const&&
+    const value_type&& operator*() const&&
     {
       ETL_ASSERT(has_value(), ETL_ERROR(expected_invalid));
 
@@ -743,98 +978,131 @@ namespace etl
     }
 #endif
 
+    //*******************************************
+    /// Returns a pointer to the value if has_value(), otherwise returns nullptr.
+    /// Allows expected to be used as a range of 0 or 1 elements.
+    //*******************************************
+    ETL_NODISCARD ETL_CONSTEXPR14 value_type* begin() ETL_NOEXCEPT
+    {
+      return has_value() ? &etl::get<value_type>(storage) : ETL_NULLPTR;
+    }
+
+    //*******************************************
+    /// Returns a pointer past the value if has_value(), otherwise returns nullptr.
+    //*******************************************
+    ETL_NODISCARD ETL_CONSTEXPR14 value_type* end() ETL_NOEXCEPT
+    {
+      return has_value() ? &etl::get<value_type>(storage) + 1 : ETL_NULLPTR;
+    }
+
+    //*******************************************
+    /// Returns a const pointer to the value if has_value(), otherwise returns nullptr.
+    //*******************************************
+    ETL_NODISCARD ETL_CONSTEXPR14 const value_type* begin() const ETL_NOEXCEPT
+    {
+      return has_value() ? &etl::get<value_type>(storage) : ETL_NULLPTR;
+    }
+
+    //*******************************************
+    /// Returns a const pointer past the value if has_value(), otherwise returns nullptr.
+    //*******************************************
+    ETL_NODISCARD ETL_CONSTEXPR14 const value_type* end() const ETL_NOEXCEPT
+    {
+      return has_value() ? &etl::get<value_type>(storage) + 1 : ETL_NULLPTR;
+    }
+
 #if ETL_USING_CPP11
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, TValue&>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F, TValue&>>>
     auto transform(F&& f) & -> expected<U, TError>
     {
       return transform_impl<F, this_type&, U, TValue&>(etl::forward<F>(f), *this);
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, const TValue&>::type>::type>
+    template < typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, const TValue&>>>
     auto transform(F&& f) const& -> expected<U, TError>
     {
       return transform_impl<F, const this_type&, U, const TValue&>(etl::forward<F>(f), *this);
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, TValue&&>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, TValue&&>>>
     auto transform(F&& f) && -> expected<U, TError>
     {
       return transform_impl<F, this_type&&, U, TValue&&>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, const TValue&&>::type>::type>
+    template < typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, const TValue&&>>>
     auto transform(F&& f) const&& -> expected<U, TError>
     {
       return transform_impl<F, const this_type&&, U, const TValue&&>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, TValue&>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, TValue&>>>
     auto and_then(F&& f) & -> U
     {
       return and_then_impl<F, this_type&, U, TValue&>(etl::forward<F>(f), *this);
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, const TValue&>::type>::type>
+    template < typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, const TValue&>>>
     auto and_then(F&& f) const& -> U
     {
       return and_then_impl<F, const this_type&, U, const TValue&>(etl::forward<F>(f), *this);
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, TValue&&>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, TValue&&>>>
     auto and_then(F&& f) && -> U
     {
       return and_then_impl<F, this_type&&, U, TValue&&>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, const TValue&&>::type>::type>
+    template < typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, const TValue&&>>>
     auto and_then(F&& f) const&& -> U
     {
       return and_then_impl<F, const this_type&&, U, const TValue&&>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, TError&>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, TError&>>>
     auto or_else(F&& f) & -> U
     {
       return or_else_impl<F, this_type&, U, TError&>(etl::forward<F>(f), *this);
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, const TError&>::type>::type>
-    auto or_else(F&& f) const & -> U
+    template < typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, const TError&>>>
+    auto or_else(F&& f) const& -> U
     {
       return or_else_impl<F, const this_type&, U, const TError&>(etl::forward<F>(f), *this);
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, TError&&>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, TError&&>>>
     auto or_else(F&& f) && -> U
     {
       return or_else_impl<F, this_type&&, U, TError&&>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, const TError&&>::type>::type>
-    auto or_else(F&& f) const && -> U
+    template < typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, const TError&&>>>
+    auto or_else(F&& f) const&& -> U
     {
       return or_else_impl<F, const this_type&&, U, const TError&&>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, TError&>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, TError&>>>
     auto transform_error(F&& f) & -> expected<TValue, U>
     {
       return transform_error_impl<F, this_type&, U, TError&>(etl::forward<F>(f), *this);
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, const TError&>::type>::type>
-    auto transform_error(F&& f) const & -> expected<TValue, U>
+    template < typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, const TError&>>>
+    auto transform_error(F&& f) const& -> expected<TValue, U>
     {
       return transform_error_impl<F, const this_type&, U, const TError&>(etl::forward<F>(f), *this);
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, TError&&>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, TError&&>>>
     auto transform_error(F&& f) && -> expected<TValue, U>
     {
       return transform_error_impl<F, this_type&&, U, TError&&>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, const TError&&>::type>::type>
+    template < typename F, typename U = etl::remove_cvref_t< etl::invoke_result_t<F, const TError&&>>>
     auto transform_error(F&& f) const&& -> expected<TValue, U>
     {
       return transform_error_impl<F, const this_type&&, U, const TError&&>(etl::forward<F>(f), etl::move(*this));
@@ -845,16 +1113,15 @@ namespace etl
 
     enum
     {
-      Uninitialised,
       Value_Type,
       Error_Type
     };
 
-    typedef etl::variant<etl::monostate, value_type, error_type> storage_type;
-    storage_type storage;
+    typedef etl::variant<value_type, error_type> storage_type;
+    storage_type                                 storage;
 
 #if ETL_USING_CPP11
-    template <typename F, typename TExp, typename TRet, typename TValueRef, typename = typename etl::enable_if<!etl::is_void<TRet>::value>::type>
+    template < typename F, typename TExp, typename TRet, typename TValueRef, typename = etl::enable_if_t<!etl::is_void<TRet>::value>>
     auto transform_impl(F&& f, TExp&& exp) const -> expected<TRet, TError>
     {
       if (exp.has_value())
@@ -867,7 +1134,7 @@ namespace etl
       }
     }
 
-    template <typename F, typename TExp, typename TRet, typename TValueRef, typename = typename etl::enable_if<etl::is_void<TRet>::value>::type>
+    template < typename F, typename TExp, typename TRet, typename TValueRef, typename = etl::enable_if_t<etl::is_void<TRet>::value>>
     auto transform_impl(F&& f, TExp&& exp) const -> expected<void, TError>
     {
       if (exp.has_value())
@@ -881,7 +1148,9 @@ namespace etl
       }
     }
 
-    template <typename F, typename TExp, typename TRet, typename TValueRef, typename = typename etl::enable_if<!etl::is_void<TRet>::value && etl::is_expected<TRet>::value && etl::is_same<typename TRet::error_type, TError>::value>::type>
+    template < typename F, typename TExp, typename TRet, typename TValueRef,
+               typename = etl::enable_if_t<!etl::is_void<TRet>::value && etl::is_expected<TRet>::value
+                                           && etl::is_same<typename TRet::error_type, TError>::value>>
     auto and_then_impl(F&& f, TExp&& exp) const -> TRet
     {
       if (exp.has_value())
@@ -894,7 +1163,9 @@ namespace etl
       }
     }
 
-    template <typename F, typename TExp, typename TRet, typename TErrorRef, typename = typename etl::enable_if<!etl::is_void<TRet>::value && etl::is_expected<TRet>::value && etl::is_same<typename TRet::value_type, TValue>::value>::type>
+    template < typename F, typename TExp, typename TRet, typename TErrorRef,
+               typename = etl::enable_if_t<!etl::is_void<TRet>::value && etl::is_expected<TRet>::value
+                                           && etl::is_same<typename TRet::value_type, TValue>::value>>
     auto or_else_impl(F&& f, TExp&& exp) const -> TRet
     {
       if (exp.has_value())
@@ -907,7 +1178,7 @@ namespace etl
       }
     }
 
-    template <typename F, typename TExp, typename TRet, typename TErrorRef, typename = typename etl::enable_if<!etl::is_void<TRet>::value>::type>
+    template < typename F, typename TExp, typename TRet, typename TErrorRef, typename = etl::enable_if_t<!etl::is_void<TRet>::value>>
     auto transform_error_impl(F&& f, TExp&& exp) const -> expected<TValue, TRet>
     {
       if (exp.has_value())
@@ -925,7 +1196,7 @@ namespace etl
   //*****************************************************************************
   /// Specialisation for void value type.
   //*****************************************************************************
-  template<typename TError>
+  template <typename TError>
   class expected<void, TError>
   {
   public:
@@ -938,16 +1209,14 @@ namespace etl
     //*******************************************
     /// Default constructor
     //*******************************************
-    ETL_CONSTEXPR14
-      expected()
+    ETL_CONSTEXPR14 expected()
     {
     }
 
     //*******************************************
     /// Copy construct from unexpected
     //*******************************************
-    ETL_CONSTEXPR14
-      expected(const unexpected_type& ue_)
+    ETL_CONSTEXPR14 expected(const unexpected_type& ue_)
       : storage(ue_.error())
     {
     }
@@ -956,8 +1225,7 @@ namespace etl
     //*******************************************
     /// Move construct from unexpected
     //*******************************************
-    ETL_CONSTEXPR14
-      expected(unexpected_type&& ue_)
+    ETL_CONSTEXPR14 expected(unexpected_type&& ue_)
       : storage(etl::move(ue_.error()))
     {
     }
@@ -966,8 +1234,7 @@ namespace etl
     //*******************************************
     /// Copy construct
     //*******************************************
-    ETL_CONSTEXPR14
-      expected(const this_type& other)
+    ETL_CONSTEXPR14 expected(const this_type& other)
       : storage(other.storage)
     {
     }
@@ -976,8 +1243,7 @@ namespace etl
     //*******************************************
     /// Move construct
     //*******************************************
-    ETL_CONSTEXPR14
-      expected(this_type&& other)
+    ETL_CONSTEXPR14 expected(this_type&& other)
       : storage(etl::move(other.storage))
     {
     }
@@ -986,7 +1252,7 @@ namespace etl
     //*******************************************
     /// Copy assign
     //*******************************************
-    this_type& operator =(const this_type& other)
+    this_type& operator=(const this_type& other)
     {
       ETL_STATIC_ASSERT(etl::is_copy_constructible<TError>::value, "Not copy assignable");
 
@@ -998,7 +1264,7 @@ namespace etl
     //*******************************************
     /// Move assign
     //*******************************************
-    this_type& operator =(this_type&& other)
+    this_type& operator=(this_type&& other)
     {
       ETL_STATIC_ASSERT(etl::is_move_constructible<TError>::value, "Not move assignable");
 
@@ -1010,7 +1276,7 @@ namespace etl
     //*******************************************
     /// Copy assign from unexpected
     //*******************************************
-    expected& operator =(const unexpected_type& ue)
+    expected& operator=(const unexpected_type& ue)
     {
 #if ETL_USING_CPP11
       ETL_STATIC_ASSERT(etl::is_copy_constructible<TError>::value, "Error not copy assignable");
@@ -1024,7 +1290,7 @@ namespace etl
     //*******************************************
     /// Move assign from unexpected
     //*******************************************
-    expected& operator =(unexpected_type&& ue)
+    expected& operator=(unexpected_type&& ue)
     {
       ETL_STATIC_ASSERT(etl::is_move_constructible<TError>::value, "Error not move assignable");
 
@@ -1036,9 +1302,7 @@ namespace etl
     //*******************************************
     /// Returns true if expected has a value
     //*******************************************
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    bool has_value() const ETL_NOEXCEPT
+    ETL_NODISCARD ETL_CONSTEXPR14 bool has_value() const ETL_NOEXCEPT
     {
       return (storage.index() != Error_Type);
     }
@@ -1046,10 +1310,7 @@ namespace etl
     //*******************************************
     /// Returns true if expected has a value
     //*******************************************
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    ETL_EXPLICIT
-    operator bool() const ETL_NOEXCEPT
+    ETL_NODISCARD ETL_CONSTEXPR14 ETL_EXPLICIT operator bool() const ETL_NOEXCEPT
     {
       return has_value();
     }
@@ -1059,9 +1320,7 @@ namespace etl
     /// Returns the error
     /// Undefined behaviour if an error has not been set.
     //*******************************************
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    error_type& error()& ETL_NOEXCEPT
+    ETL_NODISCARD ETL_CONSTEXPR14 error_type& error() & ETL_NOEXCEPT
     {
       return etl::get<Error_Type>(storage);
     }
@@ -1070,9 +1329,7 @@ namespace etl
     /// Returns the error
     /// Undefined behaviour if an error has not been set.
     //*******************************************
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    const error_type& error() const& ETL_NOEXCEPT
+    ETL_NODISCARD ETL_CONSTEXPR14 const error_type& error() const& ETL_NOEXCEPT
     {
       return etl::get<Error_Type>(storage);
     }
@@ -1081,9 +1338,7 @@ namespace etl
     /// Returns the error
     /// Undefined behaviour if an error has not been set.
     //*******************************************
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    error_type&& error() && ETL_NOEXCEPT
+    ETL_NODISCARD ETL_CONSTEXPR14 error_type&& error() && ETL_NOEXCEPT
     {
       return etl::move(etl::get<Error_Type>(storage));
     }
@@ -1092,11 +1347,41 @@ namespace etl
     /// Returns the error
     /// Undefined behaviour if an error has not been set.
     //*******************************************
-    ETL_NODISCARD
-    ETL_CONSTEXPR14
-    const error_type&& error() const&& ETL_NOEXCEPT
+    ETL_NODISCARD ETL_CONSTEXPR14 const error_type&& error() const&& ETL_NOEXCEPT
     {
       return etl::move(etl::get<Error_Type>(storage));
+    }
+
+    //*******************************************
+    /// Get the error or a default value.
+    //*******************************************
+    template <typename G>
+    ETL_NODISCARD ETL_CONSTEXPR14 etl::enable_if_t<etl::is_convertible<G, error_type>::value, error_type> error_or(G&& default_error) const&
+    {
+      if (has_value())
+      {
+        return static_cast<error_type>(etl::forward<G>(default_error));
+      }
+      else
+      {
+        return error();
+      }
+    }
+
+    //*******************************************
+    /// Get the error or a default value.
+    //*******************************************
+    template <typename G>
+    ETL_NODISCARD ETL_CONSTEXPR14 etl::enable_if_t<etl::is_convertible<G, error_type>::value, error_type> error_or(G&& default_error) &&
+    {
+      if (has_value())
+      {
+        return static_cast<error_type>(etl::forward<G>(default_error));
+      }
+      else
+      {
+        return etl::move(error());
+      }
     }
 #else
     //*******************************************
@@ -1106,6 +1391,22 @@ namespace etl
     const error_type& error() const
     {
       return etl::get<Error_Type>(storage);
+    }
+
+    //*******************************************
+    /// Get the error or a default value.
+    //*******************************************
+    template <typename G>
+    error_type error_or(const G& default_error) const
+    {
+      if (has_value())
+      {
+        return static_cast<error_type>(default_error);
+      }
+      else
+      {
+        return error();
+      }
     }
 #endif
 
@@ -1120,116 +1421,115 @@ namespace etl
     }
 
 #if ETL_USING_CPP11
-    template<typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F>>>
     auto transform(F&& f) & -> expected<U, TError>
     {
       return transform_impl<F, this_type&, U>(etl::forward<F>(f), *this);
     }
 
-    template<typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void>::type>::type>
-    auto transform(F&& f) const & -> expected<U, TError>
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F>>>
+    auto transform(F&& f) const& -> expected<U, TError>
     {
       return transform_impl<F, const this_type&, U>(etl::forward<F>(f), *this);
     }
 
-    template<typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F>>>
     auto transform(F&& f) && -> expected<U, TError>
     {
       return transform_impl<F, this_type&&, U>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template<typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void>::type>::type>
-    auto transform(F&& f) const && -> expected<U, TError>
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F>>>
+    auto transform(F&& f) const&& -> expected<U, TError>
     {
       return transform_impl<F, const this_type&&, U>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template<typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F>>>
     auto and_then(F&& f) & -> U
     {
       return and_then_impl<F, this_type&, U>(etl::forward<F>(f), *this);
     }
 
-    template<typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void>::type>::type>
-    auto and_then(F&& f) const & -> U
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F>>>
+    auto and_then(F&& f) const& -> U
     {
       return and_then_impl<F, const this_type&, U>(etl::forward<F>(f), *this);
     }
 
-    template<typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F>>>
     auto and_then(F&& f) && -> U
     {
       return and_then_impl<F, this_type&&, U>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template<typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void>::type>::type>
-    auto and_then(F&& f) const && -> U
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F>>>
+    auto and_then(F&& f) const&& -> U
     {
       return and_then_impl<F, const this_type&&, U>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, TError&>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F, TError&>>>
     auto or_else(F&& f) & -> U
     {
       return or_else_impl<F, this_type&, U, TError&>(etl::forward<F>(f), *this);
     }
-    
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, const TError&>::type>::type>
-    auto or_else(F&& f) const & -> U
+
+    template < typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F, const TError&>>>
+    auto or_else(F&& f) const& -> U
     {
       return or_else_impl<F, const this_type&, U, const TError&>(etl::forward<F>(f), *this);
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, TError&&>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F, TError&&>>>
     auto or_else(F&& f) && -> U
     {
       return or_else_impl<F, this_type&&, U, TError&&>(etl::forward<F>(f), etl::move(*this));
     }
-    
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, const TError&&>::type>::type>
-    auto or_else(F&& f) const && -> U
+
+    template < typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F, const TError&&>>>
+    auto or_else(F&& f) const&& -> U
     {
       return or_else_impl<F, const this_type&&, U, const TError&&>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, TError&>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F, TError&>>>
     auto transform_error(F&& f) & -> expected<void, U>
     {
       return transform_error_impl<F, this_type&, U, TError&>(etl::forward<F>(f), *this);
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, const TError&>::type>::type>
-    auto transform_error(F&& f) const & -> expected<void, U>
+    template < typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F, const TError&>>>
+    auto transform_error(F&& f) const& -> expected<void, U>
     {
       return transform_error_impl<F, const this_type&, U, const TError&>(etl::forward<F>(f), *this);
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, TError&&>::type>::type>
+    template <typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F, TError&&>>>
     auto transform_error(F&& f) && -> expected<void, U>
     {
       return transform_error_impl<F, this_type&&, U, TError&&>(etl::forward<F>(f), etl::move(*this));
     }
 
-    template <typename F, typename U = typename etl::remove_cvref<typename etl::invoke_result<F, void, const TError&&>::type>::type>
-    auto transform_error(F&& f) const && -> expected<void, U>
+    template < typename F, typename U = etl::remove_cvref_t<etl::invoke_result_t<F, const TError&&>>>
+    auto transform_error(F&& f) const&& -> expected<void, U>
     {
-      return transform_error_impl<F, const this_type&&, U, const TError&&>(etl::forward<F>(f), *this);
+      return transform_error_impl<F, const this_type&&, U, const TError&&>(etl::forward<F>(f), etl::move(*this));
     }
 #endif
-  
-    
+
   private:
 
     enum
     {
-      Uninitialised,
+      Void_Type,
       Error_Type
     };
 
     etl::variant<etl::monostate, error_type> storage;
 
 #if ETL_USING_CPP11
-    template <typename F, typename TExp, typename TRet, typename = typename etl::enable_if<!etl::is_void<TRet>::value>::type>
+    template < typename F, typename TExp, typename TRet, typename = etl::enable_if_t<!etl::is_void<TRet>::value>>
     auto transform_impl(F&& f, TExp&& exp) const -> expected<TRet, TError>
     {
       if (exp.has_value())
@@ -1242,7 +1542,7 @@ namespace etl
       }
     }
 
-    template <typename F, typename TExp, typename TRet, typename = typename etl::enable_if<etl::is_void<TRet>::value>::type>
+    template < typename F, typename TExp, typename TRet, typename = etl::enable_if_t<etl::is_void<TRet>::value>>
     auto transform_impl(F&& f, TExp&& exp) const -> expected<void, TError>
     {
       if (exp.has_value())
@@ -1256,7 +1556,9 @@ namespace etl
       }
     }
 
-    template <typename F, typename TExp, typename TRet, typename = typename etl::enable_if<!etl::is_void<TRet>::value && etl::is_expected<TRet>::value && etl::is_same<typename TRet::error_type, TError>::value>::type>
+    template < typename F, typename TExp, typename TRet,
+               typename = etl::enable_if_t< !etl::is_void<TRet>::value && etl::is_expected<TRet>::value
+                                            && etl::is_same<typename TRet::error_type, TError>::value>>
     auto and_then_impl(F&& f, TExp&& exp) const -> TRet
     {
       if (exp.has_value())
@@ -1269,7 +1571,9 @@ namespace etl
       }
     }
 
-    template <typename F, typename TExp, typename TRet, typename TErrorRef, typename = typename etl::enable_if<!etl::is_void<TRet>::value && etl::is_expected<TRet>::value && etl::is_same<typename TRet::value_type, void>::value>::type>
+    template <typename F, typename TExp, typename TRet, typename TErrorRef,
+              typename = etl::enable_if_t< !etl::is_void<TRet>::value && etl::is_expected<TRet>::value
+                                           && etl::is_same<typename TRet::value_type, void>::value>>
     auto or_else_impl(F&& f, TExp&& exp) const -> TRet
     {
       if (exp.has_value())
@@ -1282,7 +1586,7 @@ namespace etl
       }
     }
 
-    template <typename F, typename TExp, typename TRet, typename TErrorRef, typename = typename etl::enable_if<!etl::is_void<TRet>::value>::type>
+    template < typename F, typename TExp, typename TRet, typename TErrorRef, typename = etl::enable_if_t<!etl::is_void<TRet>::value>>
     auto transform_error_impl(F&& f, TExp&& exp) const -> expected<void, TRet>
     {
       if (exp.has_value())
@@ -1301,8 +1605,7 @@ namespace etl
   /// Equivalence operators.
   //*******************************************
   template <typename TValue, typename TError, typename TValue2, typename TError2>
-  ETL_CONSTEXPR14
-  bool operator ==(const etl::expected<TValue, TError>& lhs, const etl::expected<TValue2, TError2>& rhs)
+  ETL_CONSTEXPR14 bool operator==(const etl::expected<TValue, TError>& lhs, const etl::expected<TValue2, TError2>& rhs)
   {
     if (lhs.has_value() != rhs.has_value())
     {
@@ -1317,8 +1620,7 @@ namespace etl
 
   //*******************************************
   template <typename TValue, typename TError, typename TValue2>
-  ETL_CONSTEXPR14
-  bool operator ==(const etl::expected<TValue, TError>& lhs, const TValue2& rhs)
+  ETL_CONSTEXPR14 bool operator==(const etl::expected<TValue, TError>& lhs, const TValue2& rhs)
   {
     if (!lhs.has_value())
     {
@@ -1329,8 +1631,7 @@ namespace etl
 
   //*******************************************
   template <typename TValue, typename TError, typename TError2>
-  ETL_CONSTEXPR14
-  bool operator ==(const etl::expected<TValue, TError>& lhs, const etl::unexpected<TError2>& rhs)
+  ETL_CONSTEXPR14 bool operator==(const etl::expected<TValue, TError>& lhs, const etl::unexpected<TError2>& rhs)
   {
     if (lhs.has_value())
     {
@@ -1339,10 +1640,14 @@ namespace etl
     return lhs.error() == rhs.error();
   }
 
+#include "private/diagnostic_uninitialized_push.h"
+  //*******************************************
+  // The error is only read when the expected does not have a value, in which
+  // case it is always fully constructed. GCC can emit a false positive
+  // -Wmaybe-uninitialized when these are inlined at high optimisation levels.
   //*******************************************
   template <typename TError, typename TError2>
-  ETL_CONSTEXPR14
-  bool operator ==(const etl::expected<void, TError>& lhs, const etl::expected<void, TError2>& rhs)
+  ETL_CONSTEXPR14 bool operator==(const etl::expected<void, TError>& lhs, const etl::expected<void, TError2>& rhs)
   {
     if (lhs.has_value() != rhs.has_value())
     {
@@ -1357,8 +1662,7 @@ namespace etl
 
   //*******************************************
   template <typename TError, typename TError2>
-  ETL_CONSTEXPR14
-  bool operator ==(const etl::expected<void, TError>& lhs, const etl::unexpected<TError2>& rhs)
+  ETL_CONSTEXPR14 bool operator==(const etl::expected<void, TError>& lhs, const etl::unexpected<TError2>& rhs)
   {
     if (lhs.has_value())
     {
@@ -1366,82 +1670,75 @@ namespace etl
     }
     return lhs.error() == rhs.error();
   }
+#include "private/diagnostic_pop.h"
 
   //*******************************************
   template <typename TError, typename TError2>
-  ETL_CONSTEXPR14
-  bool operator ==(const etl::unexpected<TError>& lhs, const etl::unexpected<TError2>& rhs)
+  ETL_CONSTEXPR14 bool operator==(const etl::unexpected<TError>& lhs, const etl::unexpected<TError2>& rhs)
   {
     return lhs.error() == rhs.error();
   }
 
   //*******************************************
   template <typename TValue, typename TError, typename TValue2, typename TError2>
-  ETL_CONSTEXPR14
-  bool operator !=(const etl::expected<TValue, TError>& lhs, const etl::expected<TValue2, TError2>& rhs)
+  ETL_CONSTEXPR14 bool operator!=(const etl::expected<TValue, TError>& lhs, const etl::expected<TValue2, TError2>& rhs)
   {
     return !(lhs == rhs);
   }
 
   //*******************************************
   template <typename TValue, typename TError, typename TValue2>
-  ETL_CONSTEXPR14
-  bool operator !=(const etl::expected<TValue, TError>& lhs, const TValue2& rhs)
+  ETL_CONSTEXPR14 bool operator!=(const etl::expected<TValue, TError>& lhs, const TValue2& rhs)
   {
     return !(lhs == rhs);
   }
 
   //*******************************************
   template <typename TValue, typename TError, typename TError2>
-  ETL_CONSTEXPR14
-  bool operator !=(const etl::expected<TValue, TError>& lhs, const etl::unexpected<TError2>& rhs)
+  ETL_CONSTEXPR14 bool operator!=(const etl::expected<TValue, TError>& lhs, const etl::unexpected<TError2>& rhs)
   {
     return !(lhs == rhs);
   }
 
   //*******************************************
   template <typename TError, typename TError2>
-  ETL_CONSTEXPR14
-  bool operator !=(const etl::expected<void, TError>& lhs, const etl::expected<void, TError2>& rhs)
+  ETL_CONSTEXPR14 bool operator!=(const etl::expected<void, TError>& lhs, const etl::expected<void, TError2>& rhs)
   {
     return !(lhs == rhs);
   }
 
   //*******************************************
   template <typename TError, typename TError2>
-  ETL_CONSTEXPR14
-  bool operator !=(const etl::expected<void, TError>& lhs, const etl::unexpected<TError2>& rhs)
+  ETL_CONSTEXPR14 bool operator!=(const etl::expected<void, TError>& lhs, const etl::unexpected<TError2>& rhs)
   {
     return !(lhs == rhs);
   }
 
   //*******************************************
   template <typename TError, typename TError2>
-  ETL_CONSTEXPR14
-  bool operator !=(const etl::unexpected<TError>& lhs, const etl::unexpected<TError2>& rhs)
+  ETL_CONSTEXPR14 bool operator!=(const etl::unexpected<TError>& lhs, const etl::unexpected<TError2>& rhs)
   {
     return !(lhs == rhs);
   }
-}
 
-//*******************************************
-/// Swap etl::expected.
-//*******************************************
-template <typename TValue, typename TError>
-ETL_CONSTEXPR14
-void swap(etl::expected<TValue, TError>& lhs, etl::expected<TValue, TError>& rhs)
-{
-  lhs.swap(rhs);
-}
+  //*******************************************
+  /// Swap etl::expected.
+  //*******************************************
+  template <typename TValue, typename TError>
+  ETL_CONSTEXPR14 void swap(etl::expected<TValue, TError>& lhs, etl::expected<TValue, TError>& rhs)
+  {
+    lhs.swap(rhs);
+  }
 
-//*******************************************
-/// Swap etl::unexpected.
-//*******************************************
-template <typename TError>
-ETL_CONSTEXPR14
-void swap(etl::unexpected<TError>& lhs, etl::unexpected<TError>& rhs)
-{
-  lhs.swap(rhs);
-}
+  //*******************************************
+  /// Swap etl::unexpected.
+  //*******************************************
+  template <typename TError>
+  ETL_CONSTEXPR14 void swap(etl::unexpected<TError>& lhs, etl::unexpected<TError>& rhs)
+  {
+    lhs.swap(rhs);
+  }
+
+} // namespace etl
 
 #endif

@@ -33,15 +33,15 @@ SOFTWARE.
 
 #include "platform.h"
 #include "algorithm.h"
-#include "iterator.h"
-#include "functional.h"
-#include "utility.h"
-#include "type_traits.h"
-#include "nth_type.h"
-#include "vector.h"
-#include "pool.h"
 #include "error_handler.h"
 #include "exception.h"
+#include "functional.h"
+#include "iterator.h"
+#include "nth_type.h"
+#include "pool.h"
+#include "type_traits.h"
+#include "utility.h"
+#include "vector.h"
 
 #include "private/comparator_is_transparent.h"
 
@@ -93,7 +93,8 @@ namespace etl
 
   //***************************************************************************
   /// The base class for specifically sized reference_flat_multisets.
-  /// Can be used as a reference type for all reference_flat_multisets containing a specific type.
+  /// Can be used as a reference type for all reference_flat_multisets
+  /// containing a specific type.
   ///\ingroup reference_flat_multiset
   //***************************************************************************
   template <typename T, typename TKeyCompare = etl::less<T> >
@@ -123,9 +124,7 @@ namespace etl
 
       friend class ireference_flat_multiset;
 
-      iterator()
-      {
-      }
+      iterator() {}
 
       iterator(typename lookup_t::iterator ilookup_)
         : ilookup(ilookup_)
@@ -137,59 +136,59 @@ namespace etl
       {
       }
 
-      iterator& operator =(const iterator& other)
+      iterator& operator=(const iterator& other)
       {
         ilookup = other.ilookup;
         return *this;
       }
 
-      iterator& operator ++()
+      iterator& operator++()
       {
         ++ilookup;
         return *this;
       }
 
-      iterator operator ++(int)
+      iterator operator++(int)
       {
         iterator temp(*this);
         ++ilookup;
         return temp;
       }
 
-      iterator& operator --()
+      iterator& operator--()
       {
         --ilookup;
         return *this;
       }
 
-      iterator operator --(int)
+      iterator operator--(int)
       {
         iterator temp(*this);
         --ilookup;
         return temp;
       }
 
-      reference operator *() const
+      reference operator*() const
       {
         return *(*ilookup);
       }
 
-      pointer operator &() const
+      pointer operator&() const
       {
         return etl::addressof(*(*ilookup));
       }
 
-      pointer operator ->() const
+      pointer operator->() const
       {
         return etl::addressof(*(*ilookup));
       }
 
-      friend bool operator == (const iterator& lhs, const iterator& rhs)
+      friend bool operator==(const iterator& lhs, const iterator& rhs)
       {
         return lhs.ilookup == rhs.ilookup;
       }
 
-      friend bool operator != (const iterator& lhs, const iterator& rhs)
+      friend bool operator!=(const iterator& lhs, const iterator& rhs)
       {
         return !(lhs == rhs);
       }
@@ -206,9 +205,7 @@ namespace etl
 
       friend class ireference_flat_multiset;
 
-      const_iterator()
-      {
-      }
+      const_iterator() {}
 
       const_iterator(typename lookup_t::const_iterator ilookup_)
         : ilookup(ilookup_)
@@ -225,65 +222,65 @@ namespace etl
       {
       }
 
-      const_iterator& operator =(const iterator& other)
+      const_iterator& operator=(const iterator& other)
       {
         ilookup = other.ilookup;
         return *this;
       }
 
-      const_iterator& operator =(const const_iterator& other)
+      const_iterator& operator=(const const_iterator& other)
       {
         ilookup = other.ilookup;
         return *this;
       }
 
-      const_iterator& operator ++()
+      const_iterator& operator++()
       {
         ++ilookup;
         return *this;
       }
 
-      const_iterator operator ++(int)
+      const_iterator operator++(int)
       {
         const_iterator temp(*this);
         ++ilookup;
         return temp;
       }
 
-      const_iterator& operator --()
+      const_iterator& operator--()
       {
         --ilookup;
         return *this;
       }
 
-      const_iterator operator --(int)
+      const_iterator operator--(int)
       {
         const_iterator temp(*this);
         --ilookup;
         return temp;
       }
 
-      const_reference operator *() const
+      const_reference operator*() const
       {
         return *(*ilookup);
       }
 
-      const_pointer operator &() const
+      const_pointer operator&() const
       {
         return etl::addressof(*(*ilookup));
       }
 
-      const_pointer operator ->() const
+      const_pointer operator->() const
       {
         return etl::addressof(*(*ilookup));
       }
 
-      friend bool operator == (const const_iterator& lhs, const const_iterator& rhs)
+      friend bool operator==(const const_iterator& lhs, const const_iterator& rhs)
       {
         return lhs.ilookup == rhs.ilookup;
       }
 
-      friend bool operator != (const const_iterator& lhs, const const_iterator& rhs)
+      friend bool operator!=(const const_iterator& lhs, const const_iterator& rhs)
       {
         return !(lhs == rhs);
       }
@@ -297,10 +294,51 @@ namespace etl
 
     typedef typename etl::parameter_type<T>::type parameter_t;
 
+    //*********************************************************************
+    /// Compares a pointer to an element (as stored in 'lookup') against a
+    /// key, allowing binary searches directly over the random-access
+    /// 'lookup' container instead of the bidirectional iterator/const_iterator.
+    //*********************************************************************
+    class Compare
+    {
+    public:
+
+      Compare(const TKeyCompare& comp_)
+        : comp(comp_)
+      {
+      }
+
+      bool operator()(const value_type* element, parameter_t key) const
+      {
+        return comp(*element, key);
+      }
+
+      bool operator()(parameter_t key, const value_type* element) const
+      {
+        return comp(key, *element);
+      }
+
+#if ETL_USING_CPP11
+      template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+      bool operator()(const value_type* element, const K& key) const
+      {
+        return comp(*element, key);
+      }
+
+      template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+      bool operator()(const K& key, const value_type* element) const
+      {
+        return comp(key, *element);
+      }
+#endif
+
+      const TKeyCompare& comp;
+    };
+
   public:
 
-    typedef ETL_OR_STD::reverse_iterator<iterator>       reverse_iterator;
-    typedef ETL_OR_STD::reverse_iterator<const_iterator> const_reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<iterator>                   reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<const_iterator>             const_reverse_iterator;
     typedef typename etl::iterator_traits<iterator>::difference_type difference_type;
 
     //*********************************************************************
@@ -313,7 +351,8 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a const_iterator to the beginning of the reference_flat_multiset.
+    /// Returns a const_iterator to the beginning of the
+    /// reference_flat_multiset.
     ///\return A const iterator to the beginning of the reference_flat_multiset.
     //*********************************************************************
     const_iterator begin() const
@@ -340,7 +379,8 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a const_iterator to the beginning of the reference_flat_multiset.
+    /// Returns a const_iterator to the beginning of the
+    /// reference_flat_multiset.
     ///\return A const iterator to the beginning of the reference_flat_multiset.
     //*********************************************************************
     const_iterator cbegin() const
@@ -358,7 +398,8 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns an reverse iterator to the reverse beginning of the reference_flat_multiset.
+    /// Returns an reverse iterator to the reverse beginning of the
+    /// reference_flat_multiset.
     ///\return Iterator to the reverse beginning of the reference_flat_multiset.
     //*********************************************************************
     reverse_iterator rbegin()
@@ -367,8 +408,10 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a const reverse iterator to the reverse beginning of the reference_flat_multiset.
-    ///\return Const iterator to the reverse beginning of the reference_flat_multiset.
+    /// Returns a const reverse iterator to the reverse beginning of the
+    /// reference_flat_multiset.
+    ///\return Const iterator to the reverse beginning of the
+    /// reference_flat_multiset.
     //*********************************************************************
     const_reverse_iterator rbegin() const
     {
@@ -376,7 +419,8 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a reverse iterator to the end + 1 of the reference_flat_multiset.
+    /// Returns a reverse iterator to the end + 1 of the
+    /// reference_flat_multiset.
     ///\return Reverse iterator to the end + 1 of the reference_flat_multiset.
     //*********************************************************************
     reverse_iterator rend()
@@ -385,8 +429,10 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a const reverse iterator to the end + 1 of the reference_flat_multiset.
-    ///\return Const reverse iterator to the end + 1 of the reference_flat_multiset.
+    /// Returns a const reverse iterator to the end + 1 of the
+    /// reference_flat_multiset.
+    ///\return Const reverse iterator to the end + 1 of the
+    /// reference_flat_multiset.
     //*********************************************************************
     const_reverse_iterator rend() const
     {
@@ -394,8 +440,10 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a const reverse iterator to the reverse beginning of the reference_flat_multiset.
-    ///\return Const reverse iterator to the reverse beginning of the reference_flat_multiset.
+    /// Returns a const reverse iterator to the reverse beginning of the
+    /// reference_flat_multiset.
+    ///\return Const reverse iterator to the reverse beginning of the
+    /// reference_flat_multiset.
     //*********************************************************************
     const_reverse_iterator crbegin() const
     {
@@ -403,8 +451,10 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Returns a const reverse iterator to the end + 1 of the reference_flat_multiset.
-    ///\return Const reverse iterator to the end + 1 of the reference_flat_multiset.
+    /// Returns a const reverse iterator to the end + 1 of the
+    /// reference_flat_multiset.
+    ///\return Const reverse iterator to the end + 1 of the
+    /// reference_flat_multiset.
     //*********************************************************************
     const_reverse_iterator crend() const
     {
@@ -413,8 +463,10 @@ namespace etl
 
     //*********************************************************************
     /// Assigns values to the reference_flat_multiset.
-    /// If asserts or exceptions are enabled, emits reference_flat_multiset_full if the reference_flat_multiset does not have enough free space.
-    /// If asserts or exceptions are enabled, emits reference_flat_multiset_iterator if the iterators are reversed.
+    /// If asserts or exceptions are enabled, emits reference_flat_multiset_full
+    /// if the reference_flat_multiset does not have enough free space. If
+    /// asserts or exceptions are enabled, emits
+    /// reference_flat_multiset_iterator if the iterators are reversed.
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*********************************************************************
@@ -437,7 +489,8 @@ namespace etl
 
     //*********************************************************************
     /// Inserts a value to the reference_flat_multiset.
-    /// If asserts or exceptions are enabled, emits reference_flat_multiset_full if the reference_flat_multiset is already full.
+    /// If asserts or exceptions are enabled, emits reference_flat_multiset_full
+    /// if the reference_flat_multiset is already full.
     ///\param value    The value to insert.
     //*********************************************************************
     ETL_OR_STD::pair<iterator, bool> insert(value_type& value)
@@ -446,20 +499,20 @@ namespace etl
 
       ETL_ASSERT(!lookup.full(), ETL_ERROR(flat_multiset_full));
 
-      iterator i_element = etl::upper_bound(begin(), end(), value, compare);
+      iterator i_element = upper_bound(value);
 
       if (i_element == end())
       {
         // At the end. Doesn't exist.
         lookup.push_back(&value);
-        result.first = --end();
+        result.first  = --end();
         result.second = true;
       }
       else
       {
         // Not at the end.
         lookup.insert(i_element.ilookup, &value);
-        result.first = i_element;
+        result.first  = i_element;
         result.second = true;
       }
 
@@ -467,8 +520,21 @@ namespace etl
     }
 
     //*********************************************************************
+    /// Emplaces a value to the reference_flat_multiset.
+    /// As the reference_flat_multiset stores references to externally owned
+    /// objects, the value is not constructed in place but inserted by
+    /// reference.
+    ///\param value    The value to emplace.
+    //*********************************************************************
+    ETL_OR_STD::pair<iterator, bool> emplace(value_type& value)
+    {
+      return insert(value);
+    }
+
+    //*********************************************************************
     /// Inserts a value to the reference_flat_multiset.
-    /// If asserts or exceptions are enabled, emits reference_flat_multiset_full if the reference_flat_multiset is already full.
+    /// If asserts or exceptions are enabled, emits reference_flat_multiset_full
+    /// if the reference_flat_multiset is already full.
     ///\param position The position to insert at.
     ///\param value    The value to insert.
     //*********************************************************************
@@ -479,7 +545,8 @@ namespace etl
 
     //*********************************************************************
     /// Inserts a range of values to the reference_flat_multiset.
-    /// If asserts or exceptions are enabled, emits reference_flat_multiset_full if the reference_flat_multiset does not have enough free space.
+    /// If asserts or exceptions are enabled, emits reference_flat_multiset_full
+    /// if the reference_flat_multiset does not have enough free space.
     ///\param position The position to insert at.
     ///\param first    The first element to add.
     ///\param last     The last + 1 element to add.
@@ -509,7 +576,7 @@ namespace etl
       }
       else
       {
-        size_t d = etl::distance(range.first, range.second);
+        size_t d = static_cast<size_t>(etl::distance(range.first, range.second));
         erase(range.first, range.second);
         return d;
       }
@@ -528,7 +595,7 @@ namespace etl
       }
       else
       {
-        size_t d = etl::distance(range.first, range.second);
+        size_t d = static_cast<size_t>(etl::distance(range.first, range.second));
         erase(range.first, range.second);
         return d;
       }
@@ -555,8 +622,8 @@ namespace etl
 
     //*********************************************************************
     /// Erases a range of elements.
-    /// The range includes all the elements between first and last, including the
-    /// element pointed by first, but not the one pointed by last.
+    /// The range includes all the elements between first and last, including
+    /// the element pointed by first, but not the one pointed by last.
     ///\param first Iterator to the first element.
     ///\param last  Iterator to the last element.
     //*********************************************************************
@@ -580,13 +647,14 @@ namespace etl
     //*********************************************************************
     iterator find(parameter_t key)
     {
-      iterator itr = etl::lower_bound(begin(), end(), key, compare);
+      Compare                     ptr_compare(compare);
+      typename lookup_t::iterator itr = etl::lower_bound(lookup.begin(), lookup.end(), key, ptr_compare);
 
-      if (itr != end())
+      if (itr != lookup.end())
       {
-        if (!key_compare()(*itr, key) && !key_compare()(key, *itr))
+        if (!compare(**itr, key) && !compare(key, **itr))
         {
-          return itr;
+          return iterator(itr);
         }
         else
         {
@@ -602,13 +670,14 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     iterator find(const K& key)
     {
-      iterator itr = etl::lower_bound(begin(), end(), key, compare);
+      Compare                     ptr_compare(compare);
+      typename lookup_t::iterator itr = etl::lower_bound(lookup.begin(), lookup.end(), key, ptr_compare);
 
-      if (itr != end())
+      if (itr != lookup.end())
       {
-        if (!key_compare()(*itr, key) && !key_compare()(key, *itr))
+        if (!compare(**itr, key) && !compare(key, **itr))
         {
-          return itr;
+          return iterator(itr);
         }
         else
         {
@@ -627,13 +696,14 @@ namespace etl
     //*********************************************************************
     const_iterator find(parameter_t key) const
     {
-      const_iterator itr = etl::lower_bound(begin(), end(), key, compare);
+      Compare                           ptr_compare(compare);
+      typename lookup_t::const_iterator itr = etl::lower_bound(lookup.cbegin(), lookup.cend(), key, ptr_compare);
 
-      if (itr != end())
+      if (itr != lookup.cend())
       {
-        if (!key_compare()(*itr, key) && !key_compare()(key, *itr))
+        if (!compare(**itr, key) && !compare(key, **itr))
         {
-          return itr;
+          return const_iterator(itr);
         }
         else
         {
@@ -649,13 +719,14 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     const_iterator find(const K& key) const
     {
-      const_iterator itr = etl::lower_bound(begin(), end(), key, compare);
+      Compare                           ptr_compare(compare);
+      typename lookup_t::const_iterator itr = etl::lower_bound(lookup.cbegin(), lookup.cend(), key, ptr_compare);
 
-      if (itr != end())
+      if (itr != lookup.cend())
       {
-        if (!key_compare()(*itr, key) && !key_compare()(key, *itr))
+        if (!compare(**itr, key) && !compare(key, **itr))
         {
-          return itr;
+          return const_iterator(itr);
         }
         else
         {
@@ -676,7 +747,7 @@ namespace etl
     {
       ETL_OR_STD::pair<const_iterator, const_iterator> range = equal_range(key);
 
-      return etl::distance(range.first, range.second);
+      return static_cast<size_t>(etl::distance(range.first, range.second));
     }
 
 #if ETL_USING_CPP11
@@ -686,7 +757,7 @@ namespace etl
     {
       ETL_OR_STD::pair<const_iterator, const_iterator> range = equal_range(key);
 
-      return etl::distance(range.first, range.second);
+      return static_cast<size_t>(etl::distance(range.first, range.second));
     }
 #endif
 
@@ -697,7 +768,8 @@ namespace etl
     //*********************************************************************
     iterator lower_bound(parameter_t key)
     {
-      return etl::lower_bound(begin(), end(), key, compare);
+      Compare ptr_compare(compare);
+      return iterator(etl::lower_bound(lookup.begin(), lookup.end(), key, ptr_compare));
     }
 
 #if ETL_USING_CPP11
@@ -705,7 +777,8 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     iterator lower_bound(const K& key)
     {
-      return etl::lower_bound(begin(), end(), key, compare);
+      Compare ptr_compare(compare);
+      return iterator(etl::lower_bound(lookup.begin(), lookup.end(), key, ptr_compare));
     }
 #endif
 
@@ -716,7 +789,8 @@ namespace etl
     //*********************************************************************
     const_iterator lower_bound(parameter_t key) const
     {
-      return etl::lower_bound(cbegin(), cend(), key, compare);
+      Compare ptr_compare(compare);
+      return const_iterator(etl::lower_bound(lookup.cbegin(), lookup.cend(), key, ptr_compare));
     }
 
 #if ETL_USING_CPP11
@@ -724,7 +798,8 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     const_iterator lower_bound(const K& key) const
     {
-      return etl::lower_bound(cbegin(), cend(), key, compare);
+      Compare ptr_compare(compare);
+      return const_iterator(etl::lower_bound(lookup.cbegin(), lookup.cend(), key, ptr_compare));
     }
 #endif
 
@@ -735,7 +810,8 @@ namespace etl
     //*********************************************************************
     iterator upper_bound(parameter_t key)
     {
-      return etl::upper_bound(begin(), end(), key, compare);
+      Compare ptr_compare(compare);
+      return iterator(etl::upper_bound(lookup.begin(), lookup.end(), key, ptr_compare));
     }
 
 #if ETL_USING_CPP11
@@ -743,7 +819,8 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     iterator upper_bound(const K& key)
     {
-      return etl::upper_bound(begin(), end(), key, compare);
+      Compare ptr_compare(compare);
+      return iterator(etl::upper_bound(lookup.begin(), lookup.end(), key, ptr_compare));
     }
 #endif
 
@@ -754,7 +831,8 @@ namespace etl
     //*********************************************************************
     const_iterator upper_bound(parameter_t key) const
     {
-      return etl::upper_bound(cbegin(), cend(), key, compare);
+      Compare ptr_compare(compare);
+      return const_iterator(etl::upper_bound(lookup.cbegin(), lookup.cend(), key, ptr_compare));
     }
 
 #if ETL_USING_CPP11
@@ -762,7 +840,8 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     const_iterator upper_bound(const K& key) const
     {
-      return etl::upper_bound(cbegin(), cend(), key, compare);
+      Compare ptr_compare(compare);
+      return const_iterator(etl::upper_bound(lookup.cbegin(), lookup.cend(), key, ptr_compare));
     }
 #endif
 
@@ -773,7 +852,11 @@ namespace etl
     //*********************************************************************
     ETL_OR_STD::pair<iterator, iterator> equal_range(parameter_t key)
     {
-      return etl::equal_range(begin(), end(), key, compare);
+      Compare                     ptr_compare(compare);
+      typename lookup_t::iterator i_lower = etl::lower_bound(lookup.begin(), lookup.end(), key, ptr_compare);
+      typename lookup_t::iterator i_upper = etl::upper_bound(i_lower, lookup.end(), key, ptr_compare);
+
+      return ETL_OR_STD::make_pair(iterator(i_lower), iterator(i_upper));
     }
 
 #if ETL_USING_CPP11
@@ -781,7 +864,11 @@ namespace etl
     template <typename K, typename KC = TKeyCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
     ETL_OR_STD::pair<iterator, iterator> equal_range(const K& key)
     {
-      return etl::equal_range(begin(), end(), key, compare);
+      Compare                     ptr_compare(compare);
+      typename lookup_t::iterator i_lower = etl::lower_bound(lookup.begin(), lookup.end(), key, ptr_compare);
+      typename lookup_t::iterator i_upper = etl::upper_bound(i_lower, lookup.end(), key, ptr_compare);
+
+      return ETL_OR_STD::make_pair(iterator(i_lower), iterator(i_upper));
     }
 #endif
 
@@ -809,7 +896,11 @@ namespace etl
     //*********************************************************************
     ETL_OR_STD::pair<const_iterator, const_iterator> equal_range(parameter_t key) const
     {
-      return etl::equal_range(begin(), end(), key, compare);
+      Compare                           ptr_compare(compare);
+      typename lookup_t::const_iterator i_lower = etl::lower_bound(lookup.cbegin(), lookup.cend(), key, ptr_compare);
+      typename lookup_t::const_iterator i_upper = etl::upper_bound(i_lower, lookup.cend(), key, ptr_compare);
+
+      return ETL_OR_STD::make_pair(const_iterator(i_lower), const_iterator(i_upper));
     }
 
     //*************************************************************************
@@ -891,7 +982,7 @@ namespace etl
         ETL_ASSERT(!lookup.full(), ETL_ERROR(flat_multiset_full));
 
         lookup.push_back(&value);
-        result.first = --end();
+        result.first  = --end();
         result.second = true;
       }
       else
@@ -912,7 +1003,7 @@ namespace etl
 
     // Disable copy construction.
     ireference_flat_multiset(const ireference_flat_multiset&);
-    ireference_flat_multiset& operator =(const ireference_flat_multiset&);
+    ireference_flat_multiset& operator=(const ireference_flat_multiset&);
 
     lookup_t& lookup;
 
@@ -922,15 +1013,15 @@ namespace etl
     /// Destructor.
     //*************************************************************************
 #if defined(ETL_POLYMORPHIC_REFERENCE_FLAT_MULTISET) || defined(ETL_POLYMORPHIC_CONTAINERS)
+
   public:
-    virtual ~ireference_flat_multiset()
-    {
-    }
+
+    virtual ~ireference_flat_multiset() {}
 #else
+
   protected:
-    ~ireference_flat_multiset()
-    {
-    }
+
+    ~ireference_flat_multiset() {}
 #endif
   };
 
@@ -988,7 +1079,7 @@ namespace etl
   private:
 
     // The vector that stores pointers to the nodes.
-     etl::vector<value_type*, MAX_SIZE> lookup;
+    etl::vector<value_type*, MAX_SIZE> lookup;
   };
 
   template <typename TKey, const size_t MAX_SIZE_, typename TCompare>
@@ -999,7 +1090,7 @@ namespace etl
   //*************************************************************************
 #if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST
   template <typename... T>
-  reference_flat_multiset(T...)->reference_flat_multiset<etl::nth_type_t<0, T...>, sizeof...(T)>;
+  reference_flat_multiset(T...) -> reference_flat_multiset<etl::nth_type_t<0, T...>, sizeof...(T)>;
 #endif
 
   //*************************************************************************
@@ -1009,7 +1100,7 @@ namespace etl
   template <typename TKey, typename TKeyCompare = etl::less<TKey>, typename... T>
   constexpr auto make_reference_flat_multiset(T&&... keys) -> etl::reference_flat_multiset<TKey, sizeof...(T), TKeyCompare>
   {
-    return { etl::forward<T>(keys)... };
+    return {etl::forward<T>(keys)...};
   }
 #endif
 
@@ -1021,7 +1112,7 @@ namespace etl
   ///\ingroup reference_flat_multiset
   //***************************************************************************
   template <typename T, typename TKeyCompare>
-  bool operator ==(const etl::ireference_flat_multiset<T, TKeyCompare>& lhs, const etl::ireference_flat_multiset<T, TKeyCompare>& rhs)
+  bool operator==(const etl::ireference_flat_multiset<T, TKeyCompare>& lhs, const etl::ireference_flat_multiset<T, TKeyCompare>& rhs)
   {
     return (lhs.size() == rhs.size()) && etl::equal(lhs.begin(), lhs.end(), rhs.begin());
   }
@@ -1034,10 +1125,10 @@ namespace etl
   ///\ingroup reference_flat_multiset
   //***************************************************************************
   template <typename T, typename TKeyCompare>
-  bool operator !=(const etl::ireference_flat_multiset<T, TKeyCompare>& lhs, const etl::ireference_flat_multiset<T, TKeyCompare>& rhs)
+  bool operator!=(const etl::ireference_flat_multiset<T, TKeyCompare>& lhs, const etl::ireference_flat_multiset<T, TKeyCompare>& rhs)
   {
     return !(lhs == rhs);
   }
-}
+} // namespace etl
 
 #endif
