@@ -685,7 +685,9 @@ namespace etl
       auto node = allocate_data_node();
       if (node != nullptr)
       {
-        ::new (&node->key_value_pair) value_type(key, T());
+        node->clear();
+        ::new ((void*)etl::addressof(node->key_value_pair.first)) key_type(etl::move(key));
+        ::new ((void*)etl::addressof(node->key_value_pair.second)) mapped_type();
         ETL_INCREMENT_DEBUG_COUNT;
 
         pbucket->insert_after(pbucket->before_begin(), *node);
