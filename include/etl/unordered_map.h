@@ -683,12 +683,12 @@ namespace etl
       // Doesn't exist, so add a new one.
       // Get a new node.
       auto node = allocate_data_node();
-      if (node)
+      if (node != nullptr)
       {
-        ::new (&node->get().key_value_pair) value_type(key, T());
+        ::new (&node->key_value_pair) value_type(key, T());
         ETL_INCREMENT_DEBUG_COUNT;
 
-        pbucket->insert_after(pbucket->before_begin(), node->get());
+        pbucket->insert_after(pbucket->before_begin(), *node);
 
         adjust_first_last_markers_after_insert(pbucket);
       }
