@@ -935,7 +935,7 @@ namespace etl
         {
           // Obtain the inserted node (might be ETL_NULLPTR if node was a
           // duplicate)
-          inserted_node = insert_node(root_node, node);
+          inserted_node = insert_node(root_node, *node);
 
           // Insert node into tree and return iterator to new node location in
           // tree
@@ -974,7 +974,7 @@ namespace etl
         {
           // Obtain the inserted node (might be ETL_NULLPTR if node was a
           // duplicate)
-          inserted_node = insert_node(root_node, node);
+          inserted_node = insert_node(root_node, *node);
 
           // Insert node into tree and return iterator to new node location in
           // tree
@@ -1357,8 +1357,8 @@ namespace etl
       if (node != nullptr)
       {
         // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
-        Node* inserted_node = insert_node(root_node, node);
-        bool  inserted      = inserted_node == &node;
+        Node* inserted_node = insert_node(root_node, *node);
+        bool  inserted      = inserted_node == node;
 
         // Insert node into tree and return iterator to new node location in tree
         return ETL_OR_STD::make_pair(iterator(*this, inserted_node), inserted);
@@ -1388,7 +1388,7 @@ namespace etl
       if (node != nullptr)
       {
         // Obtain the inserted node
-        Node* inserted_node = insert_node(root_node, node);
+        Node* inserted_node = insert_node(root_node, *node);
 
         // Insert node into tree and return iterator to new node location in tree
         return ETL_OR_STD::make_pair(iterator(*this, inserted_node), true);
@@ -1417,7 +1417,7 @@ namespace etl
       if (node != nullptr)
       {
         // Obtain the inserted node
-        Node* inserted_node = insert_node(root_node, node);
+        Node* inserted_node = insert_node(root_node, *node);
 
         // Insert node into tree and return iterator to new node location in tree
         return ETL_OR_STD::make_pair(iterator(*this, inserted_node), true);
@@ -1453,7 +1453,7 @@ namespace etl
       if (node != nullptr)
       {
         // Obtain the inserted node
-        Node* inserted_node = insert_node(root_node, node);
+        Node* inserted_node = insert_node(root_node, *node);
 
         // Insert node into tree and return iterator to new node location in tree
         return ETL_OR_STD::make_pair(iterator(*this, inserted_node), true);
@@ -1482,7 +1482,7 @@ namespace etl
       if (node != nullptr)
       {
         // Obtain the inserted node
-        Node* inserted_node = insert_node(root_node, node);
+        Node* inserted_node = insert_node(root_node, *node);
 
         // Insert node into tree and return iterator to new node location in tree
         return ETL_OR_STD::make_pair(iterator(*this, inserted_node), true);
@@ -1511,7 +1511,7 @@ namespace etl
       if (node != nullptr)
       {
         // Obtain the inserted node
-        Node* inserted_node = insert_node(root_node, node);
+        Node* inserted_node = insert_node(root_node, *node);
 
         // Insert node into tree and return iterator to new node location in tree
         return ETL_OR_STD::make_pair(iterator(*this, inserted_node), true);
@@ -1539,7 +1539,7 @@ namespace etl
       if (node != nullptr)
       {
         // Obtain the inserted node
-        Node* inserted_node = insert_node(root_node, node);
+        Node* inserted_node = insert_node(root_node, *node);
 
         // Insert node into tree and return iterator to new node location in tree
         return ETL_OR_STD::make_pair(iterator(*this, inserted_node), true);
